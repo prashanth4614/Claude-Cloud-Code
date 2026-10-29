@@ -71,7 +71,7 @@ def build_sky(scene):
         z = rnd.uniform(-9, -3) if i < 60 else rnd.uniform(2, 14)
         s = rnd.uniform(3, 9)
         prim("ico_sphere", f"cloud_{i:02d}", coll, SKY + Vector((x, y, z)), (s, s * 0.8, s * 0.35), mat=white, subdivisions=2)
-    prim("plane", "cloud_sea", coll, SKY + Vector((0, 0, -10)), (900, 900, 1),
+    prim("plane", "cloud_sea", coll, SKY + Vector((0, 0, -10)), (240, 900, 1),  # stays clear of the other sets (x +-300)
          mat=material("cloud_sea", (0.86, 0.88, 0.93), rough=1.0))
     sun = bpy.data.objects.new("Sun", bpy.data.lights.new("Sun", "SUN"))
     sun.data.energy, sun.data.color, sun.data.angle = 4.0, (1.0, 0.82, 0.6), math.radians(2)
