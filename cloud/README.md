@@ -11,6 +11,23 @@ cloud/bootstrap.sh       runs on the pod (ubuntu:24.04): ffmpeg, Inter fonts, Py
 cloud/pod_agent.py       tiny token-protected job server on the pod (port 8000, via RunPod's HTTPS proxy)
 ```
 
+## Measured (first real run, 2026-10-29)
+
+Blender 3D ear-pop Short with the Piper voice, 1080×1920, 30 fps, 24 EEVEE samples:
+
+| | |
+|---|---|
+| GPU | RTX 4090 24 GB, **secure** cloud at $0.89/hr (community had no 4090 free) |
+| Engine | EEVEE (the NVIDIA EGL driver was present, so no Cycles fallback) |
+| Boot (apt + pip + Blender 4.5.15 download) | 0.7 min |
+| Render | 1299 frames in 9.3 min, **0.43 s/frame** including Blender startup per line |
+| Composite + encode | 45 s → 43.3 s MP4, 20.7 MB, −15.0 LUFS |
+| Billed | ~11.1 min, **~$0.165 (~₹15)** |
+
+At community-cloud prices ($0.34/hr) the same run is about $0.06 (≈ ₹6). If no GPU in the
+list is free, `POST /pods` returns HTTP 500 "no instances currently available" and no pod
+is created; retry with `--cloud SECURE`.
+
 ## One-time setup
 
 1. Create a RunPod account and add credit. $10 (≈ ₹1,050 incl. GST) covers roughly 60–80 videos.
