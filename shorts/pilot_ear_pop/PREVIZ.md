@@ -1,14 +1,19 @@
 # Viewing the grey-box previz in Blender
 
-`pilot_ear_pop_previz.blend` (built by `build_previz.py`, Blender 4.5 LTS or newer). Voice and
+`pilot_ear_pop_previz.blend` (built by `build_previz.py` with Blender 4.5 LTS; opens in 4.5 and 5.x). Voice and
 SFX are packed inside, so the file works on its own.
 
-## Watch the whole film (with voice, cuts, captions)
-1. Open the file. Top right, switch the **Scene** from `FILM` to **`EDIT`**.
-2. Change the big 3D viewport into a **Video Sequencer** (editor-type menu, top-left of the area)
-   and choose **Sequencer & Preview**.
-3. Press **Space** to play. The preview uses Material Preview shading. If playback stutters,
-   set Playback ▸ Sync to **Frame Dropping** so the picture stays locked to the voice.
+## Watch the whole film (Blender 5.x and 4.5)
+**Easiest: the FILM scene**, which has every shot, camera cut, voice and SFX:
+1. Top right, make sure the **Scene** is **`FILM`**.
+2. Hover over the 3D viewport: **View ▸ Cameras ▸ Active Camera** (or Numpad 0).
+3. Viewport shading: **Material Preview** (third sphere icon, top right of the viewport).
+4. Set the frame to 1 and press **Space**. The cameras cut at the markers `S01`…`S13`.
+   If it stutters: Playback ▸ Sync ▸ **Frame Dropping**.
+
+**With captions and the dissolve: the EDIT scene.** In a Video Sequencer area
+(Sequencer & Preview), pick **`EDIT`** as the sequencer's scene. In Blender 5 the sequencer
+has its own scene selector in its header, separate from the window's scene. Then play.
 
 ## Inspect or tweak the 3D shots
 - Scene **`FILM`**: press **Numpad 0** (camera view) and play. The timeline markers `S01`…`S13`

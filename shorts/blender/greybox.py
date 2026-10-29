@@ -12,6 +12,7 @@ from mathutils import Matrix, Vector
 from rigs import bezier, collection, empty, material, prim
 
 SKY, CABIN, EAR, CITY = Vector((0, 0, 0)), Vector((300, 0, 0)), Vector((600, 0, 0)), Vector((900, 0, 0))
+EAR_MAP = Vector((1200, 0, 0))  # the x-ray cutaway copy of the ear
 
 
 def _cut_near_half(ob, axis=1, keep_above=-0.08):
@@ -156,6 +157,8 @@ def build_max(scene, at):
     for s in (-1, 1):
         prim("uv_sphere", f"max_ear_{s}", coll, (s * 0.108, 0.005, 0.135), (0.018, 0.03, 0.04), mat=skin, parent=head)
         prim("uv_sphere", f"max_eye_{s}", coll, (s * 0.04, -0.105, 0.16), (0.016, 0.01, 0.016), mat=dark, parent=head)
+    prim("uv_sphere", "Max_ear_hole", coll, (0.127, 0.005, 0.13), (0.003, 0.014, 0.018),  # on the ear's outer surface
+         mat=material("ear_hole", (0.02, 0.005, 0.005), rough=1.0), parent=head)
     prim("uv_sphere", "max_mouth", coll, (0, -0.107, 0.075), (0.03, 0.01, 0.008), mat=lip, parent=head)
     hands = {}
     for s, side in ((1, "L"), (-1, "R")):  # Max faces -Y, so his left is +X
@@ -170,26 +173,52 @@ def build_max(scene, at):
 TUBE_PTS = [Vector((2.6, 0.15, -2.2)), Vector((2.4, 0.15, -6.0)), Vector((-0.5, 0.15, -8.0)), Vector((-2.4, 0.15, -10.4))]
 
 
-def build_ear(scene):
-    coll = collection("SET_ear", scene.collection)
-    o = EAR
-    tissue = material("tissue", (0.78, 0.38, 0.36), rough=0.35)
-    cavity = material("tissue_dark", (0.42, 0.13, 0.15), rough=0.5)
+def _open_towards(ob, centre, directions, half_angle_deg):
+    """Cut round openings in a closed shell (e.g. where the eardrum and the tube meet the middle ear)."""
+    import bmesh
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    cos = math.cos(math.radians(half_angle_deg))
+    doomed = [f for f in bm.faces
+              if any((f.calc_center_median() - centre).normalized().dot(d.normalized()) > cos for d in directions)]
+    bmesh.ops.delete(bm, geom=doomed, context="FACES")
+    bm.to_mesh(ob.data)
+    bm.free()
+
+
+def build_ear(scene, origin=EAR, inside=False):
+    """Ear anatomy at real proportions (scaled up). inside=False: the x-ray "map" cutaway (near
+    half removed). inside=True: closed, lit tunnels the camera can fly through (canal -> eardrum
+    -> middle ear -> Eustachian tube), with openings where the parts connect."""
+    tag = "in" if inside else "map"
+    coll = collection(f"SET_ear_{tag}", scene.collection)
+    o = origin
+    glow = 0.25 if inside else 0.0  # inside, the tissue faintly glows so the tunnel never goes black
+    tissue = material(f"tissue_{tag}", (0.78, 0.38, 0.36), rough=0.35, emission=glow)
+    cavity = material(f"tissue_dark_{tag}", (0.55, 0.2, 0.22) if inside else (0.42, 0.13, 0.15), rough=0.5, emission=glow)
     bone = material("ossicle", (0.93, 0.88, 0.78), rough=0.4)
     dome = material("ear_dome", (0.06, 0.015, 0.025), emission=1.0)
-    d = prim("uv_sphere", "ear_dome", coll, o, (90, 90, 90), mat=dome, segments=32, ring_count=16)
+    d = prim("uv_sphere", f"ear_dome_{tag}", coll, o, (90, 90, 90), mat=dome, segments=32, ring_count=16)
     d.visible_shadow = False
-    canal = prim("cylinder", "ear_canal", coll, o + Vector((-8.6, 0, 0)), (1.5, 1.5, 7.8), (0, 90, 0), tissue, vertices=48,
-                 end_fill_type="NOTHING")  # open tube: the eardrum is the end of the canal
-    _cut_near_half(canal)
-    chamber = prim("uv_sphere", "middle_ear", coll, o + Vector((2.2, 0, 0)), (2.6, 2.6, 2.6), mat=cavity, segments=48, ring_count=24)
-    _cut_near_half(chamber)
-    throat = prim("uv_sphere", "throat", coll, o + Vector((-3.4, 0, -12.6)), (2.6, 2.6, 2.2), mat=cavity, segments=40, ring_count=20)
-    _cut_near_half(throat)
-    # eardrum: a disc with shape keys Out (towards the canal) and In
-    drum = _disc("Eardrum", coll, 1.55, rings=14, segments=48)
+    canal = prim("cylinder", f"ear_canal_{tag}", coll, o + Vector((-8.6, 0, 0)), (1.5, 1.5, 7.8), (0, 90, 0), tissue,
+                 vertices=48, end_fill_type="NOTHING")  # open tube: the eardrum is the end of the canal
+    chamber = prim("uv_sphere", f"middle_ear_{tag}", coll, o + Vector((2.2, 0, 0)), (2.6, 2.6, 2.6), mat=cavity,
+                   segments=48, ring_count=24)
+    throat = prim("uv_sphere", f"throat_{tag}", coll, o + Vector((-3.4, 0, -12.6)), (2.6, 2.6, 2.2), mat=cavity,
+                  segments=40, ring_count=20)
+    if inside:
+        _open_towards(chamber, Vector((0, 0, 0)), [Vector((-1, 0, 0))], 36)                 # to the eardrum
+        _open_towards(chamber, Vector((0, 0, 0)), [TUBE_PTS[0] - Vector((2.2, 0, 0))], 13)  # to the tube
+        prim("torus", f"ear_entrance_{tag}", coll, o + Vector((-16.4, 0, 0)), (1, 1, 1), (0, 90, 0),
+             material("ear_skin", (0.86, 0.62, 0.48), rough=0.55), major_radius=1.75, minor_radius=0.35)
+    else:
+        for ob in (canal, chamber, throat):
+            _cut_near_half(ob)
+    # eardrum: a disc with shape keys Out (towards the canal) and In (towards the middle ear)
+    drum = _disc(f"Eardrum_{tag}", coll, 1.55, rings=14, segments=48)
     drum.location, drum.rotation_euler = o + Vector((-0.8, 0, 0)), (0, math.radians(90), 0)
-    drum.data.materials.append(material("eardrum", (0.97, 0.9, 0.84), rough=0.25, emission=0.0))
+    drum.data.materials.append(material(f"eardrum_{tag}", (0.97, 0.9, 0.84), rough=0.25,
+                                        alpha=0.72 if inside else 1.0))  # translucent: see the air beyond it
     drum.shape_key_add(name="Basis")
     for name, sign in (("Out", -1.1), ("In", 1.0)):
         sk = drum.shape_key_add(name=name)
@@ -199,51 +228,71 @@ def build_ear(scene):
     pts = [Vector((-0.75, 0, 0)), Vector((0.6, 0.2, 0.9)), Vector((1.4, 0.3, 0.8)), Vector((2.2, 0.3, 0.1))]
     for i in range(3):
         a, b = o + pts[i], o + pts[i + 1]
-        bn = prim("cylinder", f"ossicle_{i}", coll, (a + b) / 2, (0.12, 0.12, (b - a).length / 2), mat=bone, vertices=16)
+        r = 0.07 if inside else 0.12  # thinner inside, so the bones don't wall off the view
+        bn = prim("cylinder", f"ossicle_{i}_{tag}", coll, (a + b) / 2, (r, r, (b - a).length / 2), mat=bone,
+                  vertices=16)
         bn.rotation_mode = "QUATERNION"
         bn.rotation_quaternion = (b - a).to_track_quat("Z", "Y")
     # Eustachian tube: a bevelled curve whose thickness opens and closes
-    cu = bpy.data.curves.new("eustachian_tube", "CURVE")
+    cu = bpy.data.curves.new(f"eustachian_tube_{tag}", "CURVE")
     cu.dimensions, cu.bevel_depth, cu.bevel_resolution = "3D", 0.16, 6
     sp = cu.splines.new("BEZIER")
     sp.bezier_points.add(1)
     p0, p1 = sp.bezier_points
     p0.co, p0.handle_left, p0.handle_right = TUBE_PTS[0], TUBE_PTS[0] + Vector((0, 0, 1)), TUBE_PTS[1]
     p1.co, p1.handle_left, p1.handle_right = TUBE_PTS[3], TUBE_PTS[2], TUBE_PTS[3] + Vector((-1, 0, -1))
-    tube = bpy.data.objects.new("Eustachian_tube", cu)
+    tube = bpy.data.objects.new(f"Eustachian_tube_{tag}", cu)
     tube.location = o
     coll.objects.link(tube)
-    tube.data.materials.append(material("tube", (0.78, 0.38, 0.36), rough=0.35))
+    tube.data.materials.append(material(f"tube_{tag}", (0.78, 0.38, 0.36), rough=0.35, emission=glow))
     # air molecules: cool blue outside (canal), warm amber inside (middle ear)
     blue = material("air_outside", (0.35, 0.75, 1.0), emission=2.0)
     amber = material("air_inside", (1.0, 0.62, 0.2), emission=2.0)
     rnd = random.Random(3)
-    outside = [prim("uv_sphere", f"air_out_{i:02d}", coll, o + Vector((rnd.uniform(-15, -1.6), rnd.uniform(0.0, 1.2),
-                    rnd.uniform(-1.1, 1.1))), (0.11,) * 3, mat=blue, segments=12, ring_count=6) for i in range(48)]
-    inside = [prim("uv_sphere", f"air_in_{i:02d}", coll, o + Vector((2.2, 0, 0)) + Vector((rnd.uniform(-2.0, 2.0),
-                   rnd.uniform(0.0, 1.9), rnd.uniform(-2.0, 2.0))).normalized() * rnd.uniform(0.4, 2.1),
-                   (0.11,) * 3, mat=amber, segments=12, ring_count=6) for i in range(36)]
-    flow = [prim("uv_sphere", f"air_flow_{i:02d}", coll, o + TUBE_PTS[0], (0.0,) * 3, mat=amber, segments=12, ring_count=6)
-            for i in range(14)]
-    flash = bpy.data.objects.new("pop_flash", bpy.data.lights.new("pop_flash", "POINT"))
-    flash.data.energy, flash.data.color, flash.location = 0, (1.0, 0.95, 0.8), o + Vector((-1.4, -2.0, 0))
+
+    def in_canal():
+        if not inside:  # map: only the visible back half
+            return Vector((rnd.uniform(-15, -1.6), rnd.uniform(0.0, 1.2), rnd.uniform(-1.1, 1.1)))
+        a, r = rnd.uniform(0, 2 * math.pi), 1.2 * math.sqrt(rnd.random())
+        return Vector((rnd.uniform(-15, -1.6), r * math.cos(a), r * math.sin(a)))
+
+    def in_chamber():
+        v = Vector((rnd.uniform(-1, 1), rnd.uniform(0.0 if not inside else -1, 1), rnd.uniform(-1, 1))).normalized()
+        return Vector((2.2, 0, 0)) + v * rnd.uniform(0.4, 2.1)
+
+    outside = [prim("uv_sphere", f"air_out_{i:02d}_{tag}", coll, o + in_canal(), (0.11,) * 3, mat=blue,
+                    segments=12, ring_count=6) for i in range(48)]
+    inside_air = [prim("uv_sphere", f"air_in_{i:02d}_{tag}", coll, o + in_chamber(), (0.11,) * 3, mat=amber,
+                       segments=12, ring_count=6) for i in range(36)]
+    flow = [prim("uv_sphere", f"air_flow_{i:02d}_{tag}", coll, o + TUBE_PTS[0], (0.0,) * 3, mat=amber,
+                 segments=12, ring_count=6) for i in range(14)]
+    flash = bpy.data.objects.new(f"pop_flash_{tag}", bpy.data.lights.new(f"pop_flash_{tag}", "POINT"))
+    flash.data.energy, flash.data.color = 0, (1.0, 0.95, 0.8)
+    flash.location = o + (Vector((0.4, 0, 0)) if inside else Vector((-1.4, -2.0, 0)))
     coll.objects.link(flash)
-    ring = prim("torus", "pop_ring", coll, o + Vector((-0.9, 0, 0)), (0, 0, 0), (0, 90, 0),
+    ring = prim("torus", f"pop_ring_{tag}", coll, o + Vector((-0.9, 0, 0)), (0, 0, 0), (0, 90, 0),
                 material("pop_ring", (1.0, 0.95, 0.75), emission=6.0), major_radius=1.0, minor_radius=0.04)
-    for name, loc, energy, col in (("ear_key", (-6, -14, 8), 3000, (1.0, 0.9, 0.85)),
-                                   ("ear_rim", (6, 10, 4), 1500, (1.0, 0.6, 0.5)),
-                                   ("ear_fill", (2, -10, -9), 900, (0.8, 0.5, 0.6)),
-                                   ("canal_glow", (-4.5, 0.6, 0.4), 250, (1.0, 0.75, 0.65)),
-                                   ("chamber_glow", (2.2, 1.2, 0.3), 200, (1.0, 0.7, 0.45))):
+    if inside:
+        lights = [("canal_a", (-13, 0, 0.6), 120), ("canal_b", (-8, 0, 0.6), 120), ("canal_c", (-3.5, 0, 0.6), 120),
+                  ("chamber", (2.6, 0.4, 0.8), 160), ("tube_a", tuple(bezier(*TUBE_PTS, 0.35)), 40),
+                  ("tube_b", tuple(bezier(*TUBE_PTS, 0.75)), 40)]
+        lights = [(f"{n}_{tag}", loc, e, (1.0, 0.78, 0.65)) for n, loc, e in lights]
+    else:
+        lights = [(f"ear_key_{tag}", (-6, -14, 8), 3000, (1.0, 0.9, 0.85)), (f"ear_rim_{tag}", (6, 10, 4), 1500, (1.0, 0.6, 0.5)),
+                  (f"ear_fill_{tag}", (2, -10, -9), 900, (0.8, 0.5, 0.6)),
+                  (f"canal_glow_{tag}", (-4.5, 0.6, 0.4), 250, (1.0, 0.75, 0.65)),
+                  (f"chamber_glow_{tag}", (2.2, 1.2, 0.3), 200, (1.0, 0.7, 0.45))]
+    for name, loc, energy, col in lights:
         lt = bpy.data.objects.new(name, bpy.data.lights.new(name, "POINT"))
         lt.data.energy, lt.data.color, lt.location = energy, col, o + Vector(loc)
-        lt.data.shadow_soft_size = 3
+        lt.data.shadow_soft_size = 0.6 if inside else 3
         coll.objects.link(lt)
-    return {"drum": drum, "tube": tube, "outside": outside, "inside": inside, "flow": flow, "flash": flash, "ring": ring}
+    return {"drum": drum, "tube": tube, "outside": outside, "inside": inside_air, "flow": flow, "flash": flash,
+            "ring": ring, "origin": o, "tag": tag}
 
 
-def tube_point(t):
-    return EAR + bezier(TUBE_PTS[0], TUBE_PTS[1], TUBE_PTS[2], TUBE_PTS[3], t)
+def tube_point(t, origin=EAR):
+    return origin + bezier(TUBE_PTS[0], TUBE_PTS[1], TUBE_PTS[2], TUBE_PTS[3], t)
 
 
 # ------------------------------------------------------------------- city ---

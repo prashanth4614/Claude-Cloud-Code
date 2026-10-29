@@ -19,7 +19,7 @@ from mathutils import Vector
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "blender"))
-from greybox import CABIN, EAR, SKY, build_cabin, build_city, build_ear, build_sky, tube_point  # noqa: E402
+from greybox import CABIN, EAR, EAR_MAP, SKY, build_cabin, build_city, build_ear, build_sky, tube_point  # noqa: E402
 from rigs import bake_move, bezier, camera, collection, ease, handheld, impulse_shake, key, lerp  # noqa: E402
 
 PLAN = json.loads((HERE / "plan.json").read_text())
@@ -114,8 +114,8 @@ def animate_max(m):
     key(hand_l, "location", fh + 10, ear)
     head_rot(fh - 3)
     head_rot(fh + 12, roll=-6, yaw=4)
-    key(hand_l, "location", 300, lap_l)
-    head_rot(300)
+    key(hand_l, "location", fh + 32, lap_l)  # hand clears the ear before the camera flies in
+    head_rot(fh + 34)
     # S07: winces, hand over the ear, eyes squeezed, on "muffled"
     fm = beat("S07", "muffled")
     key(hand_l, "location", fm - 8, lap_l)
@@ -129,7 +129,8 @@ def animate_max(m):
     key(hand_l, "location", 1300, lap_l)
     head_rot(1300)
     # S12: swallow (nod), yawn (head back + mouth open), chew, relief smile
-    fs, fy, fc, fo = (beat("S12", w) for w in ("swallowing", "yawning", "chewing", "open"))
+    fs = beat("S12a", "swallowing")
+    fy, fc, fo = (beat("S12b", w) for w in ("yawning", "chewing", "open"))
     head_rot(fs - 2)
     head_rot(fs + 6, pitch=8)
     head_rot(fs + 14)
@@ -137,9 +138,9 @@ def animate_max(m):
     head_rot(fy - 2)
     head_rot(fy + 10, pitch=-16)
     mouth_shape(fy + 10, w=1.3, h=4.0)
-    mouth_shape(fy + 24, w=1.3, h=4.0)
-    head_rot(fy + 26)
-    mouth_shape(fy + 30)
+    mouth_shape(fc - 8, w=1.3, h=4.0)  # hold the yawn while the camera pulls out to reveal it
+    head_rot(fc - 6)
+    mouth_shape(fc - 2)
     for i in range(4):
         mouth_shape(fc + i * 7, h=1.0)
         mouth_shape(fc + i * 7 + 3, w=0.9, h=1.8)
@@ -191,21 +192,22 @@ def animate_ear(e):
     fk = beat("S08", "cracks")
     key(tube.data, "bevel_depth", fk - 2, 0.16)
     key(tube.data, "bevel_depth", fk + 10, 0.55)
-    flow_end = rng("S09")[1]
+    flow_end = rng("S09b")[1]
     for i, mol in enumerate(e["flow"]):
         key(mol, "scale", fk + 2 + i, (0.0,) * 3, interp="CONSTANT")
         key(mol, "scale", fk + 3 + i, (0.11,) * 3, interp="CONSTANT")
         key(mol, "scale", flow_end, (0.0,) * 3, interp="CONSTANT")
         for f in range(fk + 3 + i, flow_end, 3):
-            key(mol, "location", f, tube_point(((f - fk) / 45.0 + i / 14) % 1.0), interp="LINEAR")
+            ring = Vector((0, math.cos(i * 2.4), math.sin(i * 2.4))) * 0.3  # stream around the tube's axis (and the camera)
+            key(mol, "location", f, tube_point(((f - fk) / 45.0 + i / 14) % 1.0, e["origin"]) + ring, interp="LINEAR")
     # air escapes: inside air thins between "escapes" and "evens"
-    fe, fv = beat("S09", "escapes"), beat("S09", "evens")
+    fe, fv = beat("S09a", "escapes"), beat("S09a", "evens")
     for i, mol in enumerate(e["inside"]):
         if i % 5 < 2:
             key(mol, "scale", fe + i % 30, (0.11,) * 3)
             key(mol, "scale", fv + i % 10, (0.0,) * 3)
     # POP: eardrum snaps flat with an overshoot, flash and light ring
-    fpop = beat("S09", "pop")
+    fpop = beat("S09b", "pop")
     key(keys["Out"], "value", fpop - 1, 1.0)
     key(keys["Out"], "value", fpop + 3, 0.0)
     key(keys["In"], "value", fpop + 3, 0.0)
@@ -240,76 +242,101 @@ def animate_ear(e):
 def build_cameras(sc, m):
     coll = collection("CAMERAS", sc.collection)
     head = lambda: m["head"].matrix_world.translation + Vector((0, 0, 0.14))  # noqa: E731
-    ear = CABIN + Vector((0.13, 0.33, 1.66))
+    sc.frame_set(1)
+    hole = CABIN + Vector((0.13, 0.355, 1.65))       # Max's left ear opening (head neutral)
+    face = CABIN + Vector((0.0, 0.35, 1.62))
     window = CABIN + Vector((1.79, -0.25, 1.75))
+    I, M = EAR, EAR_MAP                              # inside-the-ear set, x-ray map set
+    drum = I + Vector((-0.8, 0, 0))
     cams = {}
 
-    def shot(sid, move, lens0, step=3):
+    def shot(sid, move, lens0, step=3, clip=0.02):
         cam = camera(f"CAM_{sid}", coll, lens=lens0)
+        cam.data.clip_start = clip
         f0, f1 = rng(sid)
         bake_move(cam, f0, f1, move, step=step)
         cams[sid] = cam
         return cam
 
+    def turn(pos, yaw_deg, pitch=0.0, dist=4.0):
+        a = math.radians(yaw_deg)
+        return pos + Vector((math.cos(a), math.sin(a), pitch)) * dist
+
     def s01(t):  # drone reveal: from under the wing, pulling back and rising as the jet climbs
         j = jet_at("S01", t)
-        k = ease(t)
-        return {"pos": j + lerp(Vector((-1.5, -5.5, -2.4)), Vector((-8, -30, 4)), k), "target": j, "lens": 24}
+        return {"pos": j + lerp(Vector((-1.5, -5.5, -2.4)), Vector((-8, -30, 4)), ease(t)), "target": j, "lens": 24}
     shot("S01", s01, 24, step=2)
 
-    def s02(t):  # dolly in to Max's ear, rack focus window -> ear
+    def s02(t):  # curved push round Max to his ear, then INTO the ear opening (ends in darkness)
         k = ease(t)
-        pos = lerp(CABIN + Vector((0.3, -2.7, 1.55)), CABIN + Vector((0.85, -0.45, 1.7)), k)
-        tgt = lerp(CABIN + Vector((0.05, 0.35, 1.45)), ear, k)
-        focus = lerp((window - pos).length, (ear - pos).length, ease(min(1, t / 0.4)))
-        return {"pos": pos, "target": tgt, "lens": lerp(50, 85, k), "focus": focus}
-    shot("S02", s02, 50)
+        pos = bezier(CABIN + Vector((0.3, -2.7, 1.55)), CABIN + Vector((0.95, -1.7, 1.62)),
+                     CABIN + Vector((0.9, 0.1, 1.66)), hole + Vector((0.002, 0, 0)), k)  # ends inside the opening: black
+        if t < 0.6:
+            tgt = lerp(CABIN + Vector((0.05, 0.35, 1.45)), hole, ease(t / 0.6))
+        else:
+            tgt = hole + lerp(Vector(), Vector((-0.3, 0, 0)), ease((t - 0.6) / 0.4))
+        focus = lerp((window - pos).length, (hole - pos).length, ease(min(1, t / 0.4)))
+        return {"pos": pos, "target": tgt, "lens": lerp(50, 28, k), "focus": max(0.01, focus)}
+    shot("S02", s02, 50, step=2, clip=0.002)
 
-    def s03(t):  # fly-through: down the canal, then arc out to the side cutaway
-        if t < 0.55:
-            k = ease(t / 0.55)
-            x = lerp(-15.0, -3.4, k)
-            return {"pos": EAR + Vector((x, 0.3, 0.2)), "target": EAR + Vector((x + 6, 0.3, 0.0)), "lens": 18}
-        k = ease((t - 0.55) / 0.45)
-        pos = bezier(EAR + Vector((-3.4, 0.3, 0.2)), EAR + Vector((-4.0, -4, 0.6)), EAR + Vector((-1, -12, 0.8)),
-                     EAR + Vector((0.6, -16, 0.2)), k)
-        return {"pos": pos, "target": lerp(EAR + Vector((2.6, 0.3, 0.0)), EAR + Vector((0.6, 0, -0.6)), k),
-                "lens": lerp(18, 40, k)}
-    shot("S03", s03, 18, step=2)
+    def s03(t):  # out of the dark, gliding down the glowing canal, slowing at the eardrum
+        x = lerp(-18.5, -2.4, ease(t))
+        wob = Vector((0, 0.12 * math.sin(t * 7), 0.15 + 0.1 * math.sin(t * 5)))
+        return {"pos": I + Vector((x, 0, 0)) + wob, "target": I + Vector((x + 6, 0, 0.05)), "lens": 20}
+    shot("S03", s03, 20, step=2)
 
-    shot("S04", lambda t: {"pos": EAR + Vector((-1.4 + 0.08 * t, -21, -0.4 + 0.05 * math.sin(t * 3))),
-                           "target": EAR + Vector((-1.4, 0, -0.5)), "lens": 50}, 50)
+    def s04(t):  # slip through the eardrum into the middle ear, then turn round to face it
+        if t < 0.5:
+            x = lerp(-2.4, 1.2, ease(t / 0.5))
+            return {"pos": I + Vector((x, 0, 0.1)), "target": I + Vector((x + 5, 0, 0.1)), "lens": 22}
+        k = ease((t - 0.5) / 0.5)
+        pos = lerp(I + Vector((1.2, 0, 0.1)), I + Vector((3.4, 0.9, 0.7)), k)
+        return {"pos": pos, "target": turn(pos, lerp(0, -168, k), lerp(0, -0.16, k)), "lens": 22}
+    shot("S04", s04, 22, step=2)
+
+    shot("S04m", lambda t: {"pos": M + Vector((-1.4 + 0.08 * t, -21, -0.4 + 0.05 * math.sin(t * 3))),
+                            "target": M + Vector((-1.4, 0, -0.5)), "lens": 50}, 50)
 
     def s05a(t):  # drone flyover high above the cloud deck
         j = jet_at("S05a", t)
         return {"pos": j + lerp(Vector((-30, -75, 38)), Vector((-18, -82, 44)), ease(t)), "target": j, "lens": 35}
     shot("S05a", s05a, 35, step=2)
 
-    shot("S05b", lambda t: {"pos": lerp(EAR + Vector((-1.4, -18, -0.4)), EAR + Vector((-1.4, -23, -0.6)), ease(t)),
-                            "target": EAR + Vector((-1.4, 0, -0.5)), "lens": 50}, 50)
+    shot("S05b", lambda t: {"pos": lerp(I + Vector((2.8, -1.5, -1.0)), I + Vector((3.3, -1.7, -1.1)), ease(t)),
+                            "target": drum + Vector((0, 0, -0.2)), "lens": 30}, 30)
 
-    shot("S06", lambda t: {"pos": lerp(EAR + Vector((-2.6, -15, -3.2)), EAR + Vector((-1.6, -10.5, -1.8)), ease(t)),
-                           "target": EAR + Vector((-0.9, 0, 0.0)), "lens": 100, "roll": 5 * ease(t)}, 100)
+    shot("S06", lambda t: {"pos": lerp(I + Vector((2.2, -1.5, -1.2)), I + Vector((1.3, -1.0, -0.8)), ease(t)),
+                           "target": drum + Vector((0, 0, -0.1)), "lens": 24, "roll": 5 * ease(t)}, 24)
 
     cam7 = shot("S07", lambda t: {"pos": lerp(CABIN + Vector((0.12, -1.0, 1.66)), CABIN + Vector((0.12, -0.92, 1.66)), t),
                                   "target": head(), "lens": 85}, 85)
     handheld(cam7, *rng("S07"), strength=0.2)
 
-    shot("S08", lambda t: {"pos": lerp(EAR + Vector((2.0, -24, 0.5)), EAR + Vector((-0.5, -24, -8.5)), ease(t)),
-                           "target": lerp(EAR + Vector((2.0, 0, -0.5)), EAR + Vector((-1.2, 0, -9.5)), ease(t)),
-                           "lens": 40}, 40)
+    shot("S08", lambda t: {"pos": lerp(I + Vector((3.4, -1.2, 0.9)), I + Vector((2.75, 0.35, -1.0)), ease(t)),
+                           "target": lerp(I + Vector((0.8, 0, -0.8)), I + Vector((2.55, 0.15, -3.2)), ease(t)),
+                           "lens": 24}, 24)
 
-    f0, f1 = rng("S09")
-    whip_t = 1 - 7 / (f1 - f0)
+    f0, f1 = rng("S09a")
+    whip_up = 1 - 6 / (f1 - f0)
 
-    def s09(t):  # push in, then whip-pan right into S10
-        pos = lerp(EAR + Vector((-1.4, -22, -1.0)), EAR + Vector((-1.2, -16, -0.6)), ease(t))
-        tgt = EAR + Vector((-1.2, 0, -0.6))
+    def s09a(t):  # ride down the Eustachian tube with the escaping air, whip up at the end
+        u = lerp(0.0, 0.7, ease(t))
+        tgt = tube_point(min(1.0, u + 0.15), I)
+        if t > whip_up:
+            tgt = tgt + Vector((0, 0, 40 * ((t - whip_up) / (1 - whip_up)) ** 2))
+        return {"pos": tube_point(u, I), "target": tgt, "lens": 18}
+    shot("S09a", s09a, 18, step=1)
+
+    f0, f1 = rng("S09b")
+    whip_t = 1 - 6 / (f1 - f0)
+
+    def s09b(t):  # face the eardrum from inside: POP! then whip-pan right into S10
+        tgt = drum
         if t > whip_t:
-            tgt = tgt + Vector((70 * ((t - whip_t) / (1 - whip_t)) ** 2, 0, 0))
-        return {"pos": pos, "target": tgt, "lens": 65}
-    cam9 = shot("S09", s09, 65, step=1)
-    impulse_shake(cam9, beat("S09", "pop"), frames=10, amp=0.25)
+            tgt = tgt + Vector((0, 70 * ((t - whip_t) / (1 - whip_t)) ** 2, 0))
+        return {"pos": lerp(I + Vector((2.9, -1.6, -1.1)), I + Vector((2.1, -1.2, -0.8)), ease(t)), "target": tgt, "lens": 28}
+    cam9 = shot("S09b", s09b, 28, step=1)
+    impulse_shake(cam9, beat("S09b", "pop"), frames=10, amp=0.06)
 
     f0, f1 = rng("S10")
     whip_in = 6 / (f1 - f0)
@@ -320,17 +347,23 @@ def build_cameras(sc, m):
         return {"pos": j + lerp(Vector((16, -24, 12)), Vector((13, -21, 9)), ease(t)), "target": tgt, "lens": 35}
     shot("S10", s10, 35, step=1)
 
-    def s11(t):  # slow high-angle orbit, creeping opposite tilt
-        a = math.radians(lerp(-90, -110, ease(t)))
-        c = EAR + Vector((-1.0, 0, -1.8))
-        return {"pos": c + Vector((24 * math.cos(a), 24 * math.sin(a), 6)), "target": c, "lens": 70, "roll": -5 * ease(t)}
-    shot("S11", s11, 85)
+    def s11(t):  # arc inside the middle ear: eardrum caves toward us, tube pinched red below
+        k = ease(t)
+        pos = bezier(I + Vector((3.4, -1.2, -0.6)), I + Vector((3.9, -0.4, -0.8)), I + Vector((3.9, 0.5, -0.7)),
+                     I + Vector((3.4, 1.1, -0.4)), k)
+        return {"pos": pos, "target": I + Vector((0.6, 0, -0.9)), "lens": 22, "roll": -5 * k}
+    shot("S11", s11, 22)
 
-    def s12(t):  # gentle arc around Max
-        a = math.radians(lerp(-90, -75, ease(t)))
-        c = CABIN + Vector((0, 0.35, 1.45))
-        return {"pos": c + Vector((2.4 * math.cos(a), 2.4 * math.sin(a), 0.1)), "target": c + Vector((0, 0, 0.05)), "lens": 50}
-    shot("S12", s12, 50)
+    shot("S12a", lambda t: {"pos": I + Vector((lerp(-2.6, -19.0, t * t), 0, 0.15)),   # accelerate back out
+                            "target": I + Vector((lerp(-2.6, -19.0, t * t) - 6, 0, 0.1)), "lens": 20}, 20, step=2)
+
+    def s12b(t):  # emerge from Max's ear, pull back and arc round to his face (yawn reveal)
+        k = ease(t)
+        pos = bezier(hole + Vector((0.002, 0, 0)), hole + Vector((0.6, 0, 0.05)), CABIN + Vector((1.1, -1.2, 1.62)),
+                     CABIN + Vector((0.35, -2.2, 1.55)), k)
+        tgt = lerp(hole - Vector((0.3, 0, 0)), face, ease(min(1.0, t * 1.6)))
+        return {"pos": pos, "target": tgt, "lens": lerp(28, 40, k)}
+    shot("S12b", s12b, 28, step=2, clip=0.002)
 
     shot("S13", lambda t: {"pos": lerp(CABIN + Vector((0.05, -1.55, 1.62)), CABIN + Vector((0.05, -1.15, 1.63)), ease(t)),
                            "target": head() + Vector((0, 0, -0.04)), "lens": 85}, 85)
@@ -406,7 +439,11 @@ def film_sound(film):
         add_sound(seq, f"sfx_{s['cue']}", HERE / s["file"], 2 + i % 2, s["frame"]).volume = 0.35
 
 
-def viewports():
+def viewports(film=None):
+    if film is not None:  # open the file on FILM, so the first thing you see is the 3D film
+        for wm in bpy.data.window_managers:
+            for win in wm.windows:
+                win.scene = film
     for scr in bpy.data.screens:
         for area in scr.areas:
             if area.type == "VIEW_3D":
@@ -425,11 +462,12 @@ def stills(film, cams, out_dir):
     film.cycles.samples, film.cycles.use_denoising = 12, True
     film.render.resolution_percentage = 25
     film.render.use_sequencer = False
-    for sh in PLAN["shots"]:
+    for sh in PLAN["shots"]:  # early / middle / late frame of every shot, to check each move
         film.camera = cams[sh["id"]]
-        film.frame_set((sh["start"] + sh["end"]) // 2)
-        film.render.filepath = str(out_dir / f"{sh['id']}.png")
-        bpy.ops.render.render(write_still=True, scene=film.name)
+        for tag, k in (("a", 0.12), ("b", 0.5), ("c", 0.92)):
+            film.frame_set(int(sh["start"] + (sh["end"] - sh["start"]) * k))
+            film.render.filepath = str(out_dir / f"{sh['id']}_{tag}.png")
+            bpy.ops.render.render(write_still=True, scene=film.name)
     film.render.resolution_percentage = 100
     film.render.use_sequencer = True
     film.camera = cams["S01"]
@@ -441,15 +479,17 @@ def main():
     film = setup_film()
     sky = build_sky(film)
     m = build_cabin(film)
-    e = build_ear(film)
+    e = build_ear(film, EAR, inside=True)
+    e_map = build_ear(film, EAR_MAP, inside=False)
     build_city(film)
     animate_jet(sky["jet"])
     animate_max(m)
     animate_ear(e)
+    animate_ear(e_map)
     cams = build_cameras(film, m)
     film_sound(film)
     build_edit(film, cams)
-    viewports()
+    viewports(film)
     if "--stills" in args:
         stills(film, cams, Path(args[args.index("--stills") + 1]))
         for eng in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE"):
