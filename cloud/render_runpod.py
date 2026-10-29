@@ -32,7 +32,9 @@ POD_URL = os.environ.get("RUNPOD_POD_URL", "https://{id}-8000.proxy.runpod.net")
 
 def http(method, url, body=None, headers=None, raw=False, timeout=120):
     data = body if isinstance(body, (bytes, type(None))) else json.dumps(body).encode()
-    req = urllib.request.Request(url, data=data, method=method, headers=headers or {})
+    # Cloudflare in front of RunPod rejects the default Python-urllib User-Agent (error 1010).
+    req = urllib.request.Request(url, data=data, method=method,
+                                 headers={"User-Agent": "shorts-render/1.0", **(headers or {})})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         out = r.read()
     return out if raw else (json.loads(out) if out else {})
@@ -71,7 +73,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", required=True, help="output path (relative to repo) the command writes; downloaded to the same path")
     ap.add_argument("--include", nargs="*", default=[], help="extra files/dirs (inside the repo) to upload")
-    ap.add_argument("--gpu", nargs="*", default=["NVIDIA GeForce RTX 4090", "NVIDIA GeForce RTX 5090", "NVIDIA L40S"])
+    # 4090 first; the rest are similar-price fallbacks for when it is out of stock.
+    ap.add_argument("--gpu", nargs="*", default=["NVIDIA GeForce RTX 4090", "NVIDIA RTX A6000", "NVIDIA A40",
+                                                 "NVIDIA RTX PRO 4500 Blackwell", "NVIDIA GeForce RTX 5090", "NVIDIA L40S"])
     ap.add_argument("--cloud", default="COMMUNITY", choices=["COMMUNITY", "SECURE"])
     ap.add_argument("--max-minutes", type=float, default=45, help="hard cost guard: delete the pod after this")
     ap.add_argument("--blender-series", default="4.5")
