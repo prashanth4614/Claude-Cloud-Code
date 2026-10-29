@@ -27,6 +27,7 @@ sys.path.insert(0, str(HERE))
 import real_max  # noqa: E402
 from sets.cabin import build_cabin as real_cabin  # noqa: E402
 from sets import ear as ear_real  # noqa: E402
+from sets import airliner  # noqa: E402
 
 PLAN = json.loads((HERE / "plan.json").read_text())
 OUT = HERE.parent.parent / "out" / "pilot_ear_pop"
@@ -495,6 +496,9 @@ def main():
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     film = setup_film()
     sky = build_sky(film)
+    if "--greybox-sets" not in args:
+        airliner.build_airliner(film)
+        airliner.realistic_sky(film, SKY)
     if "--standin" in args or not real_max.MAX_BLEND.exists():
         m = build_cabin(film)
     else:
