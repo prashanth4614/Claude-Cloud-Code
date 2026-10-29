@@ -1,7 +1,17 @@
-# Viewing the grey-box previz in Blender
+# Viewing the previz in Blender
 
 `pilot_ear_pop_previz.blend` (built by `build_previz.py` with Blender 4.5 LTS; opens in 4.5 and 5.x). Voice and
 SFX are packed inside, so the file works on its own.
+
+## Building it (on any machine)
+```
+python3 assets/fetch_assets.py          # once: free CC0 skies and textures (Poly Haven, ambientCG)
+blender -b --factory-startup -P shorts/pilot_ear_pop/build_previz.py
+```
+The sets are realistic now: an airliner cabin, the wet tissue of the ear, the airliner over a
+cloud deck, and the dusk city (`shorts/blender/sets/`). `--greybox-sets` builds the old grey boxes,
+and `--standin` the grey-box Max. Use **Rendered** viewport shading (or a render) to judge the look;
+Material Preview is only for checking motion.
 
 ## Watch the whole film (Blender 5.x and 4.5)
 **Easiest: the FILM scene**, which has every shot, camera cut, voice and SFX:
