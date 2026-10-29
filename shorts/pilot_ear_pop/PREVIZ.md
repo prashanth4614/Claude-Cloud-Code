@@ -22,9 +22,14 @@ has its own scene selector in its header, separate from the window's scene. Then
   you can move or re-time keys freely.
 - Word markers in `EDIT` (`happening`, `bulges`, `pop`…) show where the beats land.
 
-## Quick movie without RunPod
-View ▸ **Viewport Render Animation** (in FILM, camera view) writes an MP4 of exactly what the
-viewport shows, in a few minutes, for free.
+## Audio and picture in sync
+Both scenes play with **Sync to Audio**, so on a slower machine Blender skips frames rather
+than letting the picture drift behind the voice. For a perfectly smooth, synced copy, make a movie:
+
+## Quick synced movie (free, on your Mac)
+In `FILM`, camera view, Material Preview: **View ▸ Viewport Render Animation**. Blender writes
+`pilot_ear_pop_previz_0001-1566.mp4` next to the .blend, with the voice and SFX mixed in at exact
+frame timing. It takes a few minutes and costs nothing.
 
 ## Giving feedback
 - Say it by shot: *"S06 start closer"*, *"S10 drone from the left"*.

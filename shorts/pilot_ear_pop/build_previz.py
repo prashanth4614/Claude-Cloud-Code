@@ -46,6 +46,13 @@ def setup_film():
     sc.render.fps = PLAN["fps"]
     sc.render.resolution_x, sc.render.resolution_y = PLAN["resolution"]
     sc.frame_start, sc.frame_end = 1, PLAN["frame_end"]
+    sc.sync_mode = "AUDIO_SYNC"  # playback follows the voice: drops frames on slow machines instead of drifting
+    # View > Viewport Render Animation then writes a synced MP4 (picture + voice + SFX) next to the .blend
+    r = sc.render
+    r.image_settings.file_format = "FFMPEG"
+    r.ffmpeg.format, r.ffmpeg.codec, r.ffmpeg.constant_rate_factor = "MPEG4", "H264", "MEDIUM"
+    r.ffmpeg.audio_codec, r.ffmpeg.audio_bitrate, r.ffmpeg.audio_channels = "AAC", 192, "STEREO"
+    r.filepath = "//pilot_ear_pop_previz_"
     for eng in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE"):
         try:
             sc.render.engine = eng
@@ -401,6 +408,7 @@ def build_edit(film, cams):
     ed.render.fps = film.render.fps
     ed.render.resolution_x, ed.render.resolution_y = film.render.resolution_x, film.render.resolution_y
     ed.frame_start, ed.frame_end = 1, film.frame_end
+    ed.sync_mode = "AUDIO_SYNC"
     ed.render.sequencer_gl_preview = "MATERIAL"
     seq = ed.sequence_editor_create()
     ss = strips(seq)
