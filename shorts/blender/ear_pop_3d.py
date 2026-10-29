@@ -21,6 +21,7 @@ labelled 3D points, used by the 2D HUD for labels, rings and the POP! burst.
 import argparse
 import json
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -879,12 +880,31 @@ def setup_render(res, fps, samples):
     r.fps = fps
     r.image_settings.file_format, r.image_settings.color_mode = "PNG", "RGB"
     r.image_settings.compression = 15
-    for eng in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE"):
-        try:
-            r.engine = eng
-            break
-        except TypeError:
-            continue
+    if os.environ.get("SHORTS_ENGINE", "").upper() == "CYCLES":
+        # Fallback for cloud GPUs without an EGL/graphics driver: Cycles + OptiX/CUDA + denoise.
+        r.engine = "CYCLES"
+        prefs = bpy.context.preferences.addons["cycles"].preferences
+        for backend in ("OPTIX", "CUDA", "HIP", "METAL"):
+            try:
+                prefs.compute_device_type = backend
+                prefs.get_devices()
+                if any(d.type == backend for d in prefs.devices):
+                    break
+            except TypeError:
+                continue
+        for d in prefs.devices:
+            d.use = d.type != "CPU"
+        sc.cycles.device = "GPU"
+        sc.cycles.samples = max(16, samples * 2)
+        sc.cycles.use_denoising = True
+        print(f"[render] Cycles on {prefs.compute_device_type}: {[d.name for d in prefs.devices if d.use]}")
+    else:
+        for eng in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE"):
+            try:
+                r.engine = eng
+                break
+            except TypeError:
+                continue
     ee = sc.eevee
     for k, v in (("taa_render_samples", samples), ("use_shadows", True), ("shadow_ray_count", 1),
                  ("shadow_step_count", 4), ("shadow_resolution_scale", 0.5), ("use_raytracing", False), ("use_gtao", True)):
