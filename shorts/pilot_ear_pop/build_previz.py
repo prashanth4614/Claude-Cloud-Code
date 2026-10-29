@@ -21,13 +21,14 @@ from mathutils import Vector
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "blender"))
-from greybox import CABIN, EAR, EAR_MAP, SKY, build_cabin, build_city, build_ear, build_sky, tube_point  # noqa: E402
+from greybox import CABIN, CITY, EAR, EAR_MAP, SKY, build_cabin, build_city, build_ear, build_sky, tube_point  # noqa: E402
 from rigs import bake_move, bezier, camera, collection, ease, handheld, impulse_shake, key, lerp  # noqa: E402
 sys.path.insert(0, str(HERE))
 import real_max  # noqa: E402
 from sets.cabin import build_cabin as real_cabin  # noqa: E402
 from sets import ear as ear_real  # noqa: E402
 from sets import airliner  # noqa: E402
+from sets import city as city_real  # noqa: E402
 
 PLAN = json.loads((HERE / "plan.json").read_text())
 OUT = HERE.parent.parent / "out" / "pilot_ear_pop"
@@ -513,6 +514,9 @@ def main():
         ear_real.apply(e)
         ear_real.apply(e_map)
     build_city(film)
+    if "--greybox-sets" not in args:
+        city_real.build_city(film, CITY)
+        city_real.light_switch(*rng("S10"))
     animate_jet(sky["jet"])
     if m.get("real"):
         real_max.perform(m, beat, rng, film)
