@@ -225,33 +225,76 @@ def pose_head(rig, deg, frame=None, weight=1.0):
             pb.keyframe_insert("rotation_euler", frame=frame)
 
 
+def aim_bone(rig, name, direction, up=None, up_child=None):
+    """Point a pose bone along a world direction (rig-axis independent). Optionally roll it so the
+    vector from its head to bone `up_child`'s head points as close to `up` as possible."""
+    pb = rig.pose.bones.get(name)
+    if not pb:
+        return
+    bpy.context.view_layer.update()
+    inv = rig.matrix_world.to_3x3().inverted()
+    d = (inv @ Vector(direction)).normalized()
+    m = pb.matrix.copy()
+    q = m.to_3x3().col[1].normalized().rotation_difference(d)
+    rot = q.to_matrix() @ m.to_3x3()
+    if up is not None and up_child and rig.pose.bones.get(up_child):
+        c = rig.pose.bones[up_child]
+        side = (q.to_matrix() @ (c.head - pb.head))
+        y = d
+        a = (side - y * side.dot(y))
+        u = inv @ Vector(up)
+        u = (u - y * u.dot(y))
+        if a.length > 1e-6 and u.length > 1e-6:
+            rot = a.normalized().rotation_difference(u.normalized()).to_matrix() @ rot
+    new = rot.to_4x4()
+    new.translation = m.translation
+    pb.matrix = new
+    bpy.context.view_layer.update()
+
+
+def _key_bones(rig, names, frame):
+    if frame is None:
+        return
+    for n in names:
+        pb = rig.pose.bones.get(n)
+        if pb:
+            pb.keyframe_insert("rotation_quaternion" if pb.rotation_mode == "QUATERNION" else "rotation_euler", frame=frame)
+
+
+THUMB_BONES = ["upperarm01.R", "upperarm02.R", "lowerarm01.R", "lowerarm02.R", "wrist.R",
+               "upperarm01.L", "upperarm02.L", "lowerarm01.L", "lowerarm02.L"] + \
+    [f"finger{f}-{j}.R" for f in range(1, 6) for j in (1, 2, 3)] + [f"metacarpal{i}.R" for i in range(1, 5)]
+
+
 def thumbs_up(rig, on=True, frame=None):
-    """Right hand: forearm raised in front of the chest, fist closed, thumb up."""
-    poses = {
-        "upperarm01.R": (0, 0, 0), "lowerarm01.R": (0, 0, 0), "wrist.R": (0, 0, 0),
-    }
+    """Right hand: elbow at his side, forearm forward, fist closed, thumb straight up (world-aimed)."""
+    for n in THUMB_BONES:
+        pb = rig.pose.bones.get(n)
+        if pb:
+            pb.rotation_mode = "QUATERNION"
+            pb.rotation_quaternion = (1, 0, 0, 0)
     if on:
-        poses = {
-            "upperarm01.R": (-20, 0, 55),
-            "lowerarm01.R": (-95, 0, 0),
-            "wrist.R": (0, -80, 0),
-        }
+        # He faces -Y; his right side is -X.
+        for n, d in (("upperarm01.L", (0.12, 0.02, -1)), ("upperarm02.L", (0.12, 0.02, -1)),
+                     ("lowerarm01.L", (0.05, -0.15, -1)), ("lowerarm02.L", (0.05, -0.15, -1))):
+            aim_bone(rig, n, d)  # other arm relaxed at his side
+        aim_bone(rig, "upperarm01.R", (-0.12, -0.3, -1))
+        aim_bone(rig, "upperarm02.R", (-0.12, -0.3, -1))
+        aim_bone(rig, "lowerarm01.R", (0.3, -1, 0.35))
+        aim_bone(rig, "lowerarm02.R", (0.3, -1, 0.35))
+        aim_bone(rig, "wrist.R", (0.3, -1, 0.2), up=(0, 0, 1), up_child="finger1-1.R")
+        bpy.context.view_layer.update()
+        wrist = rig.pose.bones["wrist.R"]
+        fwd = (rig.matrix_world.to_3x3() @ wrist.matrix.to_3x3().col[1]).normalized()
+        palm_in = Vector((1, 0, 0))  # toward his chest
         for f in range(2, 6):
-            for j in (1, 2, 3):
-                poses[f"finger{f}-{j}.R"] = (75, 0, 0)
-        poses["finger1-2.R"] = (0, 0, -20)
-    else:
-        for f in range(1, 6):
-            for j in (1, 2, 3):
-                poses[f"finger{f}-{j}.R"] = (0, 0, 0)
-    for bone, deg in poses.items():
-        pb = rig.pose.bones.get(bone)
-        if not pb:
-            continue
-        pb.rotation_mode = "XYZ"
-        pb.rotation_euler = Euler([math.radians(a) for a in deg], "XYZ")
-        if frame is not None:
-            pb.keyframe_insert("rotation_euler", frame=frame)
+            # Fist: with the thumb up the fingers stack vertically and curl sideways into the palm.
+            dirs = [fwd.lerp(palm_in, 0.6), palm_in.lerp(-fwd, 0.5), -fwd]
+            for j, dvec in zip((1, 2, 3), dirs):
+                aim_bone(rig, f"finger{f}-{j}.R", dvec)
+        for j in (1, 2, 3):
+            aim_bone(rig, f"finger1-{j}.R", (0.15, -0.1, 1))
+    _key_bones(rig, THUMB_BONES, frame)
 
 
 # ------------------------------------------------------------------ sheet --
