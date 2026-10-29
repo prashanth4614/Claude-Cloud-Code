@@ -156,7 +156,11 @@ def tts(line_text, out_wav, model, length_scale=0.9, context=("", "")):
         lead = max(0, loud[0] - int(0.03 * SR))
         audio = audio[lead: loud[-1] + int(0.08 * SR)]
         if spans:
-            spans = [(w, max(0.0, s - lead / SR), max(0.0, e - lead / SR)) for w, s, e in spans]
+            # Provider end times can run into trailing silence; clamp to the
+            # trimmed audio so a line's last word doesn't overlap the next line.
+            d = len(audio) / SR
+            spans = [(w, min(d, max(0.0, s - lead / SR)), min(d, max(0.0, e - lead / SR)))
+                     for w, s, e in spans]
     return audio, spans
 
 
