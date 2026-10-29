@@ -8,7 +8,7 @@
 
 ## How Max is built (free)
 `shorts/blender/build_max.py` builds him from CC0 MakeHuman assets through the free MPFB2 add-on:
-body and phenotype, a stylized push (bigger eyes, softer jaw), skin, brown eyes, brows, lashes, teeth,
+body and phenotype, a stylized push (bigger eyes, defined jaw), skin, brown eyes, brows, lashes, teeth,
 the recoloured tee and jeans, white shoes05 sneakers, and the default
 skeleton (fingers, jaw, neck, eyes).
 
@@ -17,8 +17,8 @@ strands with interpolated children for the messy dark-brown mop (top swept up an
 sides), very short stubble on the jaw, chin and upper lip that moves with the face shapes, and a dark
 scalp cap underneath. Change the look with the constants at the top of that file.
 
-His face has the **52 ARKit face shapes** (faceunits01 pack) on the body, brows, lashes and hair, so
-every expression is hand-keyed by name. The expressions live in `shorts/blender/max_expressions.py`
+His face has the **52 ARKit face shapes** (faceunits01 pack) on the body (brows, lashes, teeth and tongue
+follow it through drivers), so every expression is hand-keyed by name. The expressions live in `shorts/blender/max_expressions.py`
 (puzzled, wince, swallow, yawn, chew, relief smile, thumbs-up), each a set of face-shape weights plus a
 small head and neck tilt. Change a number there and rebuild, and every shot picks it up.
 
@@ -31,8 +31,8 @@ To rebuild (only needed when changing him):
 
 ## Posing him by hand in Blender
 - Select **Max.body** ▸ Object Data properties ▸ **Shape Keys**: drag `jawOpen`, `eyeBlinkLeft`,
-  `mouthSmileLeft`… and press **I** over a slider to keyframe it. The brows, lashes, hair, teeth and tongue
-  have the same shape keys; build_max keys them all together.
+  `mouthSmileLeft`… and press **I** over a slider to keyframe it. The brows, lashes, teeth and tongue
+  follow automatically, and the stubble rides on the skin.
 - Select the **Max** armature ▸ Pose Mode for the head, neck, arms and fingers.
 - The hair shows a few guide strands in the viewport; the full head of hair appears in renders (and in
   Rendered viewport shading). Particle children are set lower in the viewport to keep it fast.
