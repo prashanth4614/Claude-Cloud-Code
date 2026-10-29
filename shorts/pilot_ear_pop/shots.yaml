@@ -97,7 +97,7 @@ shots:
     out: cut
   - id: S05b
     line: 5                     # "...the cabin pressure drops."
-    from_word: the
+    from_word: cabin
     set: ear_cutaway
     size: MS
     angle: eye

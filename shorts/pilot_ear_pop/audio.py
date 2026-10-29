@@ -69,6 +69,13 @@ def voice():
         report.append({"line": i, "seconds": round(d, 2), "words": len(spans), "caption": ln["caption"]})
         print(f"{i:2d}  {d:5.2f}s  {len(spans):2d} words  {ln['caption']}")
     (OUT / "voice_take.json").write_text(json.dumps(report, indent=1))
+    # Absolute timing of every line and word inside voice_take.wav (drives the Blender build).
+    t, timing = 0.0, []
+    for (a, spans), ln in zip(parts, SCRIPT["lines"]):
+        timing.append({"start": round(t, 3), "end": round(t + len(a) / SR, 3), "caption": ln["caption"],
+                       "words": [[w, round(t + s, 3), round(t + e, 3)] for w, s, e in spans]})
+        t += len(a) / SR + len(gap) / SR
+    (OUT / "voice_timing.json").write_text(json.dumps({"total": round(len(take) / SR, 3), "lines": timing}, indent=1))
     print(f"total {len(take) / SR:.1f}s -> {OUT / 'voice_take.wav'}")
 
 
