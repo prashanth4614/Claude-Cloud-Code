@@ -37,6 +37,19 @@ def write_wav(path, x):
         w.writeframes((np.clip(x, -1, 1) * 32767).astype("<i2").tobytes())
 
 
+def speech_match(audio, script_text):
+    """Fraction of script words Whisper hears in the audio, in order (0..1)."""
+    import difflib
+    import re
+
+    from faster_whisper import WhisperModel
+    a16 = np.interp(np.linspace(0, len(audio) - 1, int(len(audio) * 16000 / SR)),
+                    np.arange(len(audio)), audio).astype(np.float32)
+    segs, _ = WhisperModel("small.en", device="cpu", compute_type="int8").transcribe(a16, language="en")
+    words = lambda t: re.sub(r"[^a-z ]", "", t.lower()).split()  # noqa: E731
+    return difflib.SequenceMatcher(None, words(script_text), words(" ".join(x.text for x in segs))).ratio()
+
+
 def voice():
     lines = [(ln["spoken"], ln["caption"]) for ln in SCRIPT["lines"]]
     voice_id = SCRIPT["voice"].split(":", 1)[1]
@@ -44,7 +57,12 @@ def voice():
     parts = elevenlabs_script(lines, voice_id, WORK)
     gap = np.zeros(int(0.28 * SR), dtype=np.float32)  # breath between lines, like the edit
     take = np.concatenate([p for a, _ in parts for p in (a, gap)])
-    write_wav(OUT / "voice_take.wav", ffmpeg_filter(take, VOICE_CHAIN))
+    polished = ffmpeg_filter(take, VOICE_CHAIN)
+    score = speech_match(polished, " ".join(cap for _, cap in lines))
+    if score < 0.9:  # never hand over a take that isn't the script (e.g. a broken filter)
+        raise SystemExit(f"QA failed: transcript matches the script only {score:.0%}; not writing voice_take.wav")
+    print(f"QA: transcript matches script {score:.0%}")
+    write_wav(OUT / "voice_take.wav", polished)
     report = []
     for i, ((a, spans), ln) in enumerate(zip(parts, SCRIPT["lines"]), 1):
         d = len(a) / SR

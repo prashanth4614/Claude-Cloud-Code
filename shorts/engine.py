@@ -367,9 +367,12 @@ def _lowpass(x, k):
 
 
 def ffmpeg_filter(x, af):
-    """Run a mono float signal through an ffmpeg audio filter chain."""
+    """Run a mono float signal through an ffmpeg audio filter chain.
+
+    The output is forced back to SR: some filters (loudnorm) silently upsample to
+    192 kHz, which would otherwise be read back as 4x-stretched noise."""
     r = subprocess.run(["ffmpeg", "-v", "error", "-f", "f32le", "-ar", str(SR), "-ac", "1", "-i", "-",
-                        "-af", af, "-f", "f32le", "-"], input=x.astype(np.float32).tobytes(),
+                        "-af", af, "-ar", str(SR), "-f", "f32le", "-"], input=x.astype(np.float32).tobytes(),
                        capture_output=True, check=True).stdout
     y = np.frombuffer(r, dtype=np.float32).astype(float)
     return np.pad(y, (0, max(0, len(x) - len(y))))[: len(x)]
