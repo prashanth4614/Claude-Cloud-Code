@@ -52,10 +52,69 @@ Gates are the points where **you approve before money or time is spent**:
 - **Gate A:** you listen to the take before anything is rendered. Re-takes of single
   sentences are cheap and cached.
 
-## 4. Shot plan (Claude)
-- For every line: camera move, set, characters and action, the animation beats that land
-  on specific words, and the effects.
-- Output: `shorts/<video>/shots.yaml`. It drives both the scene build and the edit.
+## 4. Storyboard and cinematography (Claude drafts, you approve)
+
+The film is designed as data before anything is built: `shorts/<video>/shots.yaml`
+(see `shorts/pilot_ear_pop/shots.yaml`). For every shot it records:
+- **size**: EWS → MACRO;
+- **angle**: low, high, aerial, Dutch, POV;
+- **real lens**: focal length in mm, plus depth of field;
+- **camera move**;
+- **beats** keyed to spoken words;
+- **effects**;
+- **mood**;
+- the **transition** into the next shot.
+
+**Storytelling grammar used on every video:**
+- Open on motion, never a static frame. The hook lands in the first second.
+- **Establish → go inside → reveal → payoff → twist → takeaway**. Cut wide for "where we are",
+  close for "what it feels like".
+- Cut every ~1.5–4 s, matched to the voice. Vary shot sizes; never two identical framings in a row.
+- **Max is the emotional anchor:** cut to his face when the viewer should *feel* something.
+- **Visual motifs:** a consistent colour code (for example cool blue outside air, warm amber inside
+  air) and consistent screen direction (the plane climbs left-to-right and lands right-to-left).
+- Camera language carries emotion:
+  - calm = locked-off and still;
+  - tension = slow push-in plus a creeping Dutch tilt;
+  - release = a speed ramp, then a snap.
+- The last frame matches the first, so the Short loops into a rewatch.
+
+**Camera rig library** (`shorts/blender/rigs.py`, physically based cameras with real focal
+lengths, f-stop depth of field and motion blur):
+
+| Move | How it's built in Blender |
+|---|---|
+| Dolly in/out, truck, pedestal | Camera keyframed along an axis with smooth ease-in/out |
+| **Drone** reveal / track / flyover | Camera on a Bezier path (Follow Path) plus a Track-To target, with gentle banking and altitude change |
+| Crane up/down | Two-level rig (arm + head) for a sweeping arc |
+| Orbit / arc | Camera parented to a rotating pivot empty |
+| Fly-through | Camera on a path *through* geometry (into the ear canal), wide lens |
+| Handheld | Subtle noise modifiers on rotation (0–1 strength) |
+| Rack focus / dolly zoom | Animated focus distance, or focal length against distance |
+
+**Transitions** are built **in-camera** where possible, because that reads as cinematic:
+- match cut (window to window);
+- push-through (the camera enters the ear, and darkness bridges the cut);
+- whip pan with motion blur;
+- occlusion wipe (an object passes the lens);
+- focus pull.
+
+Edit-level dissolves, dips and flashes are the fallback. Every shot is rendered with
+**10-frame handles** either side, so transitions can overlap.
+
+**Effects:**
+- geometry-nodes particles (air molecules, dust);
+- volumetric clouds, haze and god rays;
+- shape keys and drivers keyed to word timestamps (the eardrum bulge, the tube opening);
+- emission plus compositor glare (glow);
+- shockwave ripples;
+- speed ramps;
+- lens effects: soft flare, vignette, a little grain;
+- one LUT colour grade for the whole film, with small per-shot mood shifts.
+
+**Gate B0, previz (new):** before any real assets, Claude renders a quick **grey-box previz**.
+Simple stand-in shapes, real cameras, real timing, EEVEE at 540×960, around ₹5 on RunPod.
+You approve the *cinematography* (angles, moves, pacing, transitions) when it's cheap to change.
 
 ## 5. Assets: where realism comes from
 
@@ -79,16 +138,23 @@ recording every asset's source and licence.
 body, kitchen…) and each recurring character is built once at high quality. After that, a
 new video is mostly scene assembly.
 
-## 6. Scene build (Claude, Blender Python)
-- `shorts/blender/build.py` reads `shots.yaml` plus the word timestamps and:
-  - links assets from the library;
-  - places the cameras (with easing, depth of field and motion blur);
-  - keys the animation to spoken words, so the POP happens on "pop";
-  - sets up lighting (an HDRI plus 3-point key/fill/rim lights per shot);
-  - adds geometry-nodes effects (air molecules, particles, glows);
-  - saves one `.blend` per shot.
-- **You can open any `.blend` in Blender** and tweak it by hand. Claude re-reads your
-  changes, so this works both ways.
+## 6. Scene build: how the .blend is prepared before it goes to RunPod
+
+`shorts/blender/build.py` turns `script.yaml` + `shots.yaml` + the word timestamps into
+**one master `.blend` per video**:
+- **One Blender Scene per shot** (`S01`, `S02`, …), each with its own camera rig, light rig,
+  frame range (plus handles) and render settings. RunPod renders shots in parallel, one per GPU.
+- **Sets and characters are linked, not copied,** from the asset library (`assets/*.blend`):
+  the cabin, the ear cutaway and Max. Improve an asset once, and every video gets it.
+- **Timeline markers at every spoken word.** Drivers and keyframes snap to them, so the
+  eardrum pops on "pop" even if the voice is re-taken.
+- **Render layers and passes** (beauty, AO, mist, cryptomatte, glow), plus compositor nodes
+  for glare, lens effects and the LUT.
+- **Lighting:** an HDRI for ambient light and reflections, plus a key/fill/rim rig per shot.
+- **Checks before RunPod:** missing textures, all assets packed or relative, frame ranges
+  matching the voice, cameras inside the sets, and a still from every shot reviewed by Claude.
+- **You can open the master `.blend` in Blender** and hand-tune any camera or animation.
+  Claude keeps your changes, and the builder never overwrites anything you've marked as `locked`.
 
 ## 7. Animatic: Gate B (RunPod, cheap)
 - EEVEE at 540×960 with low samples, around ₹5 per video. You review motion, timing and

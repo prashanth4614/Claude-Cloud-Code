@@ -1,0 +1,223 @@
+# Pilot storyboard: "Why your ears pop on a plane". Timed to the approved voice take
+# (audio/voice_take.json). The Blender scene builder reads this file; any camera can
+# still be refined by hand in Blender.
+#
+# Vocabulary (shorts/blender/rigs.py implements each one):
+#   size:   EWS extreme wide | WS wide | MS medium | MCU medium close-up | CU close-up | ECU extreme close-up | MACRO
+#   angle:  eye | low | high | aerial | dutch:<deg> | ots (over the shoulder) | pov
+#   move:   static | dolly_in | dolly_out | truck | pedestal | crane_up | crane_down | orbit:<deg> | arc:<deg>
+#           drone_track (follow beside a subject) | drone_reveal (pull back + rise) | drone_flyover
+#           flythrough (camera path through geometry) | push_through (into a hole, ends black)
+#           handheld:<0-1> (subtle noise) | rack_focus:<from>-><to> | dolly_zoom (vertigo)
+#   in/out: transitions. Edit-level: cut | dissolve:<frames> | dip_black:<frames> | flash:<frames>.
+#           In-camera: match_cut:<shape> | whip:<left|right> | push_through | occlusion:<object> | focus_pull
+#   beats:  actions keyed to a spoken word (snap to that word's timestamp) or a time in seconds.
+#   handles: 10 frames are rendered either side of every shot so transitions can overlap.
+
+video: pilot_ear_pop
+fps: 30
+resolution: [1080, 1920]
+engine: CYCLES            # final render; the animatic uses EEVEE
+grade: warm_filmic        # one LUT for the whole film; per-shot "mood" tweaks only
+motifs:
+  outside_air: "cool blue glowing molecules"
+  inside_air: "warm amber glowing molecules"
+  screen_direction: "plane climbs left-to-right and lands right-to-left (keeps geography clear)"
+  host: "Max: the emotional anchor; we cut to his face when the viewer should *feel* it"
+
+shots:
+  - id: S01
+    line: 1                     # "Ever wondered why your ears pop on a plane?"
+    set: sky_golden_hour
+    size: WS
+    angle: low
+    lens_mm: 24
+    move: drone_reveal          # starts under the wing, pulls back and rises as the jet climbs past
+    beats:
+      - {at: 0.0, do: "jet already in motion (no static first frame, which is the hook)"}
+      - {word: pop, do: "sun flare sweeps across the lens"}
+    fx: [volumetric_clouds, god_rays, lens_flare_soft, motion_blur]
+    mood: golden, wonder
+    out: match_cut:window       # the camera ends on one cabin window, and S02 opens on that window from inside
+
+  - id: S02
+    line: 2                     # "Here's what's actually happening... inside your head."
+    set: cabin
+    size: MS
+    angle: eye
+    lens_mm: 50
+    move: dolly_in              # 50mm -> 85mm push toward Max's ear
+    focus: rack_focus:window->ear
+    beats:
+      - {word: happening, do: "Max touches his ear, slight frown"}
+      - {word: inside, do: "push accelerates toward the ear canal"}
+    fx: [shallow_dof, window_light_shafts]
+    mood: curious
+    out: push_through           # the camera enters the ear canal; darkness bridges into S03
+
+  - id: S03
+    line: 3                     # "Behind your eardrum sits a tiny pocket of air - your middle ear."
+    set: ear_interior
+    size: MACRO
+    angle: pov
+    lens_mm: 18
+    move: flythrough            # travel down the canal, then arc 30 degrees to the cutaway side view
+    beats:
+      - {word: eardrum, do: "eardrum comes into view, glints; label EARDRUM"}
+      - {word: middle, do: "camera settles on side cutaway; label MIDDLE EAR; bones glint"}
+    fx: [volumetric_haze, floating_particles, subsurface_tissue]
+    mood: discovery
+    out: cut
+
+  - id: S04
+    line: 4                     # "On the ground, the pressure inside matches the air outside. Perfectly balanced."
+    set: ear_cutaway
+    size: MS
+    angle: eye
+    lens_mm: 65
+    move: static                # locked-off, with only a 'breathing' 1% drift: calm = stillness
+    beats:
+      - {word: ground, do: "altitude badge 0 FT"}
+      - {word: matches, do: "blue and amber molecules equal density; OUTSIDE = INSIDE badge"}
+      - {word: balanced, do: "molecules settle; soft light pulse"}
+    fx: [molecules, subsurface_tissue]
+    mood: calm
+    out: cut
+
+  - id: S05a
+    line: 5                     # "But as the plane climbs..."
+    until_word: climbs
+    set: sky_high
+    size: EWS
+    angle: aerial
+    lens_mm: 35
+    move: drone_flyover         # high above the cloud sea, the jet small, climbing left-to-right
+    fx: [volumetric_clouds, atmosphere_haze]
+    mood: cold, vast
+    out: cut
+  - id: S05b
+    line: 5                     # "...the cabin pressure drops."
+    from_word: the
+    set: ear_cutaway
+    size: MS
+    angle: eye
+    lens_mm: 65
+    move: dolly_out             # slight pull back = 'something is leaving'
+    beats:
+      - {word: drops, do: "blue outside molecules thin out; altitude counts to 8,000 FT; badge OUTSIDE < INSIDE"}
+    fx: [molecules]
+    out: cut
+
+  - id: S06
+    line: 6                     # "The trapped air pushes outward... and your eardrum bulges, like a balloon."
+    set: ear_cutaway
+    size: ECU
+    angle: low
+    lens_mm: 100
+    move: dolly_in
+    tilt: dutch:0->5            # tension creeps in
+    beats:
+      - {word: pushes, do: "amber molecules crowd against the eardrum"}
+      - {word: bulges, do: "eardrum bulges outward (shape key), rim strain glow"}
+      - {word: balloon, do: "hold the bulge, a tiny wobble"}
+    fx: [molecules, strain_glow, shallow_dof]
+    mood: tense
+    out: cut
+
+  - id: S07
+    line: 7                     # "That's the muffled, blocked feeling."
+    set: cabin
+    size: CU
+    angle: eye
+    lens_mm: 85
+    move: handheld:0.2
+    beats:
+      - {word: muffled, do: "Max winces, hand over his ear; audio muffle on"}
+    fx: [shallow_dof, desaturate_10pct]
+    mood: discomfort
+    out: cut
+
+  - id: S08
+    line: 8                     # "Then a tiny tube to your throat - the Eustachian tube - cracks open."
+    set: ear_cutaway_wide
+    size: WS
+    angle: eye
+    lens_mm: 40
+    move: crane_down            # follows the tube from the middle ear down to the throat
+    beats:
+      - {word: tube, do: "tube highlighted with a soft rim light; label EUSTACHIAN TUBE"}
+      - {word: cracks, do: "tube opens (shape key); first molecules slip in"}
+    fx: [molecules, subsurface_tissue, volumetric_haze]
+    mood: hope
+    out: cut
+
+  - id: S09
+    line: 9                     # "Air escapes, the pressure evens out, and... POP!"
+    set: ear_cutaway
+    size: MS
+    angle: eye
+    lens_mm: 65
+    move: dolly_in
+    beats:
+      - {word: escapes, do: "amber molecules stream down the tube"}
+      - {word: evens, do: "badge flips to OUTSIDE = INSIDE"}
+      - {at: "pop-0.5", do: "speed ramp: slow to 40% for the anticipation"}
+      - {word: pop, do: "eardrum snaps flat; light ripple; camera shake impulse; bloom flash"}
+    fx: [molecules, shockwave_ripple, bloom_flash, motion_blur]
+    mood: release, satisfying
+    out: whip:right             # whip pan with motion blur carries the energy into S10
+
+  - id: S10
+    line: 10                    # "Landing is actually worse."
+    set: city_dusk
+    size: WS
+    angle: high
+    lens_mm: 35
+    move: drone_track           # behind and above the jet as it descends right-to-left, gear down
+    fx: [city_lights, atmosphere_haze, motion_blur]
+    mood: serious, cooler grade
+    out: cut
+
+  - id: S11
+    line: 11                    # "The tube doesn't open on its own as easily... so your eardrum gets pushed inward."
+    set: ear_cutaway
+    size: MCU
+    angle: high
+    lens_mm: 85
+    move: orbit:-20
+    tilt: dutch:0->-5
+    beats:
+      - {word: open, do: "tube pinches shut; red warning pulse"}
+      - {word: inward, do: "eardrum pressed inward; blue molecules crowd outside"}
+    fx: [molecules, warning_pulse]
+    mood: uneasy
+    out: dissolve:8
+
+  - id: S12
+    line: 12                    # "That's why swallowing, yawning, or chewing gum helps - they pull the tube open."
+    set: cabin
+    size: MS
+    angle: eye
+    lens_mm: 50
+    move: arc:15
+    beats:
+      - {word: swallowing, do: "Max swallows; tip card 1"}
+      - {word: yawning, do: "Max yawns; tip card 2"}
+      - {word: chewing, do: "Max chews; tip card 3"}
+      - {word: open, do: "relief smile; warmer light"}
+    fx: [shallow_dof, warm_shift]
+    mood: relief
+    out: cut
+
+  - id: S13
+    line: 13                    # "Follow for more weird things your body does."
+    set: cabin
+    size: CU
+    angle: eye
+    lens_mm: 85
+    move: dolly_in
+    beats:
+      - {word: follow, do: "Max looks into the lens, thumbs up; follow button"}
+    fx: [shallow_dof]
+    mood: warm
+    end: loop_match             # last frame's sky colour matches S01's first frame, so the rewatch loops smoothly
