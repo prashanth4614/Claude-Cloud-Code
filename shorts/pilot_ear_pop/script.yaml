@@ -1,0 +1,113 @@
+# Pilot: "Why your ears pop on a plane", production-pipeline remake (see PIPELINE.md)
+#
+# spoken:  what ElevenLabs v3 reads. [tags] steer delivery; "..." and "-" make natural pauses.
+# caption: on-screen words (no tags).
+# shot:    what the Blender scene shows (drives shots.yaml / the scene build).
+# sfx:     designed accents, anchored to a spoken word or a time offset. Sparse on purpose.
+# bed:     which ambience bed plays under the line.
+
+title: Why Your Ears Pop on a Plane
+voice: elevenlabs:x5ld1ovD8agu3EPB7Qpj
+host: Max
+
+lines:
+  - spoken: "[curious] Ever wondered why your ears pop on a plane?"
+    caption: "Ever wondered why your ears pop on a plane?"
+    shot: "Exterior: airliner climbing through golden-hour clouds, camera tracking alongside."
+    bed: none
+    sfx: [{at: 0.0, cue: jet_climb}]
+
+  - spoken: "Here's what's actually happening... inside your head."
+    caption: "Here's what's actually happening inside your head."
+    shot: "Cabin: Max in a window seat touches his ear; slow push-in to the ear."
+    bed: cabin
+
+  - spoken: "Behind your eardrum sits a tiny pocket of air - your middle ear."
+    caption: "Behind your eardrum sits a tiny pocket of air - your middle ear."
+    shot: "Transition through the ear into a cutaway: ear canal, eardrum, middle ear, ossicles."
+    bed: body
+    sfx: [{at: 0.0, cue: into_ear}]
+
+  - spoken: "On the ground, the pressure inside matches the air outside. Perfectly balanced."
+    caption: "On the ground, the pressure inside matches the air outside. Perfectly balanced."
+    shot: "Calm cutaway; air molecules evenly spread on both sides of a flat eardrum."
+    bed: body
+
+  - spoken: "But as the plane climbs... the cabin pressure drops."
+    caption: "But as the plane climbs, the cabin pressure drops."
+    shot: "Outside molecules thin out; altitude badge counts up to 8,000 ft."
+    bed: body
+
+  - spoken: "[slightly tense] The trapped air pushes outward... and your eardrum bulges, like a balloon."
+    caption: "The trapped air pushes outward, and your eardrum bulges, like a balloon."
+    shot: "Eardrum stretches outward, strain glow at the rim."
+    bed: body
+    sfx: [{word: bulges, cue: stretch}]
+
+  - spoken: "[softly] That's the muffled, blocked feeling."
+    caption: "That's the muffled, blocked feeling."
+    shot: "Cut to Max wincing, hand over his ear; the cabin sound goes muffled."
+    bed: cabin
+    fx: muffle
+
+  - spoken: "Then a tiny tube to your throat - the Eustachian tube - cracks open."
+    caption: "Then a tiny tube to your throat - the Eustachian tube - cracks open."
+    shot: "Cutaway widens to show the Eustachian tube opening; air starts to flow down."
+    bed: body
+    sfx: [{word: cracks, cue: tube_open}]
+
+  - spoken: "Air escapes, the pressure evens out, and... [playful] pop!"
+    caption: "Air escapes, the pressure evens out, and... POP!"
+    shot: "Air rushes out; the eardrum snaps flat with a soft light ripple."
+    bed: body
+    sfx: [{word: escapes, cue: air_release}, {word: pop, cue: ear_pop}]
+
+  - spoken: "[serious] Landing is actually worse."
+    caption: "Landing is actually worse."
+    shot: "Exterior: the airliner descends toward city lights at dusk, landing gear down."
+    bed: none
+    sfx: [{at: 0.0, cue: gear_down}]
+
+  - spoken: "The tube doesn't open on its own as easily... so your eardrum gets pushed inward."
+    caption: "The tube doesn't open on its own as easily, so your eardrum gets pushed inward."
+    shot: "Cutaway: eardrum pressed inward, tube pinched shut with a soft red warning glow."
+    bed: body
+    sfx: [{word: inward, cue: squeeze}]
+
+  - spoken: "[warm] That's why swallowing, yawning, or chewing gum helps - they pull the tube open."
+    caption: "That's why swallowing, yawning, or chewing gum helps - they pull the tube open."
+    shot: "Max yawns, then smiles in relief; three tip cards appear."
+    bed: cabin
+    sfx: [{word: yawning, cue: card_soft}]
+
+  - spoken: "[cheerful] Follow for more weird things your body does."
+    caption: "Follow for more weird things your body does."
+    shot: "Max smiles to camera and gives a thumbs-up; follow button."
+    bed: cabin
+    sfx: [{at: 0.2, cue: outro_chime}]
+
+# ElevenLabs Sound Effects prompts. Each one is generated once and cached in assets/sfx/.
+# Mixed per PIPELINE.md: soft, low, filtered.
+sfx_cues:
+  jet_climb:   {seconds: 3.0, prompt: "Distant passenger jet climbing past, smooth warm engine rumble, soft and cinematic, no harsh highs"}
+  into_ear:    {seconds: 1.2, prompt: "Very soft airy whoosh, gentle and warm, short, like gliding into a tunnel"}
+  stretch:     {seconds: 1.5, prompt: "Subtle soft organic stretching creak, rubbery membrane, very quiet and close"}
+  tube_open:   {seconds: 0.8, prompt: "Tiny soft wet click of something opening, organic, gentle, close"}
+  air_release: {seconds: 1.2, prompt: "Gentle soft air release hiss, short, muffled, calm"}
+  ear_pop:     {seconds: 0.8, prompt: "Soft satisfying ear pop, muffled and gentle, like ears equalizing on a plane, close"}
+  gear_down:   {seconds: 2.0, prompt: "Airplane landing gear lowering heard from the cabin, distant soft clunk and wind, subdued"}
+  squeeze:     {seconds: 1.5, prompt: "Soft low muted pressure groan, subtle, organic, not scary"}
+  card_soft:   {seconds: 0.6, prompt: "Very soft paper card slide, gentle, quiet"}
+  outro_chime: {seconds: 1.5, prompt: "Single gentle warm chime, soft felt piano note with light shimmer, calm"}
+
+beds:
+  cabin: {seconds: 20, loop: true, prompt: "Quiet airplane cabin ambience, soft low engine hum, gentle air vent hiss, no voices, no announcements, calm"}
+  body:  {seconds: 20, loop: true, prompt: "Calm soft body interior ambience, slow muffled heartbeat far away, gentle low warm whoosh, soothing"}
+
+music:
+  prompt: >-
+    Gentle curious documentary underscore for a 45-second science explainer: felt piano with soft
+    pizzicato strings and a warm pad, about 80 bpm, light and wondering, no drums, no vocals, sparse
+    so a narrator sits clearly on top, a subtle lift around 25 seconds for a reveal, then a calm warm
+    resolve at the end.
+  fallback_search: "YouTube Audio Library: Genre Cinematic or Ambient, Mood Calm or Inspirational, no vocals, 70-90 bpm, piano"

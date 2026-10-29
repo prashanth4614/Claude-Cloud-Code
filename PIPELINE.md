@@ -138,11 +138,44 @@ new video is mostly scene assembly.
 | RunPod animatic + final Cycles render | ~₹20–100 |
 | Assets | ₹0 with CC0 / free libraries. Paid hero assets are a one-time cost, reused across videos. |
 
-## Open decisions
-1. **Look:** stylized-realistic (Zack D-like, recommended) or near-photoreal (much more
-   asset and render cost).
-2. **Character:** one recurring host character (recommended for channel identity) or
-   anonymous people.
-3. **Professional Voice Clone:** worth recording ~30–60 min of energetic narration.
-4. **First pilot topic:** remake the ear-pop Short with the new pipeline, so it can be
-   compared against the old versions.
+## Decisions (2026-10-29)
+1. **Look:** stylized-realistic (Zack D-like), rendered in Cycles.
+2. **Character:** one recurring host, **Max**, redesigned for the realistic-stylized look.
+3. **Voice:** the user's existing ElevenLabs voice `x5ld1ovD8agu3EPB7Qpj`, as one v3 take per
+   script (already in `shorts/engine.py: elevenlabs_script`).
+4. **Pilot:** remake the ear-pop Short in `shorts/pilot_ear_pop/` and compare it with the old versions.
+
+## Sound design: natural, gentle, never aggressive
+
+The user's explicit priority. The rules:
+
+- **Real, organic sounds, not synthesized beeps.** SFX come from ElevenLabs Sound Effects
+  (text-to-SFX; available on the current plan) or CC0 libraries such as Freesound or Sonniss.
+  Each cue is generated once from a written description and cached in `assets/sfx/`.
+  Retired: the procedural ding, thud and whoosh synths.
+- **Less is more.** At most one designed SFX accent every ~3–4 s. Accents support the picture
+  (the pop, a tube opening). They're not on every word or caption.
+- **A constant room-tone bed** gives continuity: cabin hum for cabin shots, a soft body-interior
+  ambience for inside-the-ear shots. Crossfade between beds over ~0.5–1 s, never hard-cut.
+- **Music:**
+  - a sparse, warm underscore: felt piano, soft pizzicato, pads, no drums, no vocals;
+  - ~80 bpm, composed to the video length, with a gentle lift into the payoff and a calm
+    resolve at the end;
+  - sources: ElevenLabs Music if the plan allows it, otherwise a YouTube Audio Library track
+    the user downloads from search terms Claude provides;
+  - never the procedural synth bed.
+- **Mix targets:**
+  - voice at −14 LUFS integrated for the final master, and always on top;
+  - music around −28 LUFS while under speech, rising to about −22 LUFS in gaps;
+  - ambience beds around −38 to −42 LUFS;
+  - SFX peaks at least 6–8 dB under the voice peaks;
+  - true peak ≤ −1.5 dBTP.
+- **Gentle ducking:** −4 to −6 dB under the voice, with a 250 ms attack and 700 ms release.
+  No pumping.
+- **Taming:**
+  - every SFX gets a high-shelf cut above ~8 kHz (no harshness), a low cut under 60 Hz,
+    10–30 ms fades, and a short room reverb matched to the space it plays in;
+  - transients are softened (no clicks);
+  - nothing louder than the voice, ever.
+- **QA:** loudness and peak meters per stem, plus Claude listening checks on the spectrum. The
+  user signs off at Gate C.
