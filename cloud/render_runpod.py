@@ -86,7 +86,7 @@ def main():
     data = bundle(cmd, a.out, a.include, {} if a.engine == "auto" else {"SHORTS_ENGINE": a.engine.upper()})
     print(f"bundle: {len(data) / 1e6:.1f} MB, command: {' '.join(cmd)}")
     if a.dry_run:
-        return
+        return True
 
     token = os.environ.get("RUNPOD_TEST_TOKEN") or secrets.token_urlsafe(24)
     here = Path(__file__).parent
