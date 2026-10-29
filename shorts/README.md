@@ -34,15 +34,23 @@ Render time is about 2.5 minutes on 4 CPU cores for the 42-second short.
 Every script accepts `--voice elevenlabs:<VOICE_ID>` in place of a Piper model:
 
 ```bash
+.venv/bin/pip install faster-whisper     # local word alignment for captions (first run downloads ~0.5 GB)
 export ELEVENLABS_API_KEY=...            # better: an environment secret, never commit it
 python3 shorts/ear_pop.py --voice elevenlabs:<VOICE_ID> --out out/ear_pop_11labs.mp4
 ```
 
 - **Voice ID:** ElevenLabs → Voices → your voice → copy the voice ID.
-- **Captions sync exactly:** the API's character timestamps replace the estimated word timings.
-- **Natural flow across lines:** each line is sent with the previous and next line as context.
-- **No double spending:** responses are cached in `<work>/tts_cache/`, so re-renders cost nothing.
-- **Tuning:** `ELEVENLABS_MODEL` (default `eleven_multilingual_v2`) and `ELEVENLABS_SPEED` (default `1.05`).
+- **Expressive delivery:** default model `eleven_v3`. Each line's `say` (see `DELIVERY` in `ear_pop.py`)
+  carries audio tags (`[curious]`, `[excited]`, `[sighs]`...) and pacing punctuation (`...`, CAPS for
+  stress) for real highs, lows and breaks. Captions still show `Line.text`.
+- **One take:** the whole script is one request, split back into lines, so the voice stays consistent.
+  Silences between words are capped at `MAX_PAUSE` (default 0.4 s); line gaps come from `Line.pause`.
+- **Captions sync:** v3's own timestamps drift 0.2-0.5 s, so words are aligned locally with Whisper
+  (`WHISPER_MODEL`, default `small.en`) and snapped to speech onsets.
+- **Mix:** speech normalized to -18 dBFS RMS; music ~-31 dBFS and ducked ~9 dB under speech; a quiet
+  cabin-ambience bed; `muffle_on`/`muffle_off` cues low-pass music + ambience while the ear is blocked.
+- **No double spending:** TTS responses are cached in `<work>/tts_cache/`, so re-renders cost nothing.
+- **Tuning:** `ELEVENLABS_MODEL`, `ELEVENLABS_STABILITY` (v3: 0 creative, 0.5 natural, 1 robust).
 - **Rights:** use a paid ElevenLabs plan for commercial (monetized) use.
 
 ## 3D version (Blender)

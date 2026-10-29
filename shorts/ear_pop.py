@@ -404,6 +404,26 @@ def scene_cta(c, t, dur, ctx):
 
 
 # ----------------------------------------------------------------- script --
+# How the voice performs each line (ElevenLabs v3 audio tags + pacing
+# punctuation). Captions show Line.text; words must match after tags and
+# punctuation are removed. Shared with ear_pop_3d.py (same TTS cache).
+DELIVERY = [
+    "[curious] Ever wondered why your ears... pop on a plane?",
+    "[conspiratorial] Here's what's ACTUALLY happening inside your head.",
+    "Behind your eardrum is a tiny pocket of air... called the middle ear.",
+    "[calm] On the ground, the air pressure inside matches the air outside.",
+    "But as the plane climbs... the air pressure in the cabin DROPS.",
+    "[tense] The air trapped inside pushes out, and your eardrum bulges... like a balloon.",
+    "[sighs] That's the muffled... blocked feeling.",
+    "Then a tiny tube to your throat, the Eustachian tube, [excited] cracks open.",
+    "Air escapes, the pressure evens out, and... [excited] POP!",
+    "[dramatic] Landing is actually WORSE.",
+    "The tube doesn't open on its own as easily, so your eardrum gets pushed... inward.",
+    "[upbeat] That's why swallowing, yawning, or chewing gum helps. They pull the tube open!",
+    "[warm] Follow for more weird things your body does.",
+]
+
+
 def build():
     s0 = dict(DEFAULT, labels=(("canal", 0.2), ("drum", 0.9), ("middle", 1.9)))
     s1 = dict(s0, labels=(), arrows=1.0, alt=0, cmp="=")
@@ -421,29 +441,34 @@ def build():
         intro(c, t, dur, ctx)
         ctx["intro"] = False
 
-    return [
-        Line("Ever wondered why your ears pop on a plane?", scene_plane, [(0, "whoosh"), (0.1, "rumble")]),
-        Line("Here's what's actually happening inside your head.", scene_cabin_zoom),
+    lines = [
+        Line("Ever wondered why your ears pop on a plane?", scene_plane, [(0, "whoosh"), (0.1, "rumble")],
+             pause=0.3),
+        Line("Here's what's actually happening inside your head.", scene_cabin_zoom, [(0.05, "chime")]),
         Line("Behind your eardrum is a tiny pocket of air, called the middle ear.", intro_scene,
              [(0, "whoosh"), ("eardrum", "ding"), ("middle", "ding")]),
         Line("On the ground, the air pressure inside matches the air outside.", diag_scene(s0, s1),
-             [("matches", "ding")]),
+             [("matches", "ding")], pause=0.25),
         Line("But as the plane climbs, the air pressure in the cabin drops.", diag_scene(s1, s2, alt_linear=True),
              [(0.2, "rumble")]),
         Line("The air trapped inside pushes out, and your eardrum bulges like a balloon.",
-             diag_scene(s2, s3, tween=1.6), [("bulges", "thud")]),
-        Line("That's the muffled, blocked feeling.", diag_scene(s3, s4)),
+             diag_scene(s2, s3, tween=1.6), [("bulges", "thud"), ("bulges", "muffle_on")]),
+        Line("That's the muffled, blocked feeling.", diag_scene(s3, s4), pause=0.4),
         Line("Then a tiny tube to your throat, the Eustachian tube, cracks open.", diag_scene(s4, s5, tween=1.2),
              [("eustachian", "ding")]),
         Line("Air escapes, the pressure evens out, and... POP!", diag_scene(s5, s6, pop_word="pop!"),
-             [("pop!", "pop")], pause=0.45),
-        Line("Landing is actually worse.", diag_scene(s6, s7, alt_linear=True), [(0, "whoosh")]),
+             [("pop!", "pop"), ("pop!", "muffle_off")], pause=0.6),
+        Line("Landing is actually worse.", diag_scene(s6, s7, alt_linear=True), [(0, "whoosh")], pause=0.3),
         Line("The tube doesn't open on its own as easily, so your eardrum gets pushed inward.",
-             diag_scene(s7, s8, tween=1.4), [("inward.", "thud")]),
+             diag_scene(s7, s8, tween=1.4), [("inward.", "thud"), ("inward.", "muffle_on")]),
         Line("That's why swallowing, yawning, or chewing gum helps. They pull the tube open.", scene_tips,
-             [(0, "whoosh"), ("swallowing,", "pop"), ("yawning,", "pop"), ("chewing", "pop")]),
+             [(0, "whoosh"), ("swallowing,", "gulp"), ("swallowing,", "muffle_off"), ("yawning,", "pop"),
+              ("chewing", "pop")]),
         Line("Follow for more weird things your body does.", scene_cta, [(0, "ding")], pause=0.6),
     ]
+    for ln, say in zip(lines, DELIVERY):
+        ln.say = say
+    return lines
 
 
 if __name__ == "__main__":

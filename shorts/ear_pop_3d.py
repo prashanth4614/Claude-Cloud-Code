@@ -30,7 +30,7 @@ import skia
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE / "blender"))
-from ear_pop import icon_card, shake  # noqa: E402
+from ear_pop import DELIVERY, icon_card, shake  # noqa: E402
 from ear_states import SHOTS, ear_state, word_at  # noqa: E402
 from engine import (FPS, H, W, Line, Plate, Short, back_out, clamp, ease_out,  # noqa: E402
                     font, paint, pill, text)
@@ -39,20 +39,23 @@ BLENDER = os.environ.get("BLENDER") or shutil.which("blender") or "/Applications
 
 # (text, sfx, pause) per line; SHOTS[i] in ear_states.py describes the visuals.
 SCRIPT = [
-    ("Ever wondered why your ears pop on a plane?", [(0, "whoosh"), (0.1, "rumble")], 0.18),
-    ("Here's what's actually happening inside your head.", [], 0.18),
+    ("Ever wondered why your ears pop on a plane?", [(0, "whoosh"), (0.1, "rumble")], 0.3),
+    ("Here's what's actually happening inside your head.", [(0.05, "chime")], 0.18),
     ("Behind your eardrum is a tiny pocket of air, called the middle ear.",
      [(0, "whoosh"), ("eardrum", "ding"), ("middle", "ding")], 0.18),
-    ("On the ground, the air pressure inside matches the air outside.", [("matches", "ding")], 0.18),
+    ("On the ground, the air pressure inside matches the air outside.", [("matches", "ding")], 0.25),
     ("But as the plane climbs, the air pressure in the cabin drops.", [(0.2, "rumble")], 0.18),
-    ("The air trapped inside pushes out, and your eardrum bulges like a balloon.", [("bulges", "thud")], 0.18),
-    ("That's the muffled, blocked feeling.", [], 0.18),
+    ("The air trapped inside pushes out, and your eardrum bulges like a balloon.",
+     [("bulges", "thud"), ("bulges", "muffle_on")], 0.18),
+    ("That's the muffled, blocked feeling.", [], 0.4),
     ("Then a tiny tube to your throat, the Eustachian tube, cracks open.", [("eustachian", "ding")], 0.18),
-    ("Air escapes, the pressure evens out, and... POP!", [("pop!", "pop")], 0.45),
-    ("Landing is actually worse.", [(0, "whoosh")], 0.18),
-    ("The tube doesn't open on its own as easily, so your eardrum gets pushed inward.", [("inward.", "thud")], 0.18),
+    ("Air escapes, the pressure evens out, and... POP!", [("pop!", "pop"), ("pop!", "muffle_off")], 0.6),
+    ("Landing is actually worse.", [(0, "whoosh")], 0.3),
+    ("The tube doesn't open on its own as easily, so your eardrum gets pushed inward.",
+     [("inward.", "thud"), ("inward.", "muffle_on")], 0.18),
     ("That's why swallowing, yawning, or chewing gum helps. They pull the tube open.",
-     [(0, "whoosh"), ("swallowing,", "pop"), ("yawning,", "pop"), ("chewing", "pop")], 0.18),
+     [(0, "whoosh"), ("swallowing,", "gulp"), ("swallowing,", "muffle_off"), ("yawning,", "pop"),
+      ("chewing", "pop")], 0.18),
     ("Follow for more weird things your body does.", [(0, "ding")], 0.6),
 ]
 
@@ -214,7 +217,7 @@ def main():
     for i in idx:
         txt, fx, pause = SCRIPT[i]
         d = plates / f"line{i:02d}"
-        lines.append(Line(txt, SCENES[SHOTS[i]["shot"]](Plate(d), Anchors(d), i), fx, pause))
+        lines.append(Line(txt, SCENES[SHOTS[i]["shot"]](Plate(d), Anchors(d), i), fx, pause, DELIVERY[i]))
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     short = Short(lines, a.voice, a.work)
     render_plates(short, idx, plates, a.res, a.samples, a.force)
