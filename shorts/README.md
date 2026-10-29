@@ -40,7 +40,9 @@ python3 shorts/ear_pop.py --voice elevenlabs:<VOICE_ID> --out out/ear_pop_11labs
 
 - **Voice ID:** ElevenLabs → Voices → your voice → copy the voice ID.
 - **Captions sync exactly:** the API's character timestamps replace the estimated word timings.
-- **Natural flow across lines:** each line is sent with the previous and next line as context.
+- **One take:** the whole script is one request, split back into lines at the pauses, so pitch and
+  pacing stay consistent (per-line requests drifted, e.g. a much higher-pitched first line).
+- **Level-matched:** speech is normalized to -18 dBFS RMS before mixing, so music sits the same under any voice.
 - **No double spending:** responses are cached in `<work>/tts_cache/`, so re-renders cost nothing.
 - **Tuning:** `ELEVENLABS_MODEL` (default `eleven_multilingual_v2`) and `ELEVENLABS_SPEED` (default `1.05`).
 - **Rights:** use a paid ElevenLabs plan for commercial (monetized) use.

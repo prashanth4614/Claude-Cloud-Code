@@ -135,22 +135,22 @@ def rng(seed):
 
 
 # ----------------------------------------------------------------- voice ---
-def tts(line_text, out_wav, model, length_scale=0.9, context=("", "")):
-    """Synthesise one line. Returns (audio, word_spans or None).
+def tts(line_text, out_wav, model, length_scale=0.9):
+    """Synthesise one line with Piper. Returns trimmed audio."""
+    subprocess.run([sys.executable, "-m", "piper", "-m", str(model), "-f", str(out_wav),
+                    "--length-scale", str(length_scale), "--sentence-silence", "0"],
+                   input=line_text.encode(), check=True, capture_output=True)
+    return trim(decode(out_wav))[0]
 
-    model is a Piper .onnx path, or "elevenlabs:<voice_id>" for ElevenLabs
-    (needs ELEVENLABS_API_KEY), which also returns exact word timings."""
-    spans = None
-    if str(model).startswith("elevenlabs:"):
-        spans = elevenlabs_tts(line_text, out_wav, str(model).split(":", 1)[1], context)
-    else:
-        subprocess.run([sys.executable, "-m", "piper", "-m", str(model), "-f", str(out_wav),
-                        "--length-scale", str(length_scale), "--sentence-silence", "0"],
-                       input=line_text.encode(), check=True, capture_output=True)
-    pcm = subprocess.run(["ffmpeg", "-v", "error", "-i", str(out_wav), "-f", "f32le",
+
+def decode(path):
+    pcm = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-f", "f32le",
                           "-ac", "1", "-ar", str(SR), "-"], check=True, capture_output=True).stdout
-    audio = np.frombuffer(pcm, dtype=np.float32).copy()
-    # Trim leading/trailing silence so scenes and captions sit tight on speech.
+    return np.frombuffer(pcm, dtype=np.float32).copy()
+
+
+def trim(audio, spans=None):
+    """Trim leading/trailing silence so scenes and captions sit tight on speech."""
     loud = np.flatnonzero(np.abs(audio) > 0.02)
     if len(loud):
         lead = max(0, loud[0] - int(0.03 * SR))
@@ -164,24 +164,27 @@ def tts(line_text, out_wav, model, length_scale=0.9, context=("", "")):
     return audio, spans
 
 
-def elevenlabs_tts(line_text, out_audio, voice_id, context=("", "")):
-    """ElevenLabs text-to-speech with character timestamps -> word spans.
+def elevenlabs_script(texts, voice_id, workdir):
+    """Whole script in ONE ElevenLabs take, split back into lines.
 
-    Responses are cached next to the output by text + voice + settings, so
-    re-renders never spend credits twice. Tunables via env:
-    ELEVENLABS_MODEL (default eleven_multilingual_v2), ELEVENLABS_SPEED."""
+    One take keeps pitch, energy and pacing consistent (per-line requests
+    drift, e.g. a much higher-pitched first line). The character timestamps
+    give exact word spans; lines are cut at the quietest point between them.
+    Returns [(audio, word_spans)] per line. The response is cached by text +
+    voice + settings, so re-renders never spend credits twice. Tunables via
+    env: ELEVENLABS_MODEL (default eleven_multilingual_v2), ELEVENLABS_SPEED."""
     import base64
     import hashlib
     import os
     import urllib.request
 
+    text = " ".join(texts)
     model = os.environ.get("ELEVENLABS_MODEL", "eleven_multilingual_v2")
-    settings = {"stability": 0.45, "similarity_boost": 0.85, "style": 0.25, "use_speaker_boost": True,
+    settings = {"stability": 0.55, "similarity_boost": 0.85, "style": 0.1, "use_speaker_boost": True,
                 "speed": float(os.environ.get("ELEVENLABS_SPEED", "1.05"))}
-    body = {"text": line_text, "model_id": model, "voice_settings": settings,
-            "previous_text": context[0] or None, "next_text": context[1] or None}  # keeps intonation flowing
+    body = {"text": text, "model_id": model, "voice_settings": settings}
     key = hashlib.sha256(json.dumps([voice_id, body], sort_keys=True).encode()).hexdigest()[:16]
-    cache = Path(out_audio).parent / "tts_cache" / f"{key}.json"
+    cache = Path(workdir) / "tts_cache" / f"script_{key}.json"
     if cache.exists():
         res = json.loads(cache.read_text())
     else:
@@ -192,30 +195,48 @@ def elevenlabs_tts(line_text, out_audio, voice_id, context=("", "")):
             f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/with-timestamps?output_format=mp3_44100_128",
             data=json.dumps(body).encode(), method="POST",
             headers={"xi-api-key": api_key, "Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=120) as r:
+        with urllib.request.urlopen(req, timeout=300) as r:
             res = json.loads(r.read())
         cache.parent.mkdir(parents=True, exist_ok=True)
         cache.write_text(json.dumps(res))
-    Path(out_audio).write_bytes(base64.b64decode(res["audio_base64"]))
-    al = res.get("alignment") or {}
-    chars, starts, ends = al.get("characters", []), al.get("character_start_times_seconds", []), \
-        al.get("character_end_times_seconds", [])
-    spans, cur, s0 = [], "", None
-    for ch, s, e in zip(chars, starts, ends):
+    take = Path(workdir) / "take.mp3"
+    take.write_bytes(base64.b64decode(res["audio_base64"]))
+    audio = decode(take)
+    al = res["alignment"]
+    chars, starts, ends = al["characters"], al["character_start_times_seconds"], al["character_end_times_seconds"]
+    if "".join(chars) != text:
+        raise RuntimeError("ElevenLabs alignment does not match the script text")
+    # word spans over the whole take, grouped per line
+    words, cur, s0 = [], "", None
+    for ch, s, e in zip(chars + [" "], starts + [0], ends + [0]):
         if ch.isspace():
             if cur:
-                spans.append((cur, s0, last))
+                words.append((cur, s0, last))
             cur, s0 = "", None
             continue
         if s0 is None:
             s0 = s
         cur, last = cur + ch, e
-    if cur:
-        spans.append((cur, s0, last))
-    # Only trust the alignment if it lines up word-for-word with our text.
-    if [w for w, _, _ in spans] != line_text.split():
-        return None
-    return spans
+    per_line, k = [], 0
+    for t in texts:
+        n = len(t.split())
+        per_line.append(words[k:k + n])
+        k += n
+    assert k == len(words) and all([w for w, _, _ in pl] == t.split() for pl, t in zip(per_line, texts))
+    # cut at the quietest point of the gap between a line's last word and the next line
+    win = int(0.04 * SR)
+    energy = np.convolve(np.abs(audio), np.ones(win) / win, mode="same")
+    cuts = [0]
+    for a, b in zip(per_line, per_line[1:]):
+        lo, hi = int((a[-1][2] - 0.03) * SR), int(b[0][1] * SR)
+        cuts.append(lo + int(np.argmin(energy[lo:hi])) if hi > lo else hi)
+    cuts.append(len(audio))
+    out = []
+    for i, pl in enumerate(per_line):
+        c0 = cuts[i] / SR
+        spans = [(w, s - c0, e - c0) for w, s, e in pl]
+        out.append(trim(audio[cuts[i]:cuts[i + 1]], spans))
+    return out
 
 
 def word_times(words, start, dur):
@@ -366,10 +387,12 @@ class Short:
             return
         t, self.timeline, self.words, self.events = 0.25, [], [], []
         self.voice, self.line_words = [], []
-        for i, ln in enumerate(self.lines):
-            context = (self.lines[i - 1].text if i else "",
-                       self.lines[i + 1].text if i + 1 < len(self.lines) else "")
-            audio, spans = tts(ln.text, self.work / f"line{i:02d}.audio", self.model, self.ls, context)
+        if str(self.model).startswith("elevenlabs:"):  # one take, exact word timings
+            takes = elevenlabs_script([ln.text for ln in self.lines], str(self.model).split(":", 1)[1], self.work)
+        else:
+            takes = [(tts(ln.text, self.work / f"line{i:02d}.wav", self.model, self.ls), None)
+                     for i, ln in enumerate(self.lines)]
+        for (audio, spans), ln in zip(takes, self.lines):
             d = len(audio) / SR
             span = d + ln.pause
             self.timeline.append((t, span, ln))
@@ -439,6 +462,13 @@ class Short:
         for t, a in self.voice:
             s = int(t * SR)
             voice[s:s + len(a)] += a[: n - s]
+        # Voices arrive at different levels (ElevenLabs ~9 dB under Piper), and
+        # music/SFX gains below are fixed: bring speech to -18 dBFS RMS first.
+        hop = int(0.01 * SR)
+        fr = voice[: n // hop * hop].reshape(-1, hop)
+        rms = np.sqrt((fr ** 2).mean(1))
+        speech = fr[rms > rms.max() * 0.05]
+        voice *= 10 ** (-18 / 20) / (np.sqrt((speech ** 2).mean()) + 1e-9)
         fx = np.zeros(n)
         for t, name in self.events:
             a = sfx(name)
