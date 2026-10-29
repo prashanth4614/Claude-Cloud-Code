@@ -1,6 +1,7 @@
 # Project rules for Claude sessions
 
-YouTube Shorts production pipeline. See `README.md`, `shorts/README.md`,
+YouTube Shorts production pipeline. **The agreed production pipeline is `PIPELINE.md`
+(Blender 3D + RunPod + ElevenLabs voice + Claude code-based edit). Follow it.** See also `README.md`, `shorts/README.md`,
 `shorts/ai/README.md` and `cloud/README.md`.
 
 ## Images and AI video: the user generates them, Claude writes the prompts
