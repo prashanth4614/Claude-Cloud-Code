@@ -4,3 +4,6 @@ music/
 *.mp4
 __pycache__/
 node_modules/
+voices/
+fonts/
+.venv/

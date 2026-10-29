@@ -15,7 +15,9 @@ trigger a Content ID claim.
 """
 import json
 import math
+import os
 import subprocess
+import sys
 import wave
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -24,7 +26,10 @@ import numpy as np
 import skia
 
 W, H, FPS, SR = 1080, 1920, 30, 48000
-FONT_DIR = Path("/usr/share/fonts/opentype/inter")
+# Inter (OFL). Linux: fonts-inter package. Mac: drop the .otf files in <repo>/fonts.
+FONT_DIR = next(p for p in (Path(os.environ.get("SHORTS_FONT_DIR", "/nonexistent")),
+                            Path(__file__).resolve().parent.parent / "fonts",
+                            Path("/usr/share/fonts/opentype/inter")) if (p / "Inter-Black.otf").exists())
 _typefaces = {}
 
 
@@ -131,7 +136,7 @@ def rng(seed):
 
 # ----------------------------------------------------------------- voice ---
 def tts(line_text, out_wav, model, length_scale=0.9):
-    subprocess.run(["python3", "-m", "piper", "-m", str(model), "-f", str(out_wav),
+    subprocess.run([sys.executable, "-m", "piper", "-m", str(model), "-f", str(out_wav),
                     "--length-scale", str(length_scale), "--sentence-silence", "0"],
                    input=line_text.encode(), check=True, capture_output=True)
     pcm = subprocess.run(["ffmpeg", "-v", "error", "-i", str(out_wav), "-f", "f32le",
@@ -237,6 +242,41 @@ def music_bed(total, bpm=100, seed=7):
     return out
 
 
+# ---------------------------------------------------------------- plates ---
+class Plate:
+    """A pre-rendered PNG sequence (e.g. a Blender render) played back as a
+    scene background. Frame i is the image at t = i / FPS into the line."""
+
+    def __init__(self, frames_dir):
+        self.dir, self.files = Path(frames_dir), None  # listed lazily: plates may render after layout
+        self._idx, self._img = None, None
+
+    def image(self, t):
+        if self.files is None:
+            self.files = sorted(self.dir.glob("*.png"))
+            if not self.files:
+                raise FileNotFoundError(f"no PNG frames in {self.dir}")
+        i = int(clamp(math.floor(t * FPS + 1e-6), 0, len(self.files) - 1))
+        if i != self._idx:
+            self._idx, self._img = i, skia.Image.open(str(self.files[i]))
+        return self._img
+
+    def draw(self, canvas, t):
+        canvas.drawImageRect(self.image(t), skia.Rect.MakeWH(W, H),
+                             skia.SamplingOptions(skia.FilterMode.kLinear))
+
+
+def plate_scene(frames_dir, overlay=None):
+    """Scene that plays a PNG sequence, then draws overlay(canvas, t, dur, ctx) on top."""
+    plate = Plate(frames_dir)
+
+    def scene(canvas, t, dur, ctx):
+        plate.draw(canvas, t)
+        if overlay:
+            overlay(canvas, t, dur, ctx)
+    return scene
+
+
 # ----------------------------------------------------------------- short ---
 @dataclass
 class Line:
@@ -253,6 +293,8 @@ class Short:
         self.work.mkdir(parents=True, exist_ok=True)
 
     def _layout(self):
+        if hasattr(self, "timeline"):  # already laid out (TTS is the slow part)
+            return
         t, self.timeline, self.words, self.events = 0.25, [], [], []
         self.voice, self.line_words = [], []
         for i, ln in enumerate(self.lines):
@@ -270,6 +312,16 @@ class Short:
                 self.events.append((t + when, name))
             t += span
         self.total = t + 0.6
+
+    def spans(self):
+        """(start, on-screen length, words) per line; the last line runs to the end."""
+        self._layout()
+        out = []
+        for i, (s, span, _) in enumerate(self.timeline):
+            if i == len(self.timeline) - 1:
+                span = self.total - s
+            out.append((s, span, self.line_words[i]))
+        return out
 
     def _captions(self, canvas, now):
         """2-3 word chunks, current word in yellow, chunk pops in."""
