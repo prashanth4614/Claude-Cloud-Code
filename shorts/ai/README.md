@@ -11,6 +11,20 @@ best ones with **Veo** (Gemini app or Google Flow). Save each shot as
 python3 shorts/ear_pop_ai.py --voice en_US-joe-medium.onnx --shots shorts/ai/ear_pop/shots
 ```
 
+**Fully automatic option (Gemini API):** with `GEMINI_API_KEY` set, `shorts/ai/gemini_gen.py`
+generates the character sheet, all 13 stills (with the sheet as reference) and the 7 Veo clips:
+
+```bash
+python3 shorts/ai/gemini_gen.py --list-models   # which image/Veo models your key can use
+python3 shorts/ai/gemini_gen.py --plan          # dry run, no API calls
+python3 shorts/ai/gemini_gen.py --images        # then review the stills
+python3 shorts/ai/gemini_gen.py --videos --max-videos 7
+python3 shorts/ai/gemini_gen.py --images --only 6 --force   # redo one shot
+```
+
+Veo needs billing enabled in Google AI Studio, so set a budget cap. Existing files are never
+regenerated unless you pass `--force`.
+
 Missing shots render as placeholders, so you can preview after every few shots.
 Any aspect ratio works: the assembler crops to 9:16, so **keep the subject centred**.
 
