@@ -25,6 +25,7 @@ from greybox import CABIN, EAR, EAR_MAP, SKY, build_cabin, build_city, build_ear
 from rigs import bake_move, bezier, camera, collection, ease, handheld, impulse_shake, key, lerp  # noqa: E402
 sys.path.insert(0, str(HERE))
 import real_max  # noqa: E402
+from sets.cabin import build_cabin as real_cabin  # noqa: E402
 
 PLAN = json.loads((HERE / "plan.json").read_text())
 OUT = HERE.parent.parent / "out" / "pilot_ear_pop"
@@ -497,7 +498,10 @@ def main():
         m = build_cabin(film)
     else:
         m = real_max.load(film, CABIN)
-        build_cabin(film, with_max=False, window_z=1.75 + m["offset"].z)
+        if "--greybox-sets" in args:
+            build_cabin(film, with_max=False, window_z=1.75 + m["offset"].z)
+        else:
+            real_cabin(film, CABIN)
     e = build_ear(film, EAR, inside=True)
     e_map = build_ear(film, EAR_MAP, inside=False)
     build_city(film)
