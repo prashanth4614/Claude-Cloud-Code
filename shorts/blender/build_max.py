@@ -25,21 +25,21 @@ from max_expressions import EXPRESSIONS, FACE_UNITS, HEAD_POSE, SHEET_ORDER  # n
 
 OUTFIT_TEX = os.path.join(ROOT, "assets/characters/max/textures/max_outfit_diffuse.png")
 HAIR_COLOR = (0.035, 0.022, 0.014)      # dark brown (linear)
-SKIN_WARM = (0.93, 0.78, 0.66)          # light-medium warm tone over the pale CC0 skin
+SKIN_WARM = (0.86, 0.68, 0.55)          # warm tanned tone over the pale CC0 skin
 EYE_TEX = "brown_eye.png"
 
 # Phenotype: a man in his late twenties, slim-athletic, light-medium skin (reference sheet).
 PHENOTYPE = {
-    "gender": 1.0, "age": 0.52, "muscle": 0.58, "weight": 0.45, "proportions": 0.7,
+    "gender": 1.0, "age": 0.58, "muscle": 0.6, "weight": 0.52, "proportions": 0.7,
     "height": 0.55, "cupsize": 0.5, "firmness": 0.5,
-    "race": {"caucasian": 0.7, "asian": 0.15, "african": 0.15},
+    "race": {"caucasian": 0.6, "asian": 0.2, "african": 0.2},
 }
-# Stylized-realistic push (Zack D-like): bigger, rounder eyes, softer jaw, slightly bigger head.
+# Stylized-realistic push (Zack D-like): bigger, rounder eyes, a defined jaw, slightly bigger head.
 STYLE_TARGETS = {
     "l-eye-scale-incr": 0.85, "r-eye-scale-incr": 0.85,
     "l-eye-height2-incr": 0.4, "r-eye-height2-incr": 0.4,
     "head-scale-vert-incr": 0.15, "head-scale-horiz-incr": 0.1,
-    "chin-width-decr": 0.15, "chin-prominent-decr": 0.1,
+    "chin-width-incr": 0.15, "chin-prominent-incr": 0.1,
     "nose-scale-horiz-decr": 0.1,
     "mouth-scale-horiz-incr": 0.08,
 }
@@ -49,11 +49,11 @@ HUMAN = {
     "phenotype": PHENOTYPE,
     "rig": "default",
     "eyes": "high-poly.mhclo",
-    "eyebrows": "eyebrow010.mhclo",
+    "eyebrows": "mindfront_eyebrows_06.mhclo",
     "eyelashes": "eyelashes01.mhclo",
     "teeth": "teeth_base.mhclo",
     "tongue": "tongue01.mhclo",
-    "hair": "cortu_short_messy_hair.mhclo",
+    "hair": "",                         # groomed particle hair instead (max_hair.py),
     "proxy": "",
     "targets": [{"target": k, "value": v} for k, v in STYLE_TARGETS.items()],
     "clothes": ["male_casualsuit06.mhclo", "shoes05.mhclo"],
@@ -101,6 +101,8 @@ def build():
     body.name = "Max.body"
     restyle(rig)
     link_face_drivers(rig, body)
+    import max_hair
+    max_hair.groom(rig, body)
     return rig, body
 
 
@@ -173,7 +175,7 @@ def restyle(rig):
             elif "messy" in name or "short02" in name or "hair" in name:
                 _tint(mat, [c * 6 for c in HAIR_COLOR])
             elif "eyebrow" in name:
-                _tint(mat, (0.06, 0.04, 0.03))
+                _tint(mat, (0.03, 0.02, 0.015))
             elif name.endswith(".body"):
                 _tint(mat, SKIN_WARM, all_images=True)
             elif "high-poly" in name or name.endswith("eyes"):
@@ -309,6 +311,7 @@ def setup_render(res=(720, 720), samples=48):
     sc.cycles.device = "CPU"
     sc.cycles.samples = samples
     sc.cycles.use_denoising = True
+    sc.cycles_curves.shape = "THICK"
     sc.render.resolution_x, sc.render.resolution_y = res
     sc.render.film_transparent = False
     sc.view_settings.view_transform = "AgX"
@@ -322,7 +325,7 @@ def setup_render(res=(720, 720), samples=48):
     for name, loc, energy, color, size in (
         ("Key", (-1.6, -2.2, 2.4), 220, (1.0, 0.9, 0.8), 1.6),
         ("Fill", (2.2, -1.6, 1.6), 70, (0.85, 0.9, 1.0), 2.5),
-        ("Rim", (0.6, 2.4, 2.4), 260, (1.0, 1.0, 1.0), 1.0),
+        ("Rim", (0.6, 2.4, 2.4), 150, (1.0, 1.0, 1.0), 1.0),
     ):
         ld = bpy.data.lights.new(name, "AREA")
         ld.energy, ld.color, ld.size = energy, color, size
