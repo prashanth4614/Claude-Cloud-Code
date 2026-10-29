@@ -104,7 +104,9 @@ def build_jet(scene):
 
 
 # ------------------------------------------------------------------ cabin ---
-def build_cabin(scene):
+def build_cabin(scene, with_max=True, window_z=1.75):
+    """Cabin set. with_max=False leaves Max out (the real rigged Max is appended instead);
+    window_z puts the windows at his eye line."""
     coll = collection("SET_cabin", scene.collection)
     wall = material("cabin_wall", (0.82, 0.83, 0.85), rough=0.7)
     seatm = material("seat_navy", (0.12, 0.18, 0.38), rough=0.9)
@@ -116,10 +118,13 @@ def build_cabin(scene):
     prim("cube", "cabin_wall_R", coll, o + Vector((1.85, 0, 1.15)), (0.05, 6, 1.15), mat=wall)
     prim("cube", "cabin_wall_back", coll, o + Vector((0, 4, 1.15)), (3, 0.05, 1.15), mat=wall)
     for i, y in enumerate((-0.25, 1.75)):
-        prim("cube", f"window_frame_{i}", coll, o + Vector((1.81, y, 1.75)), (0.03, 0.26, 0.32), mat=wall)
-        prim("cube", f"window_pane_{i}", coll, o + Vector((1.79, y, 1.75)), (0.02, 0.2, 0.26), mat=sky)
+        prim("cube", f"window_frame_{i}", coll, o + Vector((1.81, y, window_z)), (0.03, 0.26, 0.32), mat=wall)
+        prim("cube", f"window_pane_{i}", coll, o + Vector((1.79, y, window_z)), (0.02, 0.2, 0.26), mat=sky)
     for row, y in enumerate((0.35, -1.6)):  # Max's row and the row in front (seat backs)
-        for x in ((-0.6, 0.6, 1.2) if row == 0 else (-0.6, 1.25)):  # leave a camera lane in front of Max
+        seats = ((-0.6, 0.6, 1.2) if row == 0 else (-0.6, 1.25))  # leave a camera lane in front of Max
+        if row == 0 and not with_max:
+            seats = (-0.6, 0.0, 0.6, 1.2)  # the real Max sits in a real seat
+        for x in seats:
             prim("cube", f"seat_{row}_{x}", coll, o + Vector((x, y, 0.45)), (0.26, 0.26, 0.08), mat=seatm)
             prim("cube", f"seatback_{row}_{x}", coll, o + Vector((x, y + 0.27, 1.05)), (0.26, 0.07, 0.6), mat=seatm)
     prim("cube", "overhead_bins", coll, o + Vector((1.2, 0, 2.1)), (0.5, 6, 0.2), mat=wall)
@@ -129,9 +134,9 @@ def build_cabin(scene):
     coll.objects.link(key)
     win = bpy.data.objects.new("window_light", bpy.data.lights.new("window_light", "AREA"))
     win.data.energy, win.data.size, win.data.color = 160, 0.6, (0.75, 0.85, 1.0)
-    win.location, win.rotation_euler = o + Vector((1.7, -0.1, 1.75)), (0, math.radians(-90), 0)
+    win.location, win.rotation_euler = o + Vector((1.7, -0.1, window_z)), (0, math.radians(-90), 0)
     coll.objects.link(win)
-    return build_max(scene, o + Vector((0.0, 0.35, 0.0)))
+    return build_max(scene, o + Vector((0.0, 0.35, 0.0))) if with_max else None
 
 
 def build_max(scene, at):

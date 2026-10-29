@@ -1,13 +1,15 @@
 """Build the pilot's grey-box previz .blend (run inside Blender):
 
-  blender -b --factory-startup -P shorts/pilot_ear_pop/build_previz.py -- [--stills DIR]
+  blender -b --factory-startup -P shorts/pilot_ear_pop/build_previz.py -- [--stills DIR] [--standin]
 
 Reads plan.json (prep_plan.py) and writes out/pilot_ear_pop/pilot_ear_pop_previz.blend with:
   FILM  every set, the 14 shot cameras (bound to timeline markers, so playing it in camera
         view cuts between shots), all animation keyed to spoken words, plus the voice and SFX.
   EDIT  the cut: one strip per shot (FILM through that shot's camera), the dissolve,
         captions, voice and SFX. Play it to watch the whole film end to end.
---stills renders one low-res Cycles frame from the middle of every shot for review.
+--stills renders low-res Cycles frames (early/middle/late) of every shot for review.
+Max is the real rigged character (assets/characters/max/max_v2.blend, see real_max.py) with his
+expressions keyed to the voice; --standin uses the grey-box Max instead.
 """
 import json
 import math
@@ -21,6 +23,8 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "blender"))
 from greybox import CABIN, EAR, EAR_MAP, SKY, build_cabin, build_city, build_ear, build_sky, tube_point  # noqa: E402
 from rigs import bake_move, bezier, camera, collection, ease, handheld, impulse_shake, key, lerp  # noqa: E402
+sys.path.insert(0, str(HERE))
+import real_max  # noqa: E402
 
 PLAN = json.loads((HERE / "plan.json").read_text())
 OUT = HERE.parent.parent / "out" / "pilot_ear_pop"
@@ -250,9 +254,11 @@ def build_cameras(sc, m):
     coll = collection("CAMERAS", sc.collection)
     head = lambda: m["head"].matrix_world.translation + Vector((0, 0, 0.14))  # noqa: E731
     sc.frame_set(1)
-    hole = CABIN + Vector((0.13, 0.355, 1.65))       # Max's left ear opening (head neutral)
-    face = CABIN + Vector((0.0, 0.35, 1.62))
-    window = CABIN + Vector((1.79, -0.25, 1.75))
+    D = m.get("offset", Vector())                    # real Max's head vs the grey-box Max's (cabin shots follow it)
+    cab = lambda x, y, z: CABIN + Vector((x, y, z)) + D  # noqa: E731
+    hole = m.get("hole", CABIN + Vector((0.13, 0.355, 1.65)))   # Max's left ear opening (head neutral)
+    face = m.get("face", CABIN + Vector((0.0, 0.35, 1.62)))
+    window = CABIN + Vector((1.79, -0.25, 1.75 + D.z))
     I, M = EAR, EAR_MAP                              # inside-the-ear set, x-ray map set
     drum = I + Vector((-0.8, 0, 0))
     cams = {}
@@ -276,10 +282,10 @@ def build_cameras(sc, m):
 
     def s02(t):  # curved push round Max to his ear, then INTO the ear opening (ends in darkness)
         k = ease(t)
-        pos = bezier(CABIN + Vector((0.3, -2.7, 1.55)), CABIN + Vector((0.95, -1.7, 1.62)),
-                     CABIN + Vector((0.9, 0.1, 1.66)), hole + Vector((0.002, 0, 0)), k)  # ends inside the opening: black
+        pos = bezier(cab(0.3, -2.7, 1.55), cab(0.95, -1.7, 1.62),
+                     cab(0.9, 0.1, 1.66), hole + Vector((0.002, 0, 0)), k)  # ends inside the opening: black
         if t < 0.6:
-            tgt = lerp(CABIN + Vector((0.05, 0.35, 1.45)), hole, ease(t / 0.6))
+            tgt = lerp(cab(0.05, 0.35, 1.45), hole, ease(t / 0.6))
         else:
             tgt = hole + lerp(Vector(), Vector((-0.3, 0, 0)), ease((t - 0.6) / 0.4))
         focus = lerp((window - pos).length, (hole - pos).length, ease(min(1, t / 0.4)))
@@ -315,7 +321,7 @@ def build_cameras(sc, m):
     shot("S06", lambda t: {"pos": lerp(I + Vector((2.2, -1.5, -1.2)), I + Vector((1.3, -1.0, -0.8)), ease(t)),
                            "target": drum + Vector((0, 0, -0.1)), "lens": 24, "roll": 5 * ease(t)}, 24)
 
-    cam7 = shot("S07", lambda t: {"pos": lerp(CABIN + Vector((0.12, -1.0, 1.66)), CABIN + Vector((0.12, -0.92, 1.66)), t),
+    cam7 = shot("S07", lambda t: {"pos": lerp(cab(0.12, -1.0, 1.66), cab(0.12, -0.92, 1.66), t),
                                   "target": head(), "lens": 85}, 85)
     handheld(cam7, *rng("S07"), strength=0.2)
 
@@ -365,15 +371,16 @@ def build_cameras(sc, m):
                             "target": I + Vector((lerp(-2.6, -19.0, t * t) - 6, 0, 0.1)), "lens": 20}, 20, step=2)
 
     def s12b(t):  # emerge from Max's ear, pull back and arc round to his face (yawn reveal)
-        k = ease(t)
-        pos = bezier(hole + Vector((0.002, 0, 0)), hole + Vector((0.6, 0, 0.05)), CABIN + Vector((1.1, -1.2, 1.62)),
-                     CABIN + Vector((0.35, -2.2, 1.55)), k)
+        k = ease(min(1.0, t * 1.4)) if m.get("real") else ease(t)  # real Max: reach his face while he yawns
+        pos = bezier(hole + Vector((0.002, 0, 0)), hole + Vector((0.6, 0, 0.05)), cab(1.1, -1.2, 1.62),
+                     cab(0.35, -2.2, 1.55), k)
         tgt = lerp(hole - Vector((0.3, 0, 0)), face, ease(min(1.0, t * 1.6)))
         return {"pos": pos, "target": tgt, "lens": lerp(28, 40, k)}
     shot("S12b", s12b, 28, step=2, clip=0.002)
 
-    shot("S13", lambda t: {"pos": lerp(CABIN + Vector((0.05, -1.55, 1.62)), CABIN + Vector((0.05, -1.15, 1.63)), ease(t)),
-                           "target": head() + Vector((0, 0, -0.04)), "lens": 85}, 85)
+    shot("S13", lambda t: {"pos": lerp(cab(0.05, -1.55, 1.62), cab(0.05, -1.15, 1.63), ease(t)),
+                           "target": head() + (Vector((-0.04, 0, -0.07)) if m.get("real") else Vector((0, 0, -0.04))),
+                           "lens": 70 if m.get("real") else 85}, 85)  # real Max: keep his raised thumb in frame
 
     for sid, cam in cams.items():  # timeline markers bound to cameras -> camera cuts in FILM
         mk = sc.timeline_markers.new(sid, frame=SHOT[sid]["start"])
@@ -486,12 +493,19 @@ def main():
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     film = setup_film()
     sky = build_sky(film)
-    m = build_cabin(film)
+    if "--standin" in args or not real_max.MAX_BLEND.exists():
+        m = build_cabin(film)
+    else:
+        m = real_max.load(film, CABIN)
+        build_cabin(film, with_max=False, window_z=1.75 + m["offset"].z)
     e = build_ear(film, EAR, inside=True)
     e_map = build_ear(film, EAR_MAP, inside=False)
     build_city(film)
     animate_jet(sky["jet"])
-    animate_max(m)
+    if m.get("real"):
+        real_max.perform(m, beat, rng, film)
+    else:
+        animate_max(m)
     animate_ear(e)
     animate_ear(e_map)
     cams = build_cameras(film, m)

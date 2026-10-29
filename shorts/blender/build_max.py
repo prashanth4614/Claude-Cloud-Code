@@ -268,8 +268,9 @@ THUMB_BONES = ["upperarm01.R", "upperarm02.R", "lowerarm01.R", "lowerarm02.R", "
     [f"finger{f}-{j}.R" for f in range(1, 6) for j in (1, 2, 3)] + [f"metacarpal{i}.R" for i in range(1, 5)]
 
 
-def thumbs_up(rig, on=True, frame=None):
-    """Right hand: elbow at his side, forearm forward, fist closed, thumb straight up (world-aimed)."""
+def thumbs_up(rig, on=True, frame=None, raised=False):
+    """Right hand: fist closed, thumb straight up (world-aimed). raised=True lifts the fist to chin
+    height (for a close-up to camera); otherwise the elbow stays at his side, forearm forward."""
     for n in THUMB_BONES:
         pb = rig.pose.bones.get(n)
         if pb:
@@ -280,11 +281,13 @@ def thumbs_up(rig, on=True, frame=None):
         for n, d in (("upperarm01.L", (0.12, 0.02, -1)), ("upperarm02.L", (0.12, 0.02, -1)),
                      ("lowerarm01.L", (0.05, -0.15, -1)), ("lowerarm02.L", (0.05, -0.15, -1))):
             aim_bone(rig, n, d)  # other arm relaxed at his side
-        aim_bone(rig, "upperarm01.R", (-0.12, -0.3, -1))
-        aim_bone(rig, "upperarm02.R", (-0.12, -0.3, -1))
-        aim_bone(rig, "lowerarm01.R", (0.3, -1, 0.35))
-        aim_bone(rig, "lowerarm02.R", (0.3, -1, 0.35))
-        aim_bone(rig, "wrist.R", (0.3, -1, 0.2), up=(0, 0, 1), up_child="finger1-1.R")
+        upper, fore, hand = ((-0.08, -0.9, -0.42), (0.32, -0.3, 0.9), (0.3, -0.9, 0.35)) if raised else \
+            ((-0.12, -0.3, -1), (0.3, -1, 0.35), (0.3, -1, 0.2))
+        aim_bone(rig, "upperarm01.R", upper)
+        aim_bone(rig, "upperarm02.R", upper)
+        aim_bone(rig, "lowerarm01.R", fore)
+        aim_bone(rig, "lowerarm02.R", fore)
+        aim_bone(rig, "wrist.R", hand, up=(0, 0, 1), up_child="finger1-1.R")
         bpy.context.view_layer.update()
         wrist = rig.pose.bones["wrist.R"]
         fwd = (rig.matrix_world.to_3x3() @ wrist.matrix.to_3x3().col[1]).normalized()

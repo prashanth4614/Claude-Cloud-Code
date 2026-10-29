@@ -31,6 +31,21 @@ In `FILM`, camera view, Material Preview: **View ▸ Viewport Render Animation**
 `pilot_ear_pop_previz_0001-1566.mp4` next to the .blend, with the voice and SFX mixed in at exact
 frame timing. It takes a few minutes and costs nothing.
 
+## Max (the real character)
+The cabin shots use the real rigged Max (`assets/characters/max/max_v2.blend`), seated in his seat,
+with his acting hand-keyed to the voice (`real_max.py`):
+- S02 "happening": puzzled, touches his ear; the camera then pushes into his real ear (ends black).
+- S07 "muffled": wince, hand cupping the ear.
+- S12 "swallowing" / "yawning" / "chewing" / "open": swallow, a big yawn revealed as the camera
+  pulls out of his ear, chewing, then a relief smile.
+- S13 "Follow": grin and thumbs-up to the lens.
+- Natural blinks throughout.
+
+His expressions are named face shapes (`shorts/blender/max_expressions.py`), so you can retime or
+tweak any of them in Blender: select `Max.body` ▸ Shape Keys, or the `Max` armature in Pose Mode.
+In Material Preview the hair shows as guide strands; switch to Rendered shading for the full head of hair.
+`--standin` builds the old grey-box Max instead.
+
 ## Giving feedback
 - Say it by shot: *"S06 start closer"*, *"S10 drone from the left"*.
 - Or change it in Blender and tell Claude which shots you touched, so those are kept.
