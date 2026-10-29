@@ -31,6 +31,34 @@ Render time is about 2.5 minutes on 4 CPU cores for the 42-second short.
 > For a more human, "storyteller" voice, swap `tts()` in `engine.py` for a
 > commercial TTS API (e.g. ElevenLabs) under a plan that includes commercial rights.
 
+## 3D version (Blender)
+
+```
+shorts/blender/ear_pop_3d.py   headless Blender plate renderer: plane, cabin + character, ear cross-section
+shorts/blender/ear_states.py   shot list + ear states, shared by Blender and the 2D HUD
+shorts/ear_pop_3d.py           TTS -> Blender plates per line -> plates + HUD + captions + audio -> MP4
+```
+
+Everything in the 3D scenes is built procedurally (no downloaded models or
+textures). Each line's plate is a PNG sequence exactly as long as that line;
+`engine.plate_scene` / `engine.Plate` play it back under the usual HUD and
+captions. Blender also writes `anchors.json` (screen positions of 3D points)
+so 2D labels and the POP! burst follow the camera.
+
+```bash
+brew install ffmpeg && brew install --cask blender   # macOS; Blender 4.2+ (EEVEE Next)
+python3 -m venv .venv && .venv/bin/pip install piper-tts skia-python numpy
+# Inter font (OFL) in <repo>/fonts on macOS: Inter-Black.otf, Inter-ExtraBold.otf
+.venv/bin/python shorts/ear_pop_3d.py --voice voices/en_US-joe-medium.onnx \
+    --res 540x960 --samples 16 --lines 0 1 8 --out out/test.mp4      # quick low-res test
+.venv/bin/python shorts/ear_pop_3d.py --voice voices/en_US-joe-medium.onnx --out out/ear_pop_3d.mp4
+# one line by hand:
+blender -b -P shorts/blender/ear_pop_3d.py -- --line 5 --out out/l5 --res 540x960 --seconds 3 --stills 3
+```
+
+Plates are cached in `out/ear_pop_3d_work/plates/<res>/` and re-rendered only
+when a line's length changes. Set `BLENDER=/path/to/blender` if it isn't on PATH.
+
 ## Making the next short
 
 Copy `ear_pop.py` and change two things:
