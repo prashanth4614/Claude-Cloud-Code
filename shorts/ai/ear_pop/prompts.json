@@ -1,0 +1,109 @@
+{
+ "character_sheet": "Character turnaround sheet of an original 3D animated character named Max: a friendly man in his late 20s, slightly stylized proportions (large expressive brown eyes, soft rounded features, short messy dark-brown hair), wearing a teal crew-neck t-shirt. Front view, 3/4 view, side view, plus 4 facial expressions (neutral, wincing in discomfort, big yawn, happy smile). High-end 3D animated film look, soft studio lighting, subsurface skin, plain light-grey background, no text, no logos.",
+ "shots": [
+  {
+   "n": 1,
+   "line": "Ever wondered why your ears pop on a plane?",
+   "image_prompt": "A white passenger jet climbing steeply through golden-hour clouds, dramatic low angle, sun flare, high-end 3D animated film still, cinematic lighting, shallow depth of field, rich colour, vertical 9:16 composition, subject centred, no text, no labels, no watermark, no logos.",
+   "attach_sheet": false,
+   "animate": true,
+   "motion_prompt": "The jet climbs toward camera through the clouds, clouds streaming past fast, camera tracks with it."
+  },
+  {
+   "n": 2,
+   "line": "Here's what's actually happening inside your head.",
+   "image_prompt": "Using the attached character sheet, keep Max exactly the same: Max in an airplane window seat, touching his ear with a puzzled face, warm cabin light, clouds in the window, high-end 3D animated film still, cinematic lighting, shallow depth of field, rich colour, vertical 9:16 composition, subject centred, no text, no labels, no watermark, no logos.",
+   "attach_sheet": true,
+   "animate": true,
+   "motion_prompt": "Slow push-in toward Max's ear, he tilts his head slightly, subtle cabin vibration."
+  },
+  {
+   "n": 3,
+   "line": "Behind your eardrum is a tiny pocket of air, called the middle ear.",
+   "image_prompt": "Cutaway cross-section inside a human head: the ear canal tube leading to a thin pearly eardrum membrane, behind it a small glowing air-filled chamber with three tiny bones, stylized 3D medical visualization, glowing translucent tissue, soft volumetric light, dark warm background, clean and non-gory, vertical 9:16, subject centred, no text, no labels.",
+   "attach_sheet": false,
+   "animate": true,
+   "motion_prompt": "Camera glides slowly down the ear canal toward the glowing eardrum, tiny air particles drifting."
+  },
+  {
+   "n": 4,
+   "line": "On the ground, the air pressure inside matches the air outside.",
+   "image_prompt": "Same cross-section, perfectly calm, soft balanced blue glow on both sides of a flat eardrum, air particles evenly spread, stylized 3D medical visualization, glowing translucent tissue, soft volumetric light, dark warm background, clean and non-gory, vertical 9:16, subject centred, no text, no labels.",
+   "attach_sheet": false,
+   "animate": false,
+   "motion_prompt": null
+  },
+  {
+   "n": 5,
+   "line": "But as the plane climbs, the air pressure in the cabin drops.",
+   "image_prompt": "The jet high above a sea of clouds, deep blue thin-air sky, cold light, high-end 3D animated film still, cinematic lighting, shallow depth of field, rich colour, vertical 9:16 composition, subject centred, no text, no labels, no watermark, no logos.",
+   "attach_sheet": false,
+   "animate": false,
+   "motion_prompt": "Jet cruises upward, clouds fall away below."
+  },
+  {
+   "n": 6,
+   "line": "The air trapped inside pushes out, and your eardrum bulges like a balloon.",
+   "image_prompt": "Close-up of the eardrum membrane stretched and bulging outward like a balloon, glowing red at the edges from strain, air particles crowded behind it, stylized 3D medical visualization, glowing translucent tissue, soft volumetric light, dark warm background, clean and non-gory, vertical 9:16, subject centred, no text, no labels.",
+   "attach_sheet": false,
+   "animate": true,
+   "motion_prompt": "The membrane slowly inflates outward like a balloon, stretching, pulsing gently."
+  },
+  {
+   "n": 7,
+   "line": "That's the muffled, blocked feeling.",
+   "image_prompt": "Using the attached character sheet, keep Max exactly the same: Max wincing, hand pressed over one ear, eyes squeezed, the cabin behind him blurred and muted, high-end 3D animated film still, cinematic lighting, shallow depth of field, rich colour, vertical 9:16 composition, subject centred, no text, no labels, no watermark, no logos.",
+   "attach_sheet": true,
+   "animate": false,
+   "motion_prompt": "Max shakes his head slightly, discomfort."
+  },
+  {
+   "n": 8,
+   "line": "Then a tiny tube to your throat, the Eustachian tube, cracks open.",
+   "image_prompt": "Cross-section showing a narrow tube running from the middle-ear chamber down to the throat, the tube opening up, glowing air bubbles starting to rush down it, stylized 3D medical visualization, glowing translucent tissue, soft volumetric light, dark warm background, clean and non-gory, vertical 9:16, subject centred, no text, no labels.",
+   "attach_sheet": false,
+   "animate": true,
+   "motion_prompt": "The tube widens open and glowing air bubbles rush down through it."
+  },
+  {
+   "n": 9,
+   "line": "Air escapes, the pressure evens out, and... POP!",
+   "image_prompt": "The eardrum snapping back flat with a bright burst of light and a circular shockwave ripple, stylized 3D medical visualization, glowing translucent tissue, soft volumetric light, dark warm background, clean and non-gory, vertical 9:16, subject centred, no text, no labels.",
+   "attach_sheet": false,
+   "animate": true,
+   "motion_prompt": "The membrane snaps flat in an instant, burst of light, shockwave ripple."
+  },
+  {
+   "n": 10,
+   "line": "Landing is actually worse.",
+   "image_prompt": "The jet descending toward glittering city lights at dusk, landing gear down, high-end 3D animated film still, cinematic lighting, shallow depth of field, rich colour, vertical 9:16 composition, subject centred, no text, no labels, no watermark, no logos.",
+   "attach_sheet": false,
+   "animate": false,
+   "motion_prompt": "Jet descends toward the city lights."
+  },
+  {
+   "n": 11,
+   "line": "The tube doesn't open on its own as easily, so your eardrum gets pushed inward.",
+   "image_prompt": "The eardrum pressed inward, and the narrow tube pinched shut, glowing warning red, stylized 3D medical visualization, glowing translucent tissue, soft volumetric light, dark warm background, clean and non-gory, vertical 9:16, subject centred, no text, no labels.",
+   "attach_sheet": false,
+   "animate": true,
+   "motion_prompt": "The membrane is pushed inward, the tube squeezes shut, red warning glow pulses."
+  },
+  {
+   "n": 12,
+   "line": "That's why swallowing, yawning, or chewing gum helps. They pull the tube open.",
+   "image_prompt": "Using the attached character sheet, keep Max exactly the same: Max in his seat mid-yawn, big open mouth, relaxed, warm light, high-end 3D animated film still, cinematic lighting, shallow depth of field, rich colour, vertical 9:16 composition, subject centred, no text, no labels, no watermark, no logos.",
+   "attach_sheet": true,
+   "animate": false,
+   "motion_prompt": "Max yawns widely, then relaxes into a relieved smile."
+  },
+  {
+   "n": 13,
+   "line": "Follow for more weird things your body does.",
+   "image_prompt": "Using the attached character sheet, keep Max exactly the same: Max smiling at the camera, giving a thumbs-up, cozy cabin light, high-end 3D animated film still, cinematic lighting, shallow depth of field, rich colour, vertical 9:16 composition, subject centred, no text, no labels, no watermark, no logos.",
+   "attach_sheet": true,
+   "animate": false,
+   "motion_prompt": "Max smiles and gives a thumbs-up to camera."
+  }
+ ]
+}
