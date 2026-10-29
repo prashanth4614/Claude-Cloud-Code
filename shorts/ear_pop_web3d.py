@@ -118,14 +118,14 @@ def tips(c, t, dur, ctx, spec):
     Plates.draw(c, ctx["now"])
     for i, (word, label, kind) in enumerate((("swallowing", "SWALLOW", "drop"), ("yawning", "YAWN", "yawn"),
                                             ("chewing", "CHEW GUM", "gum"))):
-        icon_card(c, 200 + i * 340, 300, label, kind, back_out((t - local_word(ctx["words"], word)) / 0.35))
+        icon_card(c, 200 + i * 340, 175, label, kind, back_out((t - local_word(ctx["words"], word)) / 0.35))
 
 
 def cta(c, t, dur, ctx, spec):
     Plates.draw(c, ctx["now"])
     k = back_out(t / 0.4) * (1 + 0.05 * math.sin(ctx["now"] * 7))
-    pill(c, "FOLLOW", 540, 300, size=80, fill="#ff0033", fg="#ffffff", scale=k, pad=50)
-    text(c, "for more body facts", 540, 430, 52, stroke_w=12, alpha=255 * clamp(t / 0.4))
+    pill(c, "FOLLOW", 540, 120, size=80, fill="#ff0033", fg="#ffffff", scale=k, pad=50)
+    text(c, "for more body facts", 540, 250, 52, stroke_w=12, alpha=255 * clamp(t / 0.4))
 
 
 # Each line: narration, 3D shot spec, overlay, sfx, pause. Mirrors ear_pop.build().
