@@ -164,24 +164,125 @@ def trim(audio, spans=None):
     return audio, spans
 
 
-def elevenlabs_script(texts, voice_id, workdir):
+def _norm(w):
+    return "".join(ch for ch in w.lower() if ch.isalnum())
+
+
+def strip_tags(text):
+    """Drop [audio tags] (ElevenLabs v3 delivery directions) from a line."""
+    import re
+    return re.sub(r"\s+", " ", re.sub(r"\[[^\]]*\]", "", text)).strip()
+
+
+def align_words(audio, script_words, prompt):
+    """Word spans for script_words in audio: Whisper word timestamps matched
+    to the script, then starts snapped forward to the actual speech onset
+    (Whisper starts tend to absorb the silence before a word)."""
+    import difflib
+
+    from faster_whisper import WhisperModel
+
+    model = WhisperModel(os.environ.get("WHISPER_MODEL", "small.en"), device="cpu", compute_type="int8")
+    segs, _ = model.transcribe(audio.astype(np.float32) if SR == 16000 else _resample16(audio),
+                               word_timestamps=True, initial_prompt=prompt, language="en")
+    heard = [(w.word.strip(), w.start, w.end) for sg in segs for w in sg.words if _norm(w.word)]
+    want = [_norm(w) for w in script_words]
+    times = [None] * len(want)
+    sm = difflib.SequenceMatcher(None, want, [_norm(w) for w, _, _ in heard], autojunk=False)
+    for op, i0, i1, j0, j1 in sm.get_opcodes():
+        if op == "equal" or (op == "replace" and i1 - i0 == j1 - j0):
+            for k in range(i1 - i0):
+                times[i0 + k] = heard[j0 + k][1:]
+        elif op == "replace":  # e.g. "Eustachian" heard as two words: share the span
+            t0, t1 = heard[j0][1], heard[j1 - 1][2]
+            wts = np.cumsum([0] + [len(want[k]) + 1 for k in range(i0, i1)]) / (sum(len(want[k]) + 1 for k in range(i0, i1)))
+            for k in range(i1 - i0):
+                times[i0 + k] = (t0 + (t1 - t0) * wts[k], t0 + (t1 - t0) * wts[k + 1])
+    # words Whisper missed: spread over the gap between their neighbours
+    k = 0
+    while k < len(times):
+        if times[k] is None:
+            j = k
+            while j < len(times) and times[j] is None:
+                j += 1
+            lo = times[k - 1][1] if k else 0.0
+            hi = times[j][0] if j < len(times) else len(audio) / SR
+            step = (hi - lo) / (j - k)
+            for m in range(k, j):
+                times[m] = (lo + step * (m - k), lo + step * (m - k + 1))
+            k = j
+        k += 1
+    # snap to speech energy
+    hop = int(0.01 * SR)
+    fr = audio[: len(audio) // hop * hop].reshape(-1, hop)
+    rms = np.convolve(np.sqrt((fr ** 2).mean(1)), np.ones(3) / 3, mode="same")
+    voiced = rms > rms.max() * 0.06
+    spans = []
+    for k, (s, e) in enumerate(times):
+        nxt = times[k + 1][0] if k + 1 < len(times) else len(audio) / SR
+        f0, f1 = int(s * 100), int(min(e, nxt) * 100)
+        on = np.flatnonzero(voiced[f0:max(f0 + 1, f1 - 4)])
+        s2 = (f0 + on[0]) / 100 if len(on) else s
+        off = np.flatnonzero(voiced[int(s2 * 100):f1 + 1])
+        e2 = (int(s2 * 100) + off[-1] + 1) / 100 if len(off) else e
+        spans.append((s2, max(e2, s2 + 0.05)))
+    return spans
+
+
+def _resample16(audio):
+    n = int(len(audio) * 16000 / SR)
+    return np.interp(np.linspace(0, len(audio) - 1, n), np.arange(len(audio)), audio).astype(np.float32)
+
+
+def compress_pauses(audio, spans, max_gap):
+    """Shorten silences between words to max_gap seconds (cut from the middle
+    with a short crossfade) and shift the word spans to match."""
+    xf = int(0.01 * SR)
+    pieces, shift, last, new = [], 0.0, 0, []
+    for k, (s, e) in enumerate(spans):
+        if k:
+            gap = s - spans[k - 1][1]
+            if gap > max_gap:
+                mid = (spans[k - 1][1] + s) / 2
+                c0, c1 = int((mid - (gap - max_gap) / 2) * SR), int((mid + (gap - max_gap) / 2) * SR)
+                seg = audio[last:c0 + xf].copy()
+                pieces.append(seg)
+                last = c1
+                shift += (c1 - c0) / SR
+        new.append((s - shift, e - shift))
+    pieces.append(audio[last:])
+    out = pieces[0]
+    ramp = np.linspace(1, 0, xf)
+    for pc in pieces[1:]:
+        head = out[-xf:] * ramp + pc[:xf] * (1 - ramp) if len(pc) >= xf else out[-xf:]
+        out = np.concatenate([out[:-xf], head, pc[xf:]])
+    return out, new
+
+
+def elevenlabs_script(lines, voice_id, workdir):
     """Whole script in ONE ElevenLabs take, split back into lines.
 
-    One take keeps pitch, energy and pacing consistent (per-line requests
-    drift, e.g. a much higher-pitched first line). The character timestamps
-    give exact word spans; lines are cut at the quietest point between them.
-    Returns [(audio, word_spans)] per line. The response is cached by text +
-    voice + settings, so re-renders never spend credits twice. Tunables via
-    env: ELEVENLABS_MODEL (default eleven_multilingual_v2), ELEVENLABS_SPEED."""
+    lines: [(spoken, caption)]. spoken may carry v3 audio tags ([curious],
+    [excited], ...) and pacing punctuation (..., dashes); captions show the
+    caption text. One take keeps the voice consistent while the tags give
+    real pitch/energy swings. Word timings come from local Whisper alignment
+    snapped to speech onsets (v3's own timestamps drift 0.2-0.5 s). Long
+    silences are shortened, then each line is sliced at its words plus a
+    breath either side. Returns [(audio, word_spans)].
+    The response is cached by text + voice + settings: re-renders are free.
+    Env: ELEVENLABS_MODEL (default eleven_v3), ELEVENLABS_STABILITY."""
     import base64
     import hashlib
-    import os
     import urllib.request
 
-    text = " ".join(texts)
-    model = os.environ.get("ELEVENLABS_MODEL", "eleven_multilingual_v2")
-    settings = {"stability": 0.55, "similarity_boost": 0.85, "style": 0.1, "use_speaker_boost": True,
-                "speed": float(os.environ.get("ELEVENLABS_SPEED", "1.05"))}
+    model = os.environ.get("ELEVENLABS_MODEL", "eleven_v3")
+    v3 = model.startswith("eleven_v3")
+    spoken = [sp if v3 else strip_tags(sp) for sp, _ in lines]
+    text = " ".join(spoken)
+    settings = {"stability": float(os.environ.get("ELEVENLABS_STABILITY", "0.5")), "similarity_boost": 0.85,
+                "style": 0.4, "use_speaker_boost": True}
+    if not v3:
+        settings["speed"] = 1.0
     body = {"text": text, "model_id": model, "voice_settings": settings}
     key = hashlib.sha256(json.dumps([voice_id, body], sort_keys=True).encode()).hexdigest()[:16]
     cache = Path(workdir) / "tts_cache" / f"script_{key}.json"
@@ -202,40 +303,28 @@ def elevenlabs_script(texts, voice_id, workdir):
     take = Path(workdir) / "take.mp3"
     take.write_bytes(base64.b64decode(res["audio_base64"]))
     audio = decode(take)
-    al = res["alignment"]
-    chars, starts, ends = al["characters"], al["character_start_times_seconds"], al["character_end_times_seconds"]
-    if "".join(chars) != text:
-        raise RuntimeError("ElevenLabs alignment does not match the script text")
-    # word spans over the whole take, grouped per line
-    words, cur, s0 = [], "", None
-    for ch, s, e in zip(chars + [" "], starts + [0], ends + [0]):
-        if ch.isspace():
-            if cur:
-                words.append((cur, s0, last))
-            cur, s0 = "", None
-            continue
-        if s0 is None:
-            s0 = s
-        cur, last = cur + ch, e
-    per_line, k = [], 0
-    for t in texts:
-        n = len(t.split())
-        per_line.append(words[k:k + n])
-        k += n
-    assert k == len(words) and all([w for w, _, _ in pl] == t.split() for pl, t in zip(per_line, texts))
-    # cut at the quietest point of the gap between a line's last word and the next line
-    win = int(0.04 * SR)
-    energy = np.convolve(np.abs(audio), np.ones(win) / win, mode="same")
-    cuts = [0]
-    for a, b in zip(per_line, per_line[1:]):
-        lo, hi = int((a[-1][2] - 0.03) * SR), int(b[0][1] * SR)
-        cuts.append(lo + int(np.argmin(energy[lo:hi])) if hi > lo else hi)
-    cuts.append(len(audio))
-    out = []
-    for i, pl in enumerate(per_line):
-        c0 = cuts[i] / SR
-        spans = [(w, s - c0, e - c0) for w, s, e in pl]
-        out.append(trim(audio[cuts[i]:cuts[i + 1]], spans))
+    captions = [cap.split() for _, cap in lines]
+    words = [w for cap in captions for w in cap]
+    times = Path(workdir) / f"align_{key}.json"  # Whisper is slow-ish: cache it too
+    if times.exists():
+        spans = [tuple(x) for x in json.loads(times.read_text())]
+    else:
+        spans = align_words(audio, words, " ".join(cap for _, cap in lines))
+        times.write_text(json.dumps(spans))
+    audio, spans = compress_pauses(audio, spans, float(os.environ.get("MAX_PAUSE", "0.4")))
+    out, k, pad = [], 0, int(0.12 * SR)
+    bounds = []
+    for cap in captions:
+        bounds.append((spans[k][0], spans[k + len(cap) - 1][1], k, len(cap)))
+        k += len(cap)
+    for i, (s0, e0, k, n) in enumerate(bounds):
+        # line = its words plus a breath either side, never into a neighbour
+        lo = int(s0 * SR) - pad if not i else max(int(s0 * SR) - pad, int((bounds[i - 1][1] + s0) / 2 * SR))
+        hi = int(e0 * SR) + pad if i + 1 == len(bounds) else \
+            min(int(e0 * SR) + pad, int((e0 + bounds[i + 1][0]) / 2 * SR))
+        lo = max(0, lo)
+        c0 = lo / SR
+        out.append((audio[lo:hi].copy(), [(w, st - c0, en - c0) for w, (st, en) in zip(captions[i], spans[k:k + n])]))
     return out
 
 
@@ -254,6 +343,36 @@ def _env(n, attack, decay):
     return np.minimum(1, t / max(attack, 1e-4)) * np.exp(-t / decay)
 
 
+def _lowpass(x, k):
+    """One-pole lowpass (k in 0..1, higher = brighter). For short SFX only."""
+    y, out = 0.0, np.empty(len(x))
+    for i, v in enumerate(x):
+        y += k * (v - y)
+        out[i] = y
+    return out
+
+
+def ffmpeg_filter(x, af):
+    """Run a mono float signal through an ffmpeg audio filter chain."""
+    r = subprocess.run(["ffmpeg", "-v", "error", "-f", "f32le", "-ar", str(SR), "-ac", "1", "-i", "-",
+                        "-af", af, "-f", "f32le", "-"], input=x.astype(np.float32).tobytes(),
+                       capture_output=True, check=True).stdout
+    y = np.frombuffer(r, dtype=np.float32).astype(float)
+    return np.pad(y, (0, max(0, len(x) - len(y))))[: len(x)]
+
+
+def cabin_ambience(total, seed=3):
+    """Airliner cabin bed: brown-ish air noise + engine hum with slow drift."""
+    r = rng(seed)
+    n = int(total * SR)
+    t = np.arange(n) / SR
+    air = ffmpeg_filter(r.standard_normal(n), "lowpass=f=420,lowpass=f=420,highpass=f=40")
+    hum = sum(a * np.sin(2 * np.pi * f * t + r.random() * 6) for f, a in ((92, 1), (184, 0.4), (276, 0.15)))
+    drift = 1 + 0.15 * np.sin(2 * np.pi * t / 7.3)
+    out = air / (np.std(air) + 1e-9) + 0.25 * hum * drift
+    return out / (np.std(out) + 1e-9)
+
+
 def sfx(name, rand=None):
     """Procedural sound effects (royalty-free by construction)."""
     r = rand or rng(hash(name) % 2**32)
@@ -268,18 +387,34 @@ def sfx(name, rand=None):
             y += cutoff[i] * (noise[i] - y)
             out[i] = y
         return out * np.sin(np.pi * t) ** 1.5 * 1.6
-    if name == "pop":
-        n = int(0.25 * SR)
+    if name == "pop":  # ear pop: soft click + low thump + a breath of released air
+        n = int(0.35 * SR)
         t = np.arange(n) / SR
-        freq = 900 * np.exp(-t * 18) + 140
-        body = np.sin(2 * np.pi * np.cumsum(freq) / SR) * _env(n, 0.001, 0.05)
-        click = r.standard_normal(n) * _env(n, 0.0005, 0.006)
-        return (body + 0.6 * click) * 0.9
+        thump = np.sin(2 * np.pi * (75 + 160 * np.exp(-t * 60)) * t) * _env(n, 0.001, 0.045)
+        click = _lowpass(r.standard_normal(n), 0.35) * _env(n, 0.0003, 0.004)
+        air = _lowpass(r.standard_normal(n), 0.08) * _env(n, 0.01, 0.09) * 2.5
+        return (thump + 0.8 * click + 0.5 * air) * 0.8
+    if name == "gulp":  # swallow: wet low blip
+        n = int(0.22 * SR)
+        t = np.arange(n) / SR
+        f = 380 * np.exp(-t * 9) + 110
+        body = np.sin(2 * np.pi * np.cumsum(f) / SR) * _env(n, 0.006, 0.05)
+        return (body + 0.3 * _lowpass(r.standard_normal(n), 0.1) * _env(n, 0.002, 0.02)) * 0.55
+    if name == "chime":  # cabin seatbelt chime: bing-bong
+        n = int(1.6 * SR)
+        t = np.arange(n) / SR
+        out = np.zeros(n)
+        for t0, f in ((0, 784), (0.42, 622)):
+            s0 = int(t0 * SR)
+            tt = t[: n - s0]
+            out[s0:] += sum(a * np.sin(2 * np.pi * f * m * tt) for m, a in ((1, 1), (2, 0.25), (3, 0.08))) \
+                * _env(n - s0, 0.004, 0.45)
+        return out * 0.22
     if name == "ding":
         n = int(0.9 * SR)
         t = np.arange(n) / SR
         tone = sum(a * np.sin(2 * np.pi * f * t) for f, a in ((1568, 1), (3136, 0.35), (4704, 0.12)))
-        return tone * _env(n, 0.002, 0.25) * 0.28
+        return tone * _env(n, 0.002, 0.25) * 0.18
     if name == "tick":
         n = int(0.04 * SR)
         return r.standard_normal(n) * _env(n, 0.0003, 0.004) * 0.35
@@ -374,6 +509,7 @@ class Line:
     scene: callable
     sfx: list = field(default_factory=list)  # (seconds | "word", name)
     pause: float = 0.18                     # silence after the line
+    say: str = ""                          # what the voice says (ElevenLabs v3 tags ok); default: text
 
 
 class Short:
@@ -388,7 +524,8 @@ class Short:
         t, self.timeline, self.words, self.events = 0.25, [], [], []
         self.voice, self.line_words = [], []
         if str(self.model).startswith("elevenlabs:"):  # one take, exact word timings
-            takes = elevenlabs_script([ln.text for ln in self.lines], str(self.model).split(":", 1)[1], self.work)
+            takes = elevenlabs_script([(ln.say or ln.text, ln.text) for ln in self.lines],
+                                      str(self.model).split(":", 1)[1], self.work)
         else:
             takes = [(tts(ln.text, self.work / f"line{i:02d}.wav", self.model, self.ls), None)
                      for i, ln in enumerate(self.lines)]
@@ -469,17 +606,31 @@ class Short:
         rms = np.sqrt((fr ** 2).mean(1))
         speech = fr[rms > rms.max() * 0.05]
         voice *= 10 ** (-18 / 20) / (np.sqrt((speech ** 2).mean()) + 1e-9)
-        fx = np.zeros(n)
+        fx, muffle_cues = np.zeros(n), []
         for t, name in self.events:
+            if name in ("muffle_on", "muffle_off"):  # blocked-ear effect on music + ambience
+                muffle_cues.append((t, name == "muffle_on"))
+                continue
             a = sfx(name)
             s = int(max(0, t) * SR)
             fx[s:s + len(a)] += a[: n - s]
+        db = lambda x: 10 ** (x / 20)
         music = music_bed(self.total)
-        # Duck music under the voice (smoothed envelope sidechain).
-        env = np.convolve(np.abs(voice), np.ones(int(0.25 * SR)) / (0.25 * SR), mode="same")
-        duck = 1 - 0.55 * np.clip(env / (env.max() + 1e-9) * 4, 0, 1)
+        music *= db(-31) / (np.std(music[np.abs(music) > 1e-4]) + 1e-9)
+        amb = cabin_ambience(self.total) * db(-40)
+        bed = music + amb
+        if muffle_cues:
+            m = np.zeros(n)
+            for t, on in sorted(muffle_cues):
+                m[int(max(0, t) * SR):] = 1.0 if on else 0.0
+            m = np.convolve(m, np.ones(int(0.12 * SR)) / (0.12 * SR), mode="same")  # quick open/close
+            bed = bed * (1 - m) + ffmpeg_filter(bed, "lowpass=f=380,lowpass=f=380") * db(3) * m
+        # Duck the bed under the voice (smoothed sidechain): ~ -9 dB while speaking.
+        env = np.convolve(np.abs(voice), np.ones(int(0.2 * SR)) / (0.2 * SR), mode="same")
+        duck = 1 - 0.65 * np.clip(env / (np.percentile(env[env > 1e-4], 60) + 1e-9), 0, 1)
+        duck = np.convolve(duck, np.ones(int(0.08 * SR)) / (0.08 * SR), mode="same")
         fade = np.minimum(1, (n - np.arange(n)) / (0.8 * SR))
-        mix = voice * 1.0 + fx * 0.55 + music * duck * fade * 0.9
+        mix = voice + fx * 0.45 + bed * duck * fade
         mix = np.stack([mix, mix], axis=1)
         raw = self.work / "mix_raw.wav"
         with wave.open(str(raw), "wb") as wv:
