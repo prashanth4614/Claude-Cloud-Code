@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""Pilot audio: voice take (Gate A), SFX + ambience beds, music, per PIPELINE.md.
+
+  python3 shorts/pilot_ear_pop/audio.py voice        # one ElevenLabs v3 take of the whole script
+  python3 shorts/pilot_ear_pop/audio.py sfx          # generate missing SFX cues + beds (cached)
+  python3 shorts/pilot_ear_pop/audio.py music-test   # 3 s probe: does the plan include ElevenLabs Music?
+
+Outputs go to shorts/pilot_ear_pop/audio/. Every generation is cached, so re-runs never re-spend.
+"""
+import json
+import sys
+import wave
+from pathlib import Path
+
+import numpy as np
+import yaml
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))
+from engine import SR, decode, elevenlabs_post, elevenlabs_script, ffmpeg_filter  # noqa: E402
+
+OUT = HERE / "audio"
+WORK = HERE.parent.parent / "out" / "pilot_ear_pop_work"  # caches + alignment (gitignored)
+SCRIPT = yaml.safe_load((HERE / "script.yaml").read_text())
+# Gentle narration polish: rumble cut, soft de-ess, light compression, streaming level.
+VOICE_CHAIN = ("highpass=f=80,deesser=i=0.35:m=0.5:f=0.5,"
+               "acompressor=threshold=-21dB:ratio=2.2:attack=12:release=180:makeup=1.5,"
+               "loudnorm=I=-16:TP=-1.5:LRA=8")
+
+
+def write_wav(path, x):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with wave.open(str(path), "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(SR)
+        w.writeframes((np.clip(x, -1, 1) * 32767).astype("<i2").tobytes())
+
+
+def voice():
+    lines = [(ln["spoken"], ln["caption"]) for ln in SCRIPT["lines"]]
+    voice_id = SCRIPT["voice"].split(":", 1)[1]
+    WORK.mkdir(parents=True, exist_ok=True)
+    parts = elevenlabs_script(lines, voice_id, WORK)
+    gap = np.zeros(int(0.28 * SR), dtype=np.float32)  # breath between lines, like the edit
+    take = np.concatenate([p for a, _ in parts for p in (a, gap)])
+    write_wav(OUT / "voice_take.wav", ffmpeg_filter(take, VOICE_CHAIN))
+    report = []
+    for i, ((a, spans), ln) in enumerate(zip(parts, SCRIPT["lines"]), 1):
+        d = len(a) / SR
+        report.append({"line": i, "seconds": round(d, 2), "words": len(spans), "caption": ln["caption"]})
+        print(f"{i:2d}  {d:5.2f}s  {len(spans):2d} words  {ln['caption']}")
+    (OUT / "voice_take.json").write_text(json.dumps(report, indent=1))
+    print(f"total {len(take) / SR:.1f}s -> {OUT / 'voice_take.wav'}")
+
+
+def sfx():
+    jobs = [(f"sfx/{k}", v, False) for k, v in SCRIPT["sfx_cues"].items()] + \
+           [(f"beds/{k}", v, bool(v.get("loop"))) for k, v in SCRIPT["beds"].items()]
+    for name, spec, loop in jobs:
+        dest = OUT / f"{name}.mp3"
+        if dest.exists():
+            print(f"cached  {name}")
+            continue
+        body = {"text": spec["prompt"], "duration_seconds": spec["seconds"], "prompt_influence": 0.45}
+        if loop:
+            body["loop"] = True
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(elevenlabs_post("/v1/sound-generation?output_format=mp3_44100_128", body))
+        a = decode(dest)
+        peak = 20 * np.log10(np.abs(a).max() + 1e-9)
+        print(f"made    {name:18s} {len(a) / SR:5.2f}s  peak {peak:5.1f} dBFS")
+
+
+def music_test():
+    dest = OUT / "music_test.mp3"
+    body = {"prompt": SCRIPT["music"]["prompt"], "music_length_ms": 3000}
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(elevenlabs_post("/v1/music", body))
+    print(f"music available: {len(decode(dest)) / SR:.1f}s test clip -> {dest}")
+
+
+if __name__ == "__main__":
+    {"voice": voice, "sfx": sfx, "music-test": music_test}[sys.argv[1]]()

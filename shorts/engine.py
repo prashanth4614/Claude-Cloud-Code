@@ -259,6 +259,27 @@ def compress_pauses(audio, spans, max_gap):
     return out, new
 
 
+def elevenlabs_post(path, body, timeout=300):
+    """POST to the ElevenLabs API and return the raw response bytes.
+
+    Uses ELEVENLABS_API_KEY when set. Cloud sessions may instead have the key
+    attached by the network proxy as a secret, so a missing variable is not an
+    error; a 401 then means no key reached ElevenLabs."""
+    import urllib.error
+    import urllib.request
+
+    headers = {"Content-Type": "application/json"}
+    if os.environ.get("ELEVENLABS_API_KEY"):
+        headers["xi-api-key"] = os.environ["ELEVENLABS_API_KEY"]
+    req = urllib.request.Request("https://api.elevenlabs.io" + path, data=json.dumps(body).encode(),
+                                 method="POST", headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.read()
+    except urllib.error.HTTPError as e:
+        raise SystemExit(f"ElevenLabs {path.split('?')[0]} -> HTTP {e.code}: {e.read().decode()[:400]}")
+
+
 def elevenlabs_script(lines, voice_id, workdir):
     """Whole script in ONE ElevenLabs take, split back into lines.
 
@@ -289,15 +310,8 @@ def elevenlabs_script(lines, voice_id, workdir):
     if cache.exists():
         res = json.loads(cache.read_text())
     else:
-        api_key = os.environ.get("ELEVENLABS_API_KEY")
-        if not api_key:
-            raise SystemExit("ELEVENLABS_API_KEY is not set (add it as an environment secret)")
-        req = urllib.request.Request(
-            f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/with-timestamps?output_format=mp3_44100_128",
-            data=json.dumps(body).encode(), method="POST",
-            headers={"xi-api-key": api_key, "Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=300) as r:
-            res = json.loads(r.read())
+        res = json.loads(elevenlabs_post(
+            f"/v1/text-to-speech/{voice_id}/with-timestamps?output_format=mp3_44100_128", body))
         cache.parent.mkdir(parents=True, exist_ok=True)
         cache.write_text(json.dumps(res))
     take = Path(workdir) / "take.mp3"
