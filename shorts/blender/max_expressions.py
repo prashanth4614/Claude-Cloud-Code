@@ -23,9 +23,9 @@ EXPRESSIONS = {
     "neutral": {},
     # S01-S02 hook: one brow up, the other down, mouth pulled to one side, eyes slightly narrowed.
     "puzzled": {
-        "browOuterUpLeft": 0.75, "browInnerUp": 0.35, "browDownRight": 0.45,
-        "eyeSquintRight": 0.35, "eyeWideLeft": 0.15,
-        "mouthLeft": 0.35, "mouthPressLeft": 0.3, "mouthPressRight": 0.15, "mouthRollLower": 0.1,
+        "browOuterUpLeft": 0.9, "browInnerUp": 0.52, "browDownRight": 0.68,
+        "eyeSquintRight": 0.52, "eyeWideLeft": 0.22,
+        "mouthLeft": 0.52, "mouthPressLeft": 0.45, "mouthPressRight": 0.22, "mouthRollLower": 0.15,
     },
     # S07 "muffled, blocked feeling": eyes screwed up, nose wrinkled, teeth-gritting stretch.
     "wince": {

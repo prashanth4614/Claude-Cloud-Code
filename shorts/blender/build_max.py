@@ -25,6 +25,7 @@ from max_expressions import EXPRESSIONS, FACE_UNITS, HEAD_POSE, SHEET_ORDER  # n
 
 OUTFIT_TEX = os.path.join(ROOT, "assets/characters/max/textures/max_outfit_diffuse.png")
 HAIR_COLOR = (0.035, 0.022, 0.014)      # dark brown (linear)
+SKIN_WARM = (0.93, 0.78, 0.66)          # light-medium warm tone over the pale CC0 skin
 EYE_TEX = "brown_eye.png"
 
 # Phenotype: a man in his late twenties, slim-athletic, light-medium skin (reference sheet).
@@ -35,9 +36,9 @@ PHENOTYPE = {
 }
 # Stylized-realistic push (Zack D-like): bigger, rounder eyes, softer jaw, slightly bigger head.
 STYLE_TARGETS = {
-    "l-eye-scale-incr": 0.45, "r-eye-scale-incr": 0.45,
-    "l-eye-height2-incr": 0.25, "r-eye-height2-incr": 0.25,
-    "head-scale-vert-incr": 0.1, "head-scale-horiz-incr": 0.08,
+    "l-eye-scale-incr": 0.85, "r-eye-scale-incr": 0.85,
+    "l-eye-height2-incr": 0.4, "r-eye-height2-incr": 0.4,
+    "head-scale-vert-incr": 0.15, "head-scale-horiz-incr": 0.1,
     "chin-width-decr": 0.15, "chin-prominent-decr": 0.1,
     "nose-scale-horiz-decr": 0.1,
     "mouth-scale-horiz-incr": 0.08,
@@ -48,11 +49,11 @@ HUMAN = {
     "phenotype": PHENOTYPE,
     "rig": "default",
     "eyes": "high-poly.mhclo",
-    "eyebrows": "eyebrow001.mhclo",
+    "eyebrows": "eyebrow010.mhclo",
     "eyelashes": "eyelashes01.mhclo",
     "teeth": "teeth_base.mhclo",
     "tongue": "tongue01.mhclo",
-    "hair": "short02.mhclo",
+    "hair": "cortu_short_messy_hair.mhclo",
     "proxy": "",
     "targets": [{"target": k, "value": v} for k, v in STYLE_TARGETS.items()],
     "clothes": ["male_casualsuit06.mhclo", "shoes05.mhclo"],
@@ -125,6 +126,35 @@ def _images(mat):
     return [n for n in mat.node_tree.nodes if n.type == "TEX_IMAGE"] if mat and mat.use_nodes else []
 
 
+def _tint(mat, color, all_images=False):
+    """Multiply a material's diffuse texture by a colour (keeps its detail, changes its tone)."""
+    nt = mat.node_tree
+    for n in _images(mat):
+        nm = (n.image.name if n.image else "").lower()
+        if not n.image or "normal" in nm or "objnorm" in nm or "_ao" in nm:
+            continue
+        if not all_images and "diff" not in nm and not nm.startswith("eyebrow"):
+            continue
+        for link in list(n.outputs["Color"].links):
+            mix = nt.nodes.new("ShaderNodeMix")
+            mix.data_type, mix.blend_type = "RGBA", "MULTIPLY"
+            mix.inputs[0].default_value = 1.0
+            mix.inputs[7].default_value = (*color, 1)
+            nt.links.new(mix.outputs[2], link.to_socket)
+            nt.links.new(n.outputs["Color"], mix.inputs[6])
+    if mat.node_tree and not _images(mat):
+        for g in [n for n in nt.nodes if n.type == "GROUP"]:
+            for nn in g.node_tree.nodes if g.node_tree else []:
+                if nn.type == "TEX_IMAGE" and nn.image and "diffuse" in nn.image.name.lower():
+                    for link in list(nn.outputs["Color"].links):
+                        mix = g.node_tree.nodes.new("ShaderNodeMix")
+                        mix.data_type, mix.blend_type = "RGBA", "MULTIPLY"
+                        mix.inputs[0].default_value = 1.0
+                        mix.inputs[7].default_value = (*color, 1)
+                        g.node_tree.links.new(mix.outputs[2], link.to_socket)
+                        g.node_tree.links.new(nn.outputs["Color"], mix.inputs[6])
+
+
 def restyle(rig):
     """Recolour the CC0 assets to the reference: teal tee, dark jeans, dark-brown hair, brown eyes."""
     outfit = bpy.data.images.load(OUTFIT_TEX, check_existing=True)
@@ -140,16 +170,12 @@ def restyle(rig):
                 for n in _images(mat):
                     if "diffuse" in (n.image.name if n.image else "").lower():
                         n.image = outfit
-            elif "short02" in name or "hair" in name:
-                for n in _images(mat):
-                    if n.image and "diffuse" in n.image.name.lower():
-                        tint = mat.node_tree.nodes.new("ShaderNodeMix")
-                        tint.data_type, tint.blend_type = "RGBA", "MULTIPLY"
-                        tint.inputs[0].default_value = 1.0
-                        tint.inputs[7].default_value = (*[c * 9 for c in HAIR_COLOR], 1)
-                        for link in list(n.outputs["Color"].links):
-                            mat.node_tree.links.new(tint.outputs[2], link.to_socket)
-                        mat.node_tree.links.new(n.outputs["Color"], tint.inputs[6])
+            elif "messy" in name or "short02" in name or "hair" in name:
+                _tint(mat, [c * 6 for c in HAIR_COLOR])
+            elif "eyebrow" in name:
+                _tint(mat, (0.06, 0.04, 0.03))
+            elif name.endswith(".body"):
+                _tint(mat, SKIN_WARM, all_images=True)
             elif "high-poly" in name or name.endswith("eyes"):
                 for n in _images(mat):
                     if n.image and "eye" in n.image.name.lower() and "normal" not in n.image.name.lower():
@@ -251,9 +277,9 @@ def setup_render(res=(720, 720), samples=48):
     sc.world = world
     # Three-point studio light, warm key / cool fill, like the cabin's window light.
     for name, loc, energy, color, size in (
-        ("Key", (-1.6, -2.2, 2.4), 450, (1.0, 0.93, 0.85), 1.6),
-        ("Fill", (2.2, -1.6, 1.6), 150, (0.85, 0.9, 1.0), 2.5),
-        ("Rim", (0.6, 2.4, 2.4), 300, (1.0, 1.0, 1.0), 1.0),
+        ("Key", (-1.6, -2.2, 2.4), 220, (1.0, 0.9, 0.8), 1.6),
+        ("Fill", (2.2, -1.6, 1.6), 70, (0.85, 0.9, 1.0), 2.5),
+        ("Rim", (0.6, 2.4, 2.4), 260, (1.0, 1.0, 1.0), 1.0),
     ):
         ld = bpy.data.lights.new(name, "AREA")
         ld.energy, ld.color, ld.size = energy, color, size
