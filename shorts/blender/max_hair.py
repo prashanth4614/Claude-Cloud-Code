@@ -21,7 +21,8 @@ from mathutils.bvhtree import BVHTree
 SEED = 7
 GUIDES = 1800                 # fewer, chunkier locks (stylized, reads in wide shots)
 CHILDREN = 70                 # rendered children per guide
-TOP_LEN, SIDE_LEN, BACK_LEN = 0.058, 0.026, 0.022
+TOP_LEN, SIDE_LEN, BACK_LEN = 0.064, 0.026, 0.022
+FRINGE_Z = 0.066              # front strands stay above this height over the eyes (no locks on the forehead)
 SWEEP = Vector((0.5, -0.2, 0.42))   # front/top flow: up off the forehead and over to his left (+X)
 HAIR_MELANIN, HAIR_REDNESS = 0.9, 0.12     # dark brown, highlights without orange tips
 STUBBLE_COUNT, STUBBLE_LEN = 14000, 0.0022
@@ -211,14 +212,14 @@ def groom(rig, body):
     s.child_type = "INTERPOLATED"
     s.child_percent, s.rendered_child_count = 8, CHILDREN
     s.virtual_parents = 0.0
-    s.clump_factor, s.clump_shape = 0.7, -0.1        # defined locks with soft, rounded ends (not spikes)
+    s.clump_factor, s.clump_shape = 0.6, -0.1        # soft locks with rounded ends (not spikes)
     s.roughness_1, s.roughness_1_size = 0.0012, 1.0
     s.roughness_endpoint, s.roughness_end_shape = 0.003, 1.0
     s.roughness_2, s.roughness_2_size, s.roughness_2_threshold = 0.0015, 1.0, 0.85   # few flyaways
     s.child_length_threshold = 0.25
     s.root_radius, s.tip_radius, s.radius_scale = 1.0, 0.45, 0.0005   # blunt lock ends: soft, not spiky
     s.use_close_tip = True
-    s.kink, s.kink_amplitude, s.kink_frequency, s.kink_shape = "WAVE", 0.0012, 1.2, 0.0   # a soft wave, not curls
+    s.kink, s.kink_amplitude, s.kink_frequency, s.kink_shape = "WAVE", 0.0015, 0.8, 0.0   # children follow the guide's wave
     _activate_edit(body)
     roots, oe, me, pe = _evaluated(body, "Max hair")
     sweep = SWEEP.normalized()
@@ -236,16 +237,23 @@ def groom(rig, body):
         flow = (sweep * top + side_flow * (1 - top)).normalized()
         lift = 0.45 * top + 0.25 * (1 - top)
         d = (n * lift + flow * (1 - lift)).normalized()
-        jitter = Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-0.5, 0.5))) * 0.35
+        jitter = Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-0.5, 0.5))) * 0.2
+        phase, amp = rnd.uniform(0, 2 * math.pi), rnd.uniform(0.15, 0.3) * (0.4 + top)
         d = (d + jitter).normalized()
         nk = len(part.hair_keys)
         seg = length / (nk - 1)
         p = root.copy()
         pts = [root]
         for k in range(1, nk):
-            wave = Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-1, 1))) * 0.18 * top
+            side = d.cross(n)                         # one smooth S-wave per strand (no random zigzag)
+            wave = (side.normalized() if side.length > 1e-6 else Vector()) * amp * math.sin(phase + 1.3 * k)
             d = (d + flow * 0.45 + wave + Vector((0, 0, -1)) * (0.22 + 0.15 * (1 - top))).normalized()
             p = p + d * seg
+            rp = p - head                             # forehead guard: nothing droops below the front hairline
+            if abs(math.degrees(math.atan2(rp.x, -rp.y))) < 55 and p.z - eye.z < FRINGE_Z:
+                p.z = eye.z + FRINGE_Z
+                d.z = abs(d.z) + 0.2
+                d.normalize()
             near, nn, _, _ = bvh.find_nearest(p)
             if near is not None:
                 off = 0.0022 + 0.0012 * k * (0.5 + top)
