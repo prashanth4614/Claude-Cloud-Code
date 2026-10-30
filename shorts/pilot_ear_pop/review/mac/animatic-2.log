@@ -1,0 +1,26 @@
+== pull
+== assets (only downloads what's missing)
+hdri: qwantani_sunset_puresky
+hdri: syferfontein_6d_clear_puresky
+hdri: qwantani_dusk_2_puresky
+polyhaven_tex: poly_wool_herringbone
+polyhaven_tex: leather_white
+polyhaven_tex: fabric_leather_02
+ambientcg_tex: Carpet012
+ambientcg_tex: Plastic010
+== build film
+[sets] sky: cached (sky.blend)
+[sets] cabin: cached (cabin.blend)
+[sets] ear_in: cached (ear_in.blend)
+[sets] ear_map: cached (ear_map.blend)
+[sets] city: cached (city.blend)
+[max] seated; eyes (300.0, 0.427, 1.374), ear (300.07, 0.498, 1.334)
+[build] saved /Users/prashanthmogili/My Files/Claude-Cloud-Code/out/pilot_ear_pop/pilot_ear_pop_previz.blend
+shorts/tools/guard.sh: line 7: 16750 Terminated: 15          sleep "$limit"
+build: 7 s
+== render animatic
+[animatic] /Users/prashanthmogili/My Files/Claude-Cloud-Code/shorts/pilot_ear_pop/review/mac/animatic-2.mp4
+render: 972 s for 1566 frames (0.62 s/frame)
+size:  10M
+total: 981 s on Apple M4
+STATUS: OK
