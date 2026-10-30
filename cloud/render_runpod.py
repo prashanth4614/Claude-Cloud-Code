@@ -180,13 +180,17 @@ def main():
             "gpuTypeIds": a.gpu, "gpuTypePriority": "custom", "cloudType": a.cloud,
             "containerDiskInGb": 40, "volumeInGb": 0, "ports": ["8000/http"], "minRAMPerGPU": 16, "minVCPUPerGPU": 4,
             "env": env, "dockerStartCmd": ["bash", "-c", "echo \"$BOOT_B64\" | base64 -d > /boot.sh && bash /boot.sh"]}
+    if a.blender_series.startswith("5"):   # Blender 5.x needs NVIDIA driver >= 575 (CUDA 12.9+): only such hosts
+        spec["allowedCudaVersions"] = ["12.9", "13.0", "13.1", "13.2"]
     gpus, spent = list(a.gpu), 0.0
     for attempt in range(3):               # a pod whose GPU fails the boot test is replaced (different GPU type)
         spec["gpuTypeIds"] = gpus
-        pod = api("POST", "/pods", spec, soft=a.gpu_count > 1)
-        if pod is None:                    # no multi-GPU machine free: one GPU, same cost, longer
-            print(f"no {a.gpu_count}-GPU pod available; falling back to 1 GPU")
-            pod = api("POST", "/pods", {**spec, "gpuCount": 1})
+        pod = api("POST", "/pods", spec, soft=True)
+        if pod is None and a.gpu_count > 1:
+            print(f"no {a.gpu_count}-GPU pod available; trying 1 GPU")
+            pod = api("POST", "/pods", {**spec, "gpuCount": 1}, soft=True)
+        if pod is None:
+            sys.exit("no pod could be created (see the RunPod message above); nothing was billed")
         pid, t0 = pod["id"], time.time()
         rate = pod.get("adjustedCostPerHr") or pod.get("costPerHr") or 0
         gpu = (pod.get("gpu") or {}).get("displayName") or (pod.get("machine") or {}).get("gpuDisplayName") or "GPU"
@@ -197,7 +201,8 @@ def main():
             break
         api("DELETE", f"/pods/{pid}")
         spent += rate * (time.time() - t0) / 3600
-        print(f"pod {pid} deleted: its GPU failed the boot render test (cost ~${rate * (time.time() - t0) / 3600:.3f})")
+        print(f"pod {pid} deleted: its GPU failed the boot render test (cost ~${rate * (time.time() - t0) / 3600:.3f}): "
+              f"{h.get('gpu_detail', '')}")
         gpus = [g for g in gpus if not g.endswith(gpu.replace("NVIDIA ", "").replace("GeForce ", "").split(" ")[-1])] or gpus
         if attempt == 2:
             sys.exit("3 pods failed the GPU test; giving up (all deleted)")

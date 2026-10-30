@@ -69,7 +69,9 @@ class H(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
             gpu = "ok" if (WORK / "GPU_OK").exists() else "bad" if (WORK / "GPU_BAD").exists() else None
-            return self.reply(200, {"ready": (WORK / "READY").exists(), "gpu": gpu, "boot_log": tail(WORK / "boot.log", 6)})
+            detail = " | ".join(ln for ln in tail(WORK / "boot.log", 40).splitlines() if "gpu" in ln.lower() or "driver" in ln.lower())
+            return self.reply(200, {"ready": (WORK / "READY").exists(), "gpu": gpu, "gpu_detail": detail[-600:],
+                                    "boot_log": tail(WORK / "boot.log", 6)})
         if not self.authed():
             return
         if self.path == "/status":
