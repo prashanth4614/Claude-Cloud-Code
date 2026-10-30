@@ -182,9 +182,10 @@ def round_openings(chamber, o):
     bmesh.ops.create_uvsphere(bm, u_segments=160, v_segments=80, radius=1.0)
     centre = chamber.location.copy()
     holes = ((Vector((-1, 0, 0)), 36.0), ((TUBE_PTS[0] + o - centre).normalized(), 13.0))
-    doomed = [f for f in bm.faces
-              if any(f.calc_center_median().normalized().dot(d) > math.cos(math.radians(a)) for d, a in holes)]
-    bmesh.ops.delete(bm, geom=doomed, context="FACES")
+    for d, a in holes:          # slice each cap off with a plane: a perfectly round rim, no stair-steps
+        geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+        bmesh.ops.bisect_plane(bm, geom=geom, dist=1e-5, plane_co=d * math.cos(math.radians(a)), plane_no=d,
+                               clear_outer=True)
     for f in bm.faces:
         f.smooth = True
     bm.to_mesh(chamber.data)
@@ -228,6 +229,33 @@ def seals(chamber, o, mat):
         relief(ob, strength=0.05, scale=1.0, length_cuts=12)
 
 
+def exit_glow(o, coll):
+    """Warm light at the ear canal's opening (the lit cabin outside), so flying back out of the canal
+    heads toward light instead of a black hole."""
+    import bmesh
+    from mathutils import Vector
+    m = bpy.data.materials.new("ear_exit_glow")
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.clear()
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    em = nt.nodes.new("ShaderNodeEmission")
+    em.inputs["Color"].default_value = (1.0, 0.86, 0.7, 1)
+    em.inputs["Strength"].default_value = 3.0
+    nt.links.new(em.outputs[0], out.inputs["Surface"])
+    bm = bmesh.new()
+    bmesh.ops.create_circle(bm, cap_ends=True, segments=64, radius=2.4)
+    me = bpy.data.meshes.new("ear_exit_glow_in")
+    bm.to_mesh(me)
+    bm.free()
+    ob = bpy.data.objects.new("ear_exit_glow_in", me)
+    coll.objects.link(ob)
+    ob.location, ob.rotation_euler = o + Vector((-17.6, 0, 0)), (0, 1.5708, 0)
+    me.materials.append(m)
+    ob.visible_shadow = False
+    return ob
+
+
 def apply(e):
     """Realism pass on one ear set (the dict build_ear returned)."""
     tag = e["tag"]
@@ -248,6 +276,7 @@ def apply(e):
         round_openings(chamber, e["origin"])
         seals(chamber, e["origin"], bpy.data.materials[f"tissue_dark_{tag}"])
         e["tube"].data.use_fill_caps = False      # hollow: you look down into the tube, not at a cap
+        exit_glow(e["origin"], e["drum"].users_collection[0])
     for ob in e["drum"].users_collection[0].objects:   # light the tissue, but never show up as glowing balls
         if ob.type == "LIGHT":
             ob.visible_camera = False
