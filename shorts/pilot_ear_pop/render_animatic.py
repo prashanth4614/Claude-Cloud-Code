@@ -26,7 +26,7 @@ else:
             break
         except TypeError:
             continue
-    film.eevee.taa_render_samples = 8
+    film.eevee.taa_render_samples = int(os.environ.get("ANIMATIC_SAMPLES", "8"))   # 4 = ~2x faster, softer edges
 film.render.use_sequencer = False  # FILM's own audio strips must not replace its picture
 ed.render.resolution_percentage = pct
 if len(args) > 2:

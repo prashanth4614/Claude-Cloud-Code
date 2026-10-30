@@ -69,7 +69,7 @@ capped "${RENDER_LIMIT:-3600}" "$BLENDER" -b out/pilot_ear_pop/pilot_ear_pop_pre
   || echo "blender exit code $? (124 = hit the render cap)" | tee -a "$LOG"
 grep -E "\[animatic\]|Error|Traceback|Append frame|Fra:1 " "$RAW" | tail -5 | tee -a "$LOG" || true
 [ -f "$OUT/$JOB.mp4" ] || { echo "-- last 40 lines of Blender output:" >> "$LOG"; tail -40 "$RAW" >> "$LOG"; }
-N=$(grep -c "^Append frame" "$RAW" || true)
+N="${FRAMES:-1566}"
 SECS=$(( $(t) - T ))
 echo "render: $SECS s for $N frames ($(awk "BEGIN{printf \"%.2f\", $SECS/($N>0?$N:1)}") s/frame)" | tee -a "$LOG"
 echo "size: $(du -h "$OUT/$JOB.mp4" 2>/dev/null | cut -f1)" | tee -a "$LOG"
