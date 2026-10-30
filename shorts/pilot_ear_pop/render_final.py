@@ -94,30 +94,8 @@ def done(scene, *_):
 
 bpy.app.handlers.render_post.append(done)
 
-checked = []
-
-
-def not_black(scene, *_):
-    """Stop early if the first frames come out black (e.g. the GPU renders nothing): never pay for a
-    whole film of empty frames. Checks the first 3 frames written by this worker."""
-    if scene.name != "EDIT" or len(checked) >= 3:
-        return
-    path = bpy.path.abspath(scene.render.frame_path(frame=scene.frame_current))
-    try:
-        img = bpy.data.images.load(path, check_existing=False)
-    except RuntimeError:
-        return
-    px = img.pixels[:]
-    lum = sum(px[i] + px[i + 1] + px[i + 2] for i in range(0, len(px), 4 * 97)) / (3 * len(range(0, len(px), 4 * 97)))
-    bpy.data.images.remove(img)
-    checked.append(lum)
-    print(f"[final] frame {scene.frame_current} mean level {lum:.3f}", flush=True)
-    if len(checked) == 3 and max(checked) < 0.02:
-        print("[final] ERROR: the first frames are black: stopping instead of rendering an empty film", flush=True)
-        os._exit(4)
-
-
-bpy.app.handlers.render_write.append(not_black)
+# (the black-frame check runs outside Blender, in final_pod.sh: loading images inside a render
+# handler crashes Blender during an animation render)
 
 if os.environ.get("FINAL_DIAG"):              # one frame of FILM straight through its camera, to compare with EDIT
     n = int(os.environ["FINAL_DIAG"])

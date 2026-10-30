@@ -22,9 +22,30 @@ for ((i = 0; i < N; i++)); do
 done
 ( while :; do sleep 60; grep -h "^\[final\]" "$OUT"/../worker_*.log | tail -2; done ) &
 TICK=$!
+# black-frame guard: if the first 3 new frames are black (a GPU that renders nothing), stop the workers
+# instead of paying for a film of empty frames
+(
+  seen=0; black=0
+  while [ "$seen" -lt 3 ]; do
+    sleep 5
+    for f in $(find "$OUT" -name 'f_*.jpg' -size +1k -mmin -30 2>/dev/null | sort | head -3); do
+      [ -e "$f.checked" ] && continue
+      y=$(ffprobe -v error -f lavfi -i "movie=$f,signalstats" -show_entries frame_tags=lavfi.signalstats.YAVG -of csv=p=0 2>/dev/null | head -1)
+      : > "$f.checked"; seen=$((seen + 1))
+      echo "[final] $(basename "$f") mean level ${y:-?} (of 255)"
+      awk -v y="${y:-255}" 'BEGIN{exit !(y < 6)}' && black=$((black + 1))
+    done
+    if [ "$seen" -ge 3 ] && [ "$black" -ge 3 ]; then
+      echo "[final] ERROR: the first frames are black: stopping instead of rendering an empty film"
+      pkill -x blender; exit 1
+    fi
+  done
+  rm -f "$OUT"/*.checked
+) &
+GUARD=$!
 rc=0
 for p in "${pids[@]}"; do wait "$p" || rc=$?; done
-kill "$TICK" 2>/dev/null
+kill "$TICK" "$GUARD" 2>/dev/null; rm -f "$OUT"/*.checked
 for f in "$OUT"/../worker_*.log; do echo "--- $f (last 40 lines)"; grep -v "HIPEW" "$f" | tail -40; done
 # every frame in the ranges must exist and be non-empty (or be one we already downloaded)
 python3 - "$OUT" "$RANGES" <<'EOF'

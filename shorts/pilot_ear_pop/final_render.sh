@@ -56,7 +56,7 @@ fi
 [ -s out/final/film_packed.blend ] || { echo "no packed film"; exit 1; }
 touch "$OUT/done.txt"
 
-python3 cloud/render_runpod.py --gpu-count "$GPUS" --blender-series 5.2 --no-pip --max-minutes "$MAXMIN" \
+python3 cloud/render_runpod.py --cloud "${RUNPOD_CLOUD:-SECURE}" --gpu-count "$GPUS" --blender-series 5.2 --no-pip --max-minutes "$MAXMIN" \
   --upload out/final/film_packed.blend --pull-frames "$OUT/frames" --include "$OUT/done.txt" \
   --only shorts/pilot_ear_pop/final_pod.sh shorts/pilot_ear_pop/render_final.py \
   --out "$OUT/DONE" "$@" -- \
