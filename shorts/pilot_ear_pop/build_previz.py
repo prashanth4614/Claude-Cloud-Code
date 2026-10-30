@@ -395,9 +395,15 @@ def build_cameras(sc, m):
 
 
 # ------------------------------------------------------------------- edit ---
-def add_sound(seq, name, path, channel, frame):
+def add_sound(seq, name, path, channel, frame, volume=1.0):
+    """Sound strip, packed into the .blend. A missing file (the voice take is kept out of git, so a
+    fresh clone has none) is skipped with a warning: review builds don't need audio."""
+    if not Path(path).exists():
+        print(f"[build] WARNING: {Path(path).name} not found, no '{name}' audio in this build")
+        return None
     st = strips(seq).new_sound(name, str(path), channel, frame)
     st.sound.pack()
+    st.volume = volume
     return st
 
 
@@ -450,8 +456,7 @@ def build_edit(film, cams):
         t.use_box, t.box_color = True, (0, 0, 0, 0.55)
     add_sound(seq, "voice", HERE / PLAN["voice"], 8, 1)
     for i, s in enumerate(PLAN["sfx"]):
-        st = add_sound(seq, f"sfx_{s['cue']}", HERE / s["file"], 9 + i % 2, s["frame"])
-        st.volume = 0.35
+        add_sound(seq, f"sfx_{s['cue']}", HERE / s["file"], 9 + i % 2, s["frame"], volume=0.35)
     for b in (b for sh in PLAN["shots"] for b in sh["beats"] if b.get("word")):
         ed.timeline_markers.new(b["word"], frame=b["frame"])
     return ed
@@ -461,7 +466,7 @@ def film_sound(film):
     seq = film.sequence_editor_create()
     add_sound(seq, "voice", HERE / PLAN["voice"], 1, 1)
     for i, s in enumerate(PLAN["sfx"]):
-        add_sound(seq, f"sfx_{s['cue']}", HERE / s["file"], 2 + i % 2, s["frame"]).volume = 0.35
+        add_sound(seq, f"sfx_{s['cue']}", HERE / s["file"], 2 + i % 2, s["frame"], volume=0.35)
 
 
 def viewports(film=None):

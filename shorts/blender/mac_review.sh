@@ -7,7 +7,7 @@
 # Pulls the branch, fetches the free CC0 assets once, builds the film (sets come from the cache
 # unless their code changed), runs the QA checks, renders the frames, and commits only the contact
 # sheet + legend + log to shorts/pilot_ear_pop/review/mac/<job-name>.*, then pushes.
-set -euo pipefail
+set -eEuo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 JOB="${1:?job name}"; SHOTS="${2:-all}"; QUALITY="${3:-look}"
@@ -22,8 +22,21 @@ OUT=shorts/pilot_ear_pop/review/mac
 mkdir -p "$OUT"
 LOG="$OUT/$JOB.log"
 : > "$LOG"
+rm -f "$OUT/$JOB.jpg" "$OUT/$JOB.txt"          # never re-publish a stale sheet
 t() { date +%s; }
 step() { echo "== $*" | tee -a "$LOG"; }
+
+publish() {   # always push the log (and the sheet if there is one), so the cloud session sees the result
+  local status="$1"
+  trap - ERR
+  echo "STATUS: $status" | tee -a "$LOG"
+  git add "$LOG"
+  [ -f "$OUT/$JOB.jpg" ] && git add "$OUT/$JOB.jpg" "$OUT/$JOB.txt"
+  git commit -q -m "Mac review render: $JOB ($QUALITY) $status" -m "Rendered on the Mac by shorts/blender/mac_review.sh." || true
+  git pull --no-rebase -q origin "$BRANCH" && git push -q origin "$BRANCH"
+  echo "published $LOG ($status)"
+}
+trap 'echo "failed at line $LINENO: $BASH_COMMAND" | tee -a "$LOG"; publish FAILED' ERR
 
 T0=$(t)
 step "pull"
@@ -37,6 +50,7 @@ step "assets (only downloads what's missing)"
 step "build film"; T=$(t)
 "$BLENDER" -b --factory-startup -P shorts/pilot_ear_pop/build_previz.py 2>&1 \
   | grep -E "\[sets\]|\[max\]|\[build\]|Error|Traceback|line [0-9]+" | tee -a "$LOG"
+grep -q "\[build\] saved" "$LOG" || false      # no saved .blend = the build failed (trap publishes FAILED)
 echo "build: $(( $(t) - T )) s" | tee -a "$LOG"
 
 step "qa"; T=$(t)
@@ -51,9 +65,6 @@ if [ "$SHOTS" = "all" ]; then SEL=(--all); else SEL=(--shots "$SHOTS"); fi
 echo "render: $(( $(t) - T )) s" | tee -a "$LOG"
 echo "total: $(( $(t) - T0 )) s on $(sysctl -n machdep.cpu.brand_string 2>/dev/null || uname -m)" | tee -a "$LOG"
 
-step "publish"
-git add "$OUT/$JOB.jpg" "$OUT/$JOB.txt" "$LOG"
-git commit -q -m "Mac review render: $JOB ($QUALITY)" -m "Rendered on the Mac (Metal GPU) by shorts/blender/mac_review.sh."
-git pull --no-rebase -q origin "$BRANCH"
-git push -q origin "$BRANCH"
-echo "published $OUT/$JOB.jpg"
+[ -f "$OUT/$JOB.jpg" ] || false                  # no sheet = the render failed
+trap - ERR
+publish OK
