@@ -36,6 +36,7 @@ Every script accepts `--voice elevenlabs:<VOICE_ID>` in place of a Piper model:
 ```bash
 .venv/bin/pip install faster-whisper     # local word alignment for captions (first run downloads ~0.5 GB)
 .venv/bin/pip install noisereduce       # voice clean-up in shorts/pilot_ear_pop/mix.py
+curl -fL -o fonts/NotoSansTelugu-ExtraBold.ttf https://raw.githubusercontent.com/notofonts/notofonts.github.io/main/fonts/NotoSansTelugu/hinted/ttf/NotoSansTelugu-ExtraBold.ttf   # Telugu captions (OFL)
 export ELEVENLABS_API_KEY=...            # better: an environment secret, never commit it
 python3 shorts/ear_pop.py --voice elevenlabs:<VOICE_ID> --out out/ear_pop_11labs.mp4
 ```

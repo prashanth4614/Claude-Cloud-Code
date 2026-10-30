@@ -1,0 +1,34 @@
+# Telugu version of the pilot (no re-render): Telugu narration in the owner's cloned voice + Telugu
+# captions over the English ones. Built by telugu.py. One entry per English script line, in order:
+# each Telugu line is fitted into its English line's time slot (the picture is locked to it), so keep
+# them short, spoken Telugu. `spoken` may carry ElevenLabs v3 tags; `caption` is shown (split on spaces).
+# Draft translation by Claude: the owner (a native speaker) should check the wording.
+voice: elevenlabs:x5ld1ovD8agu3EPB7Qpj
+model: eleven_v3
+lines:
+  - spoken: "[curious] విమానంలో చెవులు ఎందుకు పాప్ అవుతాయి?"
+    caption: "విమానంలో చెవులు ఎందుకు పాప్ అవుతాయి?"
+  - spoken: "కర్ణభేరి వెనుక చిన్న గాలి గది ఉంటుంది - అదే మధ్య చెవి."
+    caption: "కర్ణభేరి వెనుక చిన్న గాలి గది ఉంటుంది - అదే మధ్య చెవి."
+  - spoken: "నేల మీద, లోపలి ఒత్తిడి బయటి గాలితో సమానం."
+    caption: "నేల మీద, లోపలి ఒత్తిడి బయటి గాలితో సమానం."
+  - spoken: "పైకి వెళ్తే... క్యాబిన్ ఒత్తిడి తగ్గుతుంది."
+    caption: "పైకి వెళ్తే, క్యాబిన్ ఒత్తిడి తగ్గుతుంది."
+  - spoken: "[slightly tense] లోపలి గాలి బయటకు నెడుతుంది... కర్ణభేరి బెలూన్‌లా ఉబ్బుతుంది."
+    caption: "లోపలి గాలి బయటకు నెడుతుంది, కర్ణభేరి బెలూన్‌లా ఉబ్బుతుంది."
+  - spoken: "[softly] అదే ఆ బ్లాక్ ఫీలింగ్."
+    caption: "అదే ఆ బ్లాక్ ఫీలింగ్."
+  - spoken: "అప్పుడు గొంతుకు వెళ్లే యూస్టేకియన్ ట్యూబ్ - తెరుచుకుంటుంది."
+    caption: "అప్పుడు గొంతుకు వెళ్లే యూస్టేకియన్ ట్యూబ్ తెరుచుకుంటుంది."
+  - spoken: "గాలి బయటకు పోతుంది, ఒత్తిడి సమానమవుతుంది... [playful] పాప్!"
+    caption: "గాలి బయటకు పోతుంది, ఒత్తిడి సమానమవుతుంది... పాప్!"
+    land_last_word_on: "POP!"     # its last word starts where the English "POP!" does (the POP frame)
+  - spoken: "[serious] దిగేటప్పుడు ఇంకా కష్టం."
+    caption: "దిగేటప్పుడు ఇంకా కష్టం."
+    lead: 0.45                    # starts 0.45 s before the English line: with the cut to the city
+  - spoken: "క్యాబిన్ ఒత్తిడి పెరుగుతుంది, ట్యూబ్ తెరుచుకోదు - కర్ణభేరి లోపలికి నెట్టబడుతుంది."
+    caption: "క్యాబిన్ ఒత్తిడి పెరుగుతుంది, ట్యూబ్ తెరుచుకోదు - కర్ణభేరి లోపలికి నెట్టబడుతుంది."
+  - spoken: "[warm] అందుకే మింగడం, ఆవలించడం, చూయింగ్ గమ్ నమలడం సాయపడతాయి - అవి ట్యూబ్‌ను తెరుస్తాయి."
+    caption: "అందుకే మింగడం, ఆవలించడం, చూయింగ్ గమ్ నమలడం సాయపడతాయి - అవి ట్యూబ్‌ను తెరుస్తాయి."
+# the follow card on the end shot (English: "Follow for more weird body facts"), drawn over the English one
+follow_card: "మరిన్ని బాడీ ఫ్యాక్ట్స్ కోసం ఫాలో అవ్వండి"

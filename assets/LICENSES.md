@@ -12,6 +12,7 @@ Every third-party asset the videos use, where it came from and its licence. Down
 | Carpet012, Plastic010 (textures) | cabin floor and panels | ambientCG, Lennart Demes | CC0 |
 | MakeHuman system assets, skins01, eyebrows01, eyelashes01, faceunits01 | Max (body, skin, brows, lashes, face shapes) | MakeHuman community, via MPFB2 | CC0 |
 | male_casualsuit06, shoes05 (MakeHuman) | Max's outfit (recoloured) | MakeHuman community | CC0 |
+| Noto Sans Telugu ExtraBold (font, fonts/, not committed) | Telugu captions (telugu.py) | Google / Noto project | SIL OFL 1.1 |
 | v6_music_d, v6_music_c (music) | the pilot's score (mix v6) | generated with ElevenLabs Music (our account) | ElevenLabs terms (commercial use on paid plans) |
 | "Investigations" (music) | earlier mixes only (v3, v4); not in v6 | Kevin MacLeod, incompetech.com | CC BY 4.0 |
 | v3_*, v6_* sound effects and beds, the earlier cues | Foley, room tone, pressure | generated with ElevenLabs Sound Effects (our account) | ElevenLabs terms (commercial use on paid plans) |

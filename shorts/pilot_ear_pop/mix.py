@@ -2,6 +2,7 @@
 """The pilot's sound mix: a clear voice, a score, room tone and Foley synced to the picture (no render needed).
 
   python3 shorts/pilot_ear_pop/mix.py OUT.wav [--stems DIR]      # MUSIC=0 leaves the score out
+  ... [--voice VOICE.wav --timing TIMING.json]                  # another narration (telugu.py)
 
 - Voice: rebuilt from the RAW ElevenLabs take (the cached takes, same timing as voice_take.wav),
   denoised (the clone's steady hiss came and went with every line), then VOICE_CHAIN: rumble filter, a
@@ -184,8 +185,11 @@ def foley(n):
     return fx
 
 
+TIMING = HERE / "audio" / "voice_timing.json"   # --timing: another language's line/word timing
+
+
 def lines():
-    return json.loads((HERE / "audio" / "voice_timing.json").read_text())["lines"]
+    return json.loads(Path(TIMING).read_text())["lines"]
 
 
 def smooth(g, seconds):
@@ -350,7 +354,11 @@ def main():
     a = sys.argv[1:]
     out = Path(a[0] if a else HERE.parent.parent / "out" / "final" / "mix.wav")
     n = int(t_of(PLAN["frame_end"] + 1) * SR)
-    voice = ffmpeg_filter(denoise(raw_voice()), VOICE_CHAIN)
+    global TIMING
+    if "--timing" in a:
+        TIMING = a[a.index("--timing") + 1]
+    v = decode(a[a.index("--voice") + 1]) if "--voice" in a else raw_voice()   # e.g. telugu.py's narration
+    voice = ffmpeg_filter(denoise(v), VOICE_CHAIN)
     vo = np.zeros(n)
     vo[: min(n, len(voice))] = voice[:n]
     w = int(0.4 * SR)
