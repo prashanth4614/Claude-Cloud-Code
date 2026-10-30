@@ -626,11 +626,29 @@ def build_edit(film, cams):
     return ed
 
 
+def caption_font():
+    """Inter ExtraBold (OFL) for every caption and card; packed into the .blend with the rest.
+    Same search as the 2D pipeline: <repo>/fonts, then the Linux fonts-inter package."""
+    if "Inter-ExtraBold" in bpy.data.fonts:
+        return bpy.data.fonts["Inter-ExtraBold"]
+    for d in (HERE.parent.parent / "fonts", Path("/usr/share/fonts/opentype/inter"), Path.home() / "Library/Fonts"):
+        f = d / "Inter-ExtraBold.otf"
+        if f.exists():
+            font = bpy.data.fonts.load(str(f))
+            font.name = "Inter-ExtraBold"
+            return font
+    print("[build] WARNING: Inter-ExtraBold.otf not found; captions use Blender's default font")
+    return None
+
+
 def style_text(t, text, size, loc, color):
     t.text, t.font_size, t.wrap_width = text, size, 0.9
+    font = caption_font()
+    if font is not None and hasattr(t, "font"):
+        t.font = font
     t.location, t.anchor_x, t.anchor_y = loc, "CENTER", "CENTER"
     t.color = color
-    for attr, val in (("use_bold", True), ("use_outline", True), ("outline_color", (0, 0, 0, 1)),
+    for attr, val in (("use_bold", font is None), ("use_outline", True), ("outline_color", (0, 0, 0, 1)),
                       ("outline_width", 0.12), ("use_shadow", True), ("use_box", False)):
         if hasattr(t, attr):
             setattr(t, attr, val)
