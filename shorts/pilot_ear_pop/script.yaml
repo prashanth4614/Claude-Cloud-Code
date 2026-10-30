@@ -133,9 +133,21 @@ sfx_cues:
   v3_chew: {seconds: 0.5, prompt: "Isolated close-miked dry Foley, silent studio, distinct attack, short decay; no music, speech, ambience or reverb. single soft gum chew, moist, close"}
   v3_pluck: {seconds: 0.5, prompt: "Isolated close-miked dry Foley, silent studio, distinct attack, short decay; no music, speech, ambience or reverb. muted soft UI pluck, gentle click for a label appearing"}
 
+  # v6 (mix v6, Codex 007): the scene and relief cues
+  v6_jet_swell: {seconds: 4.0, prompt: "Isolated passenger jet flying past high above, smooth rising engine swell then fade, clean, no wind noise"}
+  v6_plane_descend: {seconds: 4.0, prompt: "Isolated airliner descending, soft engine roar slowly lowering in pitch, smooth, clean"}
+  v6_exhale: {seconds: 1.2, prompt: "Isolated relieved soft human exhale sigh, close-miked, clean, short"}
+  v6_release: {seconds: 1.2, prompt: "Isolated soft airy pressure release hiss, gentle and satisfying, clean"}
+
 beds:
   cabin: {seconds: 20, loop: true, prompt: "Quiet airplane cabin ambience, soft low engine hum, gentle air vent hiss, no voices, no announcements, calm"}
   body:  {seconds: 20, loop: true, prompt: "Calm soft body interior ambience, slow muffled heartbeat far away, gentle low warm whoosh, soothing"}
+  # v6: continuous room tone per world + the blocked-ear drone (mix.py beds() / pressure())
+  v6b_cabin: {seconds: 20, loop: true, prompt: "Airplane cabin room tone, clearly audible soft steady air vent hiss over a gentle engine hum, mid-range presence, constant, no voices, no music, no clicks"}
+  v6b_ear: {seconds: 20, loop: true, prompt: "Soft airy breathy whoosh room tone, gentle filtered air movement inside a small warm space, constant, mid-range, soothing, no heartbeat, no music"}
+  v6b_sky: {seconds: 20, loop: true, prompt: "Soft steady high-altitude wind whoosh, airy and smooth, constant, mid-range, calm, no gusts, no music"}
+  v6b_city: {seconds: 20, loop: true, prompt: "Calm city evening room tone, soft distant traffic wash and faint air, constant, mid-range, no horns, no voices, no music"}
+  v6_blocked: {seconds: 12, loop: true, prompt: "no music, no speech, no voices, no clicks, smooth and even, blocked ear pressure sensation, muffled low dull pressure drone, underwater-like fullness, soft and steady"}
 
 music:
   prompt: >-
@@ -143,4 +155,10 @@ music:
     pizzicato strings and a warm pad, about 80 bpm, light and wondering, no drums, no vocals, sparse
     so a narrator sits clearly on top, a subtle lift around 25 seconds for a reveal, then a calm warm
     resolve at the end.
+  # mix v6 score (audio/bgm/v6_music_d.mp3: music_length_ms 47400, force_instrumental), Codex 007's brief
+  v6_prompt: >-
+    47.4-second instrumental science miniature, 90bpm; sparse felt piano, warm pad, occasional soft
+    pizzicato. Clean modern recording, restrained curiosity; no drums, vocals, hiss or stings. 0-11 s
+    wonder; 11-27 s gentle tension; 27-30.7 s suspended texture; 30.7 s soft harmonic release; 31-45 s
+    warm clarity; 45-47.4 s return to opening harmony/texture, seamless re-entry.
   fallback_search: "YouTube Audio Library: Genre Cinematic or Ambient, Mood Calm or Inspirational, no vocals, 70-90 bpm, piano"

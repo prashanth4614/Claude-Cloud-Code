@@ -12,11 +12,11 @@ Every third-party asset the videos use, where it came from and its licence. Down
 | Carpet012, Plastic010 (textures) | cabin floor and panels | ambientCG, Lennart Demes | CC0 |
 | MakeHuman system assets, skins01, eyebrows01, eyelashes01, faceunits01 | Max (body, skin, brows, lashes, face shapes) | MakeHuman community, via MPFB2 | CC0 |
 | male_casualsuit06, shoes05 (MakeHuman) | Max's outfit (recoloured) | MakeHuman community | CC0 |
+| v6_music_d, v6_music_c (music) | the pilot's score (mix v6) | generated with ElevenLabs Music (our account) | ElevenLabs terms (commercial use on paid plans) |
+| "Investigations" (music) | earlier mixes only (v3, v4); not in v6 | Kevin MacLeod, incompetech.com | CC BY 4.0 |
+| v3_*, v6_* sound effects and beds, the earlier cues | Foley, room tone, pressure | generated with ElevenLabs Sound Effects (our account) | ElevenLabs terms (commercial use on paid plans) |
 
-| "Investigations" (music) | background music under the pilot | Kevin MacLeod, incompetech.com | CC BY 4.0 |
-| v3_* sound effects, the earlier cues and beds | Foley and ambience | generated with ElevenLabs Sound Effects (our account) | ElevenLabs terms (commercial use on paid plans) |
-
-**Required credit in the video description (CC BY):**
+**Required credit in the video description (CC BY), only if a mix with "Investigations" is published:**
 `Music: "Investigations" by Kevin MacLeod (incompetech.com), licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/`
 
 CC0 needs no credit, but a line like "3D assets: Poly Haven, ambientCG, MakeHuman (CC0)" in the
