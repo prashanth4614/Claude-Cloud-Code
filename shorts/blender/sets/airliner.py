@@ -374,9 +374,12 @@ def cloud_material():
     return m
 
 
-def cloud_volume_material():
-    """Volumetric cumulus lobe: dense bright core, soft wispy edge, forward scattering (silver lining).
-    Density = (centre falloff + 3D noise), smoothstepped, so the lobe's ellipsoid never shows."""
+def cloud_volume_material(noise_space):
+    """Volumetric cumulus lobe (recipe from Codex review 002): the noise perturbs the BOUNDARY, so the
+    container's ellipsoid never shows; density fades to 0 before the hull; noise is anchored to one
+    shared unit-scale Empty, so billows are the same real size in every lobe.
+        r = |2*Generated - 1|      N = noise(P, 0.7, detail 3)      F = noise(P, 4, detail 2)
+        t = clamp((0.80 - r + 0.15*(2N - 1)) / 0.25)      density = k * smoothstep(t) * (0.7 + 0.3 F)"""
     m = bpy.data.materials.get("cloud_volume")
     if m:
         return m
@@ -384,43 +387,52 @@ def cloud_volume_material():
     m.use_nodes = True
     nt = m.node_tree
     nt.nodes.clear()
+    L = nt.links.new
+
+    def math(op, a, b=None):
+        n = nt.nodes.new("ShaderNodeMath")
+        n.operation = op
+        for i, v in enumerate((a, b)):
+            if v is None:
+                continue
+            if isinstance(v, (int, float)):
+                n.inputs[i].default_value = v
+            else:
+                L(v, n.inputs[i])
+        return n.outputs[0]
     out = nt.nodes.new("ShaderNodeOutputMaterial")
     vol = nt.nodes.new("ShaderNodeVolumePrincipled")
     vol.inputs["Color"].default_value = (1.0, 1.0, 1.0, 1)
-    vol.inputs["Anisotropy"].default_value = 0.55
-    coord = nt.nodes.new("ShaderNodeTexCoord")
-    centred = nt.nodes.new("ShaderNodeVectorMath")
-    centred.operation = "SUBTRACT"
-    centred.inputs[1].default_value = (0.5, 0.5, 0.5)
-    nt.links.new(coord.outputs["Generated"], centred.inputs[0])
-    dist = nt.nodes.new("ShaderNodeVectorMath")
-    dist.operation = "LENGTH"
-    nt.links.new(centred.outputs[0], dist.inputs[0])
-    fall = nt.nodes.new("ShaderNodeMapRange")              # 1 at the centre -> 0 at the hull
-    fall.inputs["From Min"].default_value, fall.inputs["From Max"].default_value = 0.5, 0.0
-    nt.links.new(dist.outputs["Value"], fall.inputs["Value"])
-    noise = nt.nodes.new("ShaderNodeTexNoise")             # billows: ~1.5 m features, fine detail
-    noise.inputs["Scale"].default_value = 0.35
-    noise.inputs["Detail"].default_value = 8.0
-    noise.inputs["Roughness"].default_value = 0.62
-    nt.links.new(coord.outputs["Object"], noise.inputs["Vector"])
-    nmid = nt.nodes.new("ShaderNodeMath")
-    nmid.operation, nmid.inputs[1].default_value = "SUBTRACT", 0.5
-    nt.links.new(noise.outputs["Fac"], nmid.inputs[0])
-    nw = nt.nodes.new("ShaderNodeMath")
-    nw.operation, nw.inputs[1].default_value = "MULTIPLY", 1.1
-    nt.links.new(nmid.outputs[0], nw.inputs[0])
-    add = nt.nodes.new("ShaderNodeMath")
-    add.operation = "ADD"
-    nt.links.new(fall.outputs["Result"], add.inputs[0])
-    nt.links.new(nw.outputs[0], add.inputs[1])
-    shape = nt.nodes.new("ShaderNodeMapRange")             # smoothstep: crisp-ish body, soft fringe
-    shape.interpolation_type = "SMOOTHSTEP"
-    shape.inputs["From Min"].default_value, shape.inputs["From Max"].default_value = 0.18, 0.62
-    shape.inputs["To Max"].default_value = 3.0             # density inside the body
-    nt.links.new(add.outputs[0], shape.inputs["Value"])
-    nt.links.new(shape.outputs["Result"], vol.inputs["Density"])
-    nt.links.new(vol.outputs[0], out.inputs["Volume"])
+    vol.inputs["Anisotropy"].default_value = 0.5
+    if "Density Attribute" in vol.inputs:
+        vol.inputs["Density Attribute"].default_value = ""
+    gen = nt.nodes.new("ShaderNodeTexCoord")
+    space = nt.nodes.new("ShaderNodeTexCoord")
+    space.object = noise_space
+    g2 = nt.nodes.new("ShaderNodeVectorMath")
+    g2.operation = "MULTIPLY_ADD"
+    g2.inputs[1].default_value, g2.inputs[2].default_value = (2, 2, 2), (-1, -1, -1)
+    L(gen.outputs["Generated"], g2.inputs[0])
+    rl = nt.nodes.new("ShaderNodeVectorMath")
+    rl.operation = "LENGTH"
+    L(g2.outputs[0], rl.inputs[0])
+    nN = nt.nodes.new("ShaderNodeTexNoise")
+    nN.inputs["Scale"].default_value, nN.inputs["Detail"].default_value, nN.inputs["Roughness"].default_value = 0.7, 3, 0.65
+    nF = nt.nodes.new("ShaderNodeTexNoise")
+    nF.inputs["Scale"].default_value, nF.inputs["Detail"].default_value, nF.inputs["Roughness"].default_value = 4, 2, 0.6
+    L(space.outputs["Object"], nN.inputs["Vector"])
+    L(space.outputs["Object"], nF.inputs["Vector"])
+    n2 = math("MULTIPLY_ADD", nN.outputs["Fac"], 2.0)          # 2N - 1
+    nt.nodes[-1].inputs[2].default_value = -1.0
+    edge = math("ADD", math("SUBTRACT", 0.80, rl.outputs["Value"]), math("MULTIPLY", n2, 0.15))
+    t = math("DIVIDE", edge, 0.25)
+    nt.nodes[-1].use_clamp = True
+    smooth = math("MULTIPLY", math("MULTIPLY", t, t), math("SUBTRACT", 3.0, math("MULTIPLY", t, 2.0)))
+    fine = math("MULTIPLY_ADD", nF.outputs["Fac"], 0.3)
+    nt.nodes[-1].inputs[2].default_value = 0.7
+    density = math("MULTIPLY", math("MULTIPLY", smooth, fine), 1.0)
+    L(density, vol.inputs["Density"])
+    L(vol.outputs[0], out.inputs["Volume"])
     m.diffuse_color = (0.95, 0.95, 0.97, 0.5)
     return m
 
@@ -470,15 +482,16 @@ def realistic_sky(scene, origin):
             f = rnd.uniform(0.45, 0.8)
             lobe.scale = (ob.scale[0] * f, ob.scale[1] * f * rnd.uniform(0.8, 1.2), ob.scale[2] * f * rnd.uniform(0.9, 1.4))
             lobe.rotation_euler = (0, 0, rnd.uniform(0, 2 * math.pi))
+    space = bpy.data.objects.get("cloud_noise_space") or bpy.data.objects.new("cloud_noise_space", None)
+    if space.name not in puffs[0].users_collection[0].objects:
+        puffs[0].users_collection[0].objects.link(space)          # shared unit-scale noise anchor (cached with the set)
     for ob in [o for o in bpy.data.objects if o.name.startswith("cloud_") and o.name[6:8].isdigit()]:
         ob.data = ob.data.copy() if ob.data.users > 1 else ob.data
         from mathutils import Matrix
-        ob.data.transform(Matrix.Diagonal((*ob.scale, 1.0)))     # bake the squash: relief must not stretch
-        ob.scale = (1, 1, 1)
+        ob.data.transform(Matrix.Diagonal((*(1.2 * v for v in ob.scale), 1.0)))  # bake the squash; +20% so the
+        ob.scale = (1, 1, 1)                                                     # soft edge never meets the hull
         ob.data.materials.clear()
-        ob.data.materials.append(cloud_volume_material())        # a volume: the mesh is only its container
-        s = ob.modifiers.new("round", "SUBSURF")
-        s.levels = s.render_levels = 1
+        ob.data.materials.append(cloud_volume_material(space))   # a volume: the mesh is only its container
         ob.visible_shadow = True
         for p in ob.data.polygons:
             p.use_smooth = True
