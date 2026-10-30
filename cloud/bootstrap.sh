@@ -55,6 +55,43 @@ if [ "${SERIES%%.*}" -ge 5 ] && [ -n "$DRV" ] && [ "$DRV" -lt 575 ]; then
   echo "[boot] WARNING: NVIDIA driver $DRV < 575: Blender ${SERIES} OptiX/CUDA may not render on this host"
 fi
 
+# GPU smoke test: a tiny Cycles render on OptiX/CUDA. Some hosts expose a GPU whose CUDA context can't be
+# created ("Failed to retain CUDA context"); Cycles then returns empty frames. The driver replaces such a pod.
+if [ "${BOOT_GPU_TEST:-0}" = "1" ]; then
+  cat > /work/gpu_test.py <<'PY'
+import bpy, sys
+prefs = bpy.context.preferences.addons["cycles"].preferences
+for kind in ("OPTIX", "CUDA"):
+    try:
+        prefs.compute_device_type = kind
+        prefs.get_devices()
+    except TypeError:
+        continue
+    if any(d.type == kind for d in prefs.devices):
+        for d in prefs.devices:
+            d.use = d.type == kind
+        break
+else:
+    print("GPUTEST no device"); sys.exit(2)
+sc = bpy.context.scene
+sc.render.engine = "CYCLES"
+sc.cycles.device, sc.cycles.samples = "GPU", 4
+sc.render.resolution_x = sc.render.resolution_y = 64
+sc.render.filepath = "/work/gpu_test.png"
+bpy.ops.render.render(write_still=True)
+img = bpy.data.images.load("/work/gpu_test.png")
+px = img.pixels[:]
+lum = sum(px[i] + px[i + 1] + px[i + 2] for i in range(0, len(px), 4)) / (3 * len(px) // 4)   # colour only: alpha is 1 even when black
+print(f"GPUTEST {kind} mean {lum:.3f}")
+sys.exit(0 if lum > 0.05 else 3)
+PY
+  if blender -b --factory-startup -P /work/gpu_test.py > /work/gpu_test.log 2>&1 && ! grep -q "CUDA context\|out of GPU" /work/gpu_test.log; then
+    touch /work/GPU_OK; echo "[boot] gpu test: OK ($(grep -o 'GPUTEST.*' /work/gpu_test.log))"
+  else
+    touch /work/GPU_BAD; echo "[boot] gpu test: FAILED: $(grep -m3 -E 'GPUTEST|CUDA|OptiX|Error' /work/gpu_test.log | tr '\n' ' ')"
+  fi
+fi
+
 # EEVEE needs the NVIDIA EGL (graphics) driver inside the container; without it use Cycles.
 if ls /usr/share/glvnd/egl_vendor.d/*nvidia* >/dev/null 2>&1; then
   echo "SHORTS_ENGINE=EEVEE" > /work/engine.env

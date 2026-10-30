@@ -113,6 +113,24 @@ def bundle(cmd, output, includes, env, only=()):
     return buf.getvalue()
 
 
+def boot(url, deadline, pid):
+    """Wait until the pod has installed everything; returns its /health (None if past the deadline)."""
+    last_boot = ""
+    while time.time() < deadline:
+        try:
+            h = http("GET", url + "/health", timeout=20)
+            if h["boot_log"] != last_boot:
+                print("  " + h["boot_log"].splitlines()[-1] if h["boot_log"] else "  booting...", flush=True)
+                last_boot = h["boot_log"]
+            if h["ready"]:
+                return h
+        except (urllib.error.URLError, TimeoutError, ConnectionError, json.JSONDecodeError):
+            pass
+        time.sleep(float(os.environ.get("RUNPOD_POLL", "10")))
+    api("DELETE", f"/pods/{pid}", soft=True)
+    return None
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", required=True, help="output path (relative to repo) the command writes; downloaded to the same path")
@@ -155,39 +173,41 @@ def main():
     here = Path(__file__).parent
     env = {"JOB_TOKEN": token, "NVIDIA_DRIVER_CAPABILITIES": "all", "BLENDER_SERIES": a.blender_series,
            "POD_MAX_SECONDS": str(int((a.max_minutes + 10) * 60)), "BOOT_PIP": "0" if a.no_pip else "1",
+           "BOOT_GPU_TEST": "1" if a.blender_series.startswith("5") else "0",
            "BOOT_B64": base64.b64encode((here / "bootstrap.sh").read_bytes()).decode(),
            "AGENT_B64": base64.b64encode((here / "pod_agent.py").read_bytes()).decode()}
     spec = {"name": "shorts-render", "imageName": "ubuntu:24.04", "computeType": "GPU", "gpuCount": a.gpu_count,
             "gpuTypeIds": a.gpu, "gpuTypePriority": "custom", "cloudType": a.cloud,
             "containerDiskInGb": 40, "volumeInGb": 0, "ports": ["8000/http"], "minRAMPerGPU": 16, "minVCPUPerGPU": 4,
             "env": env, "dockerStartCmd": ["bash", "-c", "echo \"$BOOT_B64\" | base64 -d > /boot.sh && bash /boot.sh"]}
-    pod = api("POST", "/pods", spec, soft=a.gpu_count > 1)
-    if pod is None:                        # no multi-GPU machine free: one GPU, same cost, longer
-        print(f"no {a.gpu_count}-GPU pod available; falling back to 1 GPU")
-        pod = api("POST", "/pods", {**spec, "gpuCount": 1})
-    pid, t0 = pod["id"], time.time()
-    rate = pod.get("adjustedCostPerHr") or pod.get("costPerHr") or 0
-    gpu = (pod.get("gpu") or {}).get("displayName") or (pod.get("machine") or {}).get("gpuDisplayName") or "GPU"
-    print(f"pod {pid}: {gpu} at ${rate}/hr ({a.cloud.lower()} cloud)")
-    url, hdr = POD_URL.format(id=pid), {"X-Token": token}
+    gpus, spent = list(a.gpu), 0.0
+    for attempt in range(3):               # a pod whose GPU fails the boot test is replaced (different GPU type)
+        spec["gpuTypeIds"] = gpus
+        pod = api("POST", "/pods", spec, soft=a.gpu_count > 1)
+        if pod is None:                    # no multi-GPU machine free: one GPU, same cost, longer
+            print(f"no {a.gpu_count}-GPU pod available; falling back to 1 GPU")
+            pod = api("POST", "/pods", {**spec, "gpuCount": 1})
+        pid, t0 = pod["id"], time.time()
+        rate = pod.get("adjustedCostPerHr") or pod.get("costPerHr") or 0
+        gpu = (pod.get("gpu") or {}).get("displayName") or (pod.get("machine") or {}).get("gpuDisplayName") or "GPU"
+        print(f"pod {pid}: {gpu} at ${rate}/hr ({a.cloud.lower()} cloud)")
+        url, hdr = POD_URL.format(id=pid), {"X-Token": token}
+        h = boot(url, t0 + a.max_minutes * 60, pid)
+        if h is None or h.get("gpu") != "bad":
+            break
+        api("DELETE", f"/pods/{pid}")
+        spent += rate * (time.time() - t0) / 3600
+        print(f"pod {pid} deleted: its GPU failed the boot render test (cost ~${rate * (time.time() - t0) / 3600:.3f})")
+        gpus = [g for g in gpus if not g.endswith(gpu.replace("NVIDIA ", "").replace("GeForce ", "").split(" ")[-1])] or gpus
+        if attempt == 2:
+            sys.exit("3 pods failed the GPU test; giving up (all deleted)")
+        print(f"retrying with {gpus}")
     ok = False
     try:
         deadline = t0 + a.max_minutes * 60
-        last_boot = ""
-        while True:  # boot: install deps + Blender
-            if time.time() > deadline:
-                raise TimeoutError("boot exceeded --max-minutes")
-            try:
-                h = http("GET", url + "/health", timeout=20)
-                if h["boot_log"] != last_boot:
-                    print("  " + h["boot_log"].splitlines()[-1] if h["boot_log"] else "  booting...", flush=True)
-                    last_boot = h["boot_log"]
-                if h["ready"]:
-                    break
-            except (urllib.error.URLError, TimeoutError, ConnectionError, json.JSONDecodeError):
-                pass
-            time.sleep(float(os.environ.get("RUNPOD_POLL", "10")))
-        print(f"ready after {(time.time() - t0) / 60:.1f} min; uploading job")
+        if h is None:
+            raise TimeoutError("boot exceeded --max-minutes")
+        print(f"ready after {(time.time() - t0) / 60:.1f} min (gpu test: {h.get('gpu')}); uploading job")
         for f in a.upload:
             upload(url, hdr, f)
         http("POST", url + "/job", data, {**hdr, "Content-Type": "application/gzip"}, timeout=300)
