@@ -16,7 +16,7 @@ import bpy
 ROOT = Path(__file__).resolve().parents[3]
 CACHE = ROOT / "out" / "sets"
 LIB = ROOT / "assets" / "library"
-VERSION = 1      # bump to invalidate every cached set
+VERSION = 2      # bump to invalidate every cached set (2: bake at render subdivision levels)
 
 
 def _key(deps):
@@ -33,12 +33,20 @@ def _key(deps):
 
 def bake_modifiers(coll):
     """Replace static modifier stacks with their result (keeps shape-keyed and rigged meshes live)."""
-    dg = bpy.context.evaluated_depsgraph_get()
+    todo = []
     for ob in list(coll.all_objects):
         if ob.type != "MESH" or not ob.modifiers:
             continue
         if ob.data.shape_keys or any(m.type in {"ARMATURE", "PARTICLE_SYSTEM"} for m in ob.modifiers):
             continue
+        for m in ob.modifiers:          # bake what the RENDER sees (subdivision often renders finer)
+            if hasattr(m, "render_levels"):
+                m.levels = m.render_levels
+            m.show_viewport = m.show_render
+        todo.append(ob)
+    dg = bpy.context.evaluated_depsgraph_get()
+    dg.update()
+    for ob in todo:
         me = bpy.data.meshes.new_from_object(ob.evaluated_get(dg), preserve_all_data_layers=True, depsgraph=dg)
         old = ob.data
         ob.modifiers.clear()
