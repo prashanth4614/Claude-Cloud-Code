@@ -40,6 +40,11 @@ YouTube Shorts production pipeline. **The agreed production pipeline is `PIPELIN
 - Cloud sessions get the ElevenLabs key as a network secret attached by the proxy, so
   `$ELEVENLABS_API_KEY` may be empty even though requests work. Never print, log or commit any key.
 
+## Sound
+
+- For any sound-mix work (SFX, transitions, music, room tone, voice clean-up, loudness), use the
+  `sfx-design` skill (`.claude/skills/sfx-design/`): its rules, targets and `scripts/audit_mix.py`.
+
 ## Rendering
 
 - Heavy Blender renders go to RunPod via `cloud/render_runpod.py`, after a `--dry-run`.
