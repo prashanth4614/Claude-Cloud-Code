@@ -186,6 +186,9 @@ def main():
     for attempt in range(3):               # a pod whose GPU fails the boot test is replaced (different GPU type)
         spec["gpuTypeIds"] = gpus
         pod = api("POST", "/pods", spec, soft=True)
+        if pod is None and "allowedCudaVersions" in spec:   # no host with a new driver is free: let the boot GPU test judge
+            print("no host with CUDA 12.9+ free; trying any host (the boot GPU test rejects one that can't render)")
+            pod = api("POST", "/pods", {k: v for k, v in spec.items() if k != "allowedCudaVersions"}, soft=True)
         if pod is None and a.gpu_count > 1:
             print(f"no {a.gpu_count}-GPU pod available; trying 1 GPU")
             pod = api("POST", "/pods", {**spec, "gpuCount": 1}, soft=True)
