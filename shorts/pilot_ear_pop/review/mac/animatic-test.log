@@ -1,0 +1,27 @@
+== pull
+== assets (only downloads what's missing)
+hdri: qwantani_sunset_puresky
+hdri: syferfontein_6d_clear_puresky
+hdri: qwantani_dusk_2_puresky
+polyhaven_tex: poly_wool_herringbone
+polyhaven_tex: leather_white
+polyhaven_tex: fabric_leather_02
+ambientcg_tex: Carpet012
+ambientcg_tex: Plastic010
+== build film
+[sets] sky: cached (sky.blend)
+[sets] cabin: cached (cabin.blend)
+[sets] ear_in: cached (ear_in.blend)
+[sets] ear_map: cached (ear_map.blend)
+[sets] city: cached (city.blend)
+[max] seated; eyes (300.0, 0.427, 1.374), ear (300.07, 0.498, 1.334)
+[build] WARNING: voice_take.wav not found, no 'voice' audio in this build
+[build] WARNING: voice_take.wav not found, no 'voice' audio in this build
+[build] saved /Users/prashanthmogili/My Files/Claude-Cloud-Code/out/pilot_ear_pop/pilot_ear_pop_previz.blend
+build: 7 s
+== render animatic (first 30 frames)
+[animatic] /Users/prashanthmogili/My Files/Claude-Cloud-Code/shorts/pilot_ear_pop/review/mac/animatic-test.mp4
+render: 65 s for 0 frames ( s/frame) render: 65 s for 0 frames ( s/frame)
+size: 176K
+total: 74 s on Apple M4
+STATUS: OK
