@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Animatic (Gate B) on the Mac: the whole film, every frame, EEVEE, 540x960, picture only.
+# Animatic (Gate B) on the Mac: the whole film, every frame, 540x960, with the voice when it's on the Mac.
+# EEVEE by default (~85 min); ANIMATIC_ENGINE=WORKBENCH for a flat preview in minutes.
 #
 #   shorts/blender/mac_animatic.sh <job-name> [frames]      e.g.  animatic-test 30   |   animatic-1
 #
@@ -14,7 +15,7 @@ cd "$(git rev-parse --show-toplevel)"
 source shorts/tools/guard.sh
 take_lock render
 
-JOB="${1:?job name}"; FRAMES="${2:-}"; QUALITY="animatic"
+JOB="${1:?job name}"; FRAMES="${2:-}"; QUALITY="animatic ${ANIMATIC_ENGINE:-EEVEE}"
 BRANCH="claude/youtube-video-production-4ic14n"
 BLENDER="${BLENDER:-}"
 for b in "$BLENDER" /Applications/Blender.app/Contents/MacOS/Blender "$HOME/Applications/Blender.app/Contents/MacOS/Blender"; do
@@ -65,9 +66,11 @@ echo "build: $(( $(t) - T )) s" | tee -a "$LOG"
 step "render animatic${FRAMES:+ (first $FRAMES frames)}"; T=$(t)
 RAW="out/animatic_$JOB.txt"
 # default cap 100 min: the full film takes ~85 min at 4 samples on the M4
+RC=0
 capped "${RENDER_LIMIT:-6000}" "$BLENDER" -b out/pilot_ear_pop/pilot_ear_pop_previz.blend \
-  -P shorts/pilot_ear_pop/render_animatic.py -- "$PWD/$OUT/$JOB.mp4" 50 $FRAMES > "$RAW" 2>&1 \
-  || echo "blender exit code $? (124 = hit the render cap)" | tee -a "$LOG"
+  -P shorts/pilot_ear_pop/render_animatic.py -- "$PWD/$OUT/$JOB.mp4" 50 $FRAMES > "$RAW" 2>&1 || RC=$?
+# a killed Blender leaves an MP4 without its index (unplayable): never publish that as OK
+[ "$RC" -eq 0 ] || { echo "blender exit code $RC (124 = hit the render cap, 143 = terminated)" | tee -a "$LOG"; rm -f "$OUT/$JOB.mp4"; }
 grep -E "\[animatic\]|Error|Traceback|Append frame|Fra:1 " "$RAW" | tail -5 | tee -a "$LOG" || true
 [ -f "$OUT/$JOB.mp4" ] || { echo "-- last 40 lines of Blender output:" >> "$LOG"; tail -40 "$RAW" >> "$LOG"; }
 N="${FRAMES:-1566}"
