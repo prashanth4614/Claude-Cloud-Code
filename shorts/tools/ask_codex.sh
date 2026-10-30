@@ -33,7 +33,7 @@ else
     [ -f "$img" ] && IMG_ARGS+=(--image "$img") || echo "missing image $img" >> "$ERRF"
   done
   capped "$LIMIT" codex exec --model "$MODEL" -c model_reasoning_effort="$EFFORT" -c approval_policy=never \
-    --sandbox read-only --skip-git-repo-check --output-last-message "$LAST" "${IMG_ARGS[@]}" "$PROMPT" > "$OUTF" 2> "$ERRF"
+    --sandbox read-only --skip-git-repo-check --output-last-message "$LAST" ${IMG_ARGS[@]+"${IMG_ARGS[@]}"} "$PROMPT" > "$OUTF" 2> "$ERRF"
   rc=$?
   if [ "$rc" -eq 0 ]; then STATUS=OK; elif [ "$rc" -eq 124 ]; then STATUS=TIMEOUT; else STATUS=FAILED; fi
 fi
