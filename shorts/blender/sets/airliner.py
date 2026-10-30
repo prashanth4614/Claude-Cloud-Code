@@ -374,6 +374,57 @@ def cloud_material():
     return m
 
 
+def cloud_volume_material():
+    """Volumetric cumulus lobe: dense bright core, soft wispy edge, forward scattering (silver lining).
+    Density = (centre falloff + 3D noise), smoothstepped, so the lobe's ellipsoid never shows."""
+    m = bpy.data.materials.get("cloud_volume")
+    if m:
+        return m
+    m = bpy.data.materials.new("cloud_volume")
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.clear()
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    vol = nt.nodes.new("ShaderNodeVolumePrincipled")
+    vol.inputs["Color"].default_value = (1.0, 1.0, 1.0, 1)
+    vol.inputs["Anisotropy"].default_value = 0.55
+    coord = nt.nodes.new("ShaderNodeTexCoord")
+    centred = nt.nodes.new("ShaderNodeVectorMath")
+    centred.operation = "SUBTRACT"
+    centred.inputs[1].default_value = (0.5, 0.5, 0.5)
+    nt.links.new(coord.outputs["Generated"], centred.inputs[0])
+    dist = nt.nodes.new("ShaderNodeVectorMath")
+    dist.operation = "LENGTH"
+    nt.links.new(centred.outputs[0], dist.inputs[0])
+    fall = nt.nodes.new("ShaderNodeMapRange")              # 1 at the centre -> 0 at the hull
+    fall.inputs["From Min"].default_value, fall.inputs["From Max"].default_value = 0.5, 0.0
+    nt.links.new(dist.outputs["Value"], fall.inputs["Value"])
+    noise = nt.nodes.new("ShaderNodeTexNoise")             # billows: ~1.5 m features, fine detail
+    noise.inputs["Scale"].default_value = 0.35
+    noise.inputs["Detail"].default_value = 8.0
+    noise.inputs["Roughness"].default_value = 0.62
+    nt.links.new(coord.outputs["Object"], noise.inputs["Vector"])
+    nmid = nt.nodes.new("ShaderNodeMath")
+    nmid.operation, nmid.inputs[1].default_value = "SUBTRACT", 0.5
+    nt.links.new(noise.outputs["Fac"], nmid.inputs[0])
+    nw = nt.nodes.new("ShaderNodeMath")
+    nw.operation, nw.inputs[1].default_value = "MULTIPLY", 1.1
+    nt.links.new(nmid.outputs[0], nw.inputs[0])
+    add = nt.nodes.new("ShaderNodeMath")
+    add.operation = "ADD"
+    nt.links.new(fall.outputs["Result"], add.inputs[0])
+    nt.links.new(nw.outputs[0], add.inputs[1])
+    shape = nt.nodes.new("ShaderNodeMapRange")             # smoothstep: crisp-ish body, soft fringe
+    shape.interpolation_type = "SMOOTHSTEP"
+    shape.inputs["From Min"].default_value, shape.inputs["From Max"].default_value = 0.18, 0.62
+    shape.inputs["To Max"].default_value = 3.0             # density inside the body
+    nt.links.new(add.outputs[0], shape.inputs["Value"])
+    nt.links.new(shape.outputs["Result"], vol.inputs["Density"])
+    nt.links.new(vol.outputs[0], out.inputs["Volume"])
+    m.diffuse_color = (0.95, 0.95, 0.97, 0.5)
+    return m
+
+
 def _cloud_tex(name, scale, depth=4):
     t = bpy.data.textures.get(name) or bpy.data.textures.new(name, "CLOUDS")
     t.noise_scale, t.noise_depth = scale, depth
@@ -422,17 +473,13 @@ def realistic_sky(scene, origin):
     for ob in [o for o in bpy.data.objects if o.name.startswith("cloud_") and o.name[6:8].isdigit()]:
         ob.data = ob.data.copy() if ob.data.users > 1 else ob.data
         from mathutils import Matrix
-        size = max(ob.scale)
         ob.data.transform(Matrix.Diagonal((*ob.scale, 1.0)))     # bake the squash: relief must not stretch
         ob.scale = (1, 1, 1)
         ob.data.materials.clear()
-        ob.data.materials.append(mat)
+        ob.data.materials.append(cloud_volume_material())        # a volume: the mesh is only its container
         s = ob.modifiers.new("round", "SUBSURF")
-        s.levels = s.render_levels = 3
-        d = ob.modifiers.new("cauliflower", "DISPLACE")
-        # soft billows, not crumpled paper: relief scaled to the lobe's size, few octaves
-        d.texture, d.texture_coords = _cloud_tex("cloud_cauli", 3.2, 2), "GLOBAL"
-        d.strength = 0.09 * size                                 # world units, in proportion to the lobe
+        s.levels = s.render_levels = 1
+        ob.visible_shadow = True
         for p in ob.data.polygons:
             p.use_smooth = True
     sun = bpy.data.objects.get("Sun")
@@ -443,6 +490,7 @@ def realistic_sky(scene, origin):
 
 def sky_world(scene):
     """Scene-level part of the sky (not cached with the set): HDRI world light and the film look."""
+    scene.cycles.volume_bounces = 2              # light scattering inside the cumulus (bright, soft)
     hdri = LIB / "hdri" / "qwantani_sunset_puresky_2k.exr"
     if hdri.exists():
         w = scene.world
