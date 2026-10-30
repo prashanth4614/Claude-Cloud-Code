@@ -1,0 +1,35 @@
+== pull
+== assets (only downloads what's missing)
+hdri: qwantani_sunset_puresky
+hdri: syferfontein_6d_clear_puresky
+hdri: qwantani_dusk_2_puresky
+polyhaven_tex: poly_wool_herringbone
+polyhaven_tex: leather_white
+polyhaven_tex: fabric_leather_02
+ambientcg_tex: Carpet012
+ambientcg_tex: Plastic010
+== build film
+[sets] sky: built and cached
+[sets] cabin: cached (cabin.blend)
+[sets] ear_in: cached (ear_in.blend)
+[sets] ear_map: cached (ear_map.blend)
+[sets] city: cached (city.blend)
+[max] seated; eyes (300.0, 0.427, 1.374), ear (300.07, 0.498, 1.334)
+[build] WARNING: voice_take.wav not found, no 'voice' audio in this build
+[build] WARNING: voice_take.wav not found, no 'voice' audio in this build
+[build] saved /Users/prashanthmogili/My Files/Claude-Cloud-Code/out/pilot_ear_pop/pilot_ear_pop_previz.blend
+build: 8 s
+== qa
+[qa] all shots clean
+[qa] 0 problem(s)
+qa: 6 s
+== render (look): S01:0.2,S01:0.5,S01:0.9,S05a:0.5
+[review] GPU: METAL (Apple M4 (GPU - 10 cores))
+[review] S01:0.2 (frame 18) 24.3s
+[review] S01:0.5 (frame 43) 11.8s
+[review] S01:0.9 (frame 77) 10.3s
+[review] S05a:0.5 (frame 516) 11.3s
+[review] 4 frames in 59s -> shorts/pilot_ear_pop/review/mac/clouds-3.jpg
+render: 60 s
+total: 76 s on Apple M4
+STATUS: OK
