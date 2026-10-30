@@ -15,7 +15,8 @@
 - Foley: clean ElevenLabs cues (audio/sfx), each placed by its ANCHOR (the moment of its hit, measured
   from the file) on the frame where the action happens on screen: the eardrum's shape keys, the tube
   opening, the camera reaching the ear, Max's face keys (swallow, yawn, chew; see real_max.py).
-Levels, timings and cue choices follow Codex's sound-design review (shorts/tools/codex/answers/007-*).
+Levels, timings and cue choices follow Codex's sound-design review (shorts/tools/codex/answers/007-*),
+retuned to the measured Zack D Films Shorts (shorts/reference/zack_style_study.md).
 Loudness: one fixed gain to -14 LUFS (measured), a peak limiter only above -1.9 dBFS (-1.5 dB true peak
 after AAC): nothing rides the level. --stems also writes each stem for checking against the picture.
 """
@@ -39,12 +40,12 @@ SHOT = {s["id"]: s for s in PLAN["shots"]}
 VOICE_CHAIN = ("highpass=f=75,equalizer=f=300:t=q:w=1:g=-1.5,equalizer=f=3000:t=q:w=0.9:g=2.5,"
                "highshelf=f=9000:g=1,acompressor=threshold=-18dB:ratio=2:attack=20:release=200:makeup=1:knee=6")
 MUSIC_FILE, LOOP_AT = "v6_music_d", 40.0   # the score; where it crossfades back into its opening
-MUSIC_UNDER = 21          # dB below the voice's speech level (Codex 007)
+MUSIC_UNDER = 21          # dB below the voice's speech level (study: background 19-20 dB under)
 # room tone per set, and each bed's level in dB below the speech (Codex 007)
 BEDS = {"cabin": ("v6b_cabin",), "sky_golden_hour": ("v6b_cabin", "v6b_sky"), "sky_high": ("v6b_sky",),
         "ear_inside": ("v6b_ear",), "ear_map": ("v6b_ear",), "city_dusk": ("v6b_city",)}
-BED_UNDER = {"v6b_cabin": 30, "v6b_ear": 32, "v6b_sky": 32, "v6b_city": 34}
-PRESSURE_UNDER = 24       # the blocked-ear texture at its fullest
+BED_UNDER = {"v6b_cabin": 28, "v6b_ear": 30, "v6b_sky": 30, "v6b_city": 32}
+PRESSURE_UNDER = 22       # the blocked-ear texture at its fullest
 XFADE = 0.7               # seconds
 
 
@@ -100,11 +101,19 @@ def foley(n):
                              "v3_air", "v3_thud", "v3_swallow", "v3_chew", "jet_climb", "outro_chime", "ear_pop",
                              "v6_jet_swell", "v6_plane_descend", "v6_exhale", "v6_release")}
     c["v3_yawn"] = Cue("v3_yawn", anchor="onset")
+    c["v8_boom"] = Cue("v8_boom", anchor="onset")
+    c["v6_swish"] = Cue("v6_swish")
     fx = np.zeros(n)
     S = lambda sid: SHOT[sid]["start"]   # noqa: E731
     E = lambda sid: SHOT[sid]["end"]     # noqa: E731
-    place(fx, c["jet_climb"], S("S01"), -12, 0.45)              # the jet sweeps past the camera
-    place(fx, c["v3_whoosh_in"], E("S02"), -10, -0.12)          # the camera dives into his ear
+    place(fx, c["v8_boom"], 1, -4)                              # the hook lands on frame 1: a low boom
+    place(fx, c["jet_climb"], S("S01"), -6, 0.45)               # the jet sweeps past the camera
+    place(fx, c["v3_whoosh_in"], E("S02"), -7, -0.12)           # the camera dives into his ear
+    # a whoosh on every change of world or view that has no move of its own (the study: 9 of 13 cuts),
+    # peaking on the cut; the two files alternate so they don't repeat
+    for i, sid in enumerate(("S04m", "S05b", "S06b", "S07", "S08a", "S09c", "S10", "S11a", "S11b", "S12a",
+                             "S12b", "S13")):
+        place(fx, c[("v6_swish", "v3_whoosh_pass")[i % 2]], S(sid), -14)
     place(fx, c["v3_whoosh_pass"], S("S03"), -13, 0.35)         # on down the canal
     place(fx, c["v3_whoosh_pass"], beat("S04", "ground"), -12, -0.05)  # through the eardrum
     place(fx, c["v6_jet_swell"], S("S05a"), -12, 0.8)           # the jet climbs past
@@ -115,7 +124,7 @@ def foley(n):
     place(fx, c["v3_air"], beat("S09a", "escapes"), -11)        # air escapes down the tube
     place(fx, c["v3_whip"], E("S09a") - 3, -12)                 # whip up into the POP shot
     fpop = beat("S09b", "pop")
-    place(fx, c["v3_pop"], fpop + 1, -2)                        # POP: the eardrum snaps flat (keys pop-1 -> pop+3)
+    place(fx, c["v3_pop"], fpop + 1, -5)                        # POP: the eardrum snaps flat (keys pop-1 -> pop+3)
     place(fx, c["ear_pop"], fpop + 1, -10)                      #   with the softer generated pop under it
     place(fx, c["v6_release"], fpop + 3, -12)                   #   and the pressure letting go
     place(fx, c["v6_exhale"], beat("S09c", "relief") + 3, -11)  # Max's relief (relief_smile at relief+8)
@@ -161,34 +170,23 @@ def keyed(n, keys):
     return db(np.interp(np.arange(n) / SR, t, d, left=-80, right=-80))
 
 
-def duck(n, depth_db, attack=0.15, release=0.6, bridge=0.5):
-    """depth_db for each spoken line, ramping in `attack` s BEFORE the line (anticipatory) and back out
-    over `release` s after it; lines less than `bridge` s apart are one span, so the score doesn't
-    bob up between them."""
-    spans = []
-    for ln in lines():
-        if spans and ln["start"] - spans[-1][1] < bridge:
-            spans[-1][1] = ln["end"]
-        else:
-            spans.append([ln["start"], ln["end"]])
+def payoff_dips(n):
+    """Music and room tone drop for the last 250 ms before each payoff and recover over 350 ms (all
+    three Zack D Films Shorts studied do this, ~10 dB): the POP (-9 dB), the tube clamping shut on the
+    way down and the tube opening again (-8 dB)."""
     t = np.arange(n) / SR
     g = np.zeros(n)
-    for a, b in spans:
-        g = np.maximum(g, np.interp(t, [a - attack, a, b, b + release], [0, 1, 1, 0], left=0, right=0))
-    return db(depth_db * g)
-
-
-def pop_dip(n):
-    """Music and room tone drop 9 dB for the last 250 ms before the POP and recover over 350 ms."""
-    p = t_of(beat("S09b", "pop"))
-    return db(np.interp(np.arange(n) / SR, [p - 0.3, p - 0.25, p, p + 0.35], [0, -9, -9, 0]))
+    for f, d in ((beat("S09b", "pop"), -9), (beat("S11a", "shut") + 8, -8), (beat("S12b", "open") + 2, -8)):
+        p = t_of(f)
+        g = np.minimum(g, np.interp(t, [p - 0.3, p - 0.25, p, p + 0.35], [0, d, d, 0], left=0, right=0))
+    return db(g)
 
 
 def music(n, speech_db):
     """The score (ElevenLabs Music, Codex's brief: wonder, gentle tension, a suspended hold, a soft
-    release on the POP, warm clarity) from the first frame, MUSIC_UNDER dB under the speech, ducked
-    3 dB under the lines. Near its end it crossfades back into its own opening, so the Short loops
-    seamlessly: no ending fade."""
+    release on the POP, warm clarity) from the first frame, a steady MUSIC_UNDER dB under the speech:
+    no ducking (the studied Zack D Films Shorts keep the bed constant, set low enough). Near its end it
+    crossfades back into its own opening, so the Short loops seamlessly: no ending fade."""
     src = decode(HERE / "audio" / "bgm" / f"{MUSIC_FILE}.mp3")
     m = np.zeros(n)
     m[: min(n, len(src))] = src[:n]
@@ -198,7 +196,7 @@ def music(n, speech_db):
     m[a:] = m[a:] * np.r_[np.linspace(1, 0, x), np.zeros(n - a - x)] + head * np.r_[np.linspace(0, 1, x), np.ones(n - a - x)]
     m *= db(speech_db - MUSIC_UNDER - level(m))
     m[-int(0.03 * SR):] *= np.linspace(1, 0, int(0.03 * SR))   # no click at the very end
-    return m * duck(n, -3)
+    return m
 
 
 def beds(n, speech_db):
@@ -214,7 +212,7 @@ def beds(n, speech_db):
         for s, a, b in zip(shots, edges, edges[1:]):
             if name in BEDS[s["set"]]:
                 g[a:b] = 1
-        bed = ffmpeg_filter(loop(name, n), "highpass=f=60")
+        bed = ffmpeg_filter(loop(name, n), "highpass=f=35")   # keep the low rumble
         env = np.sqrt(smooth(bed ** 2, 1.0)) + 1e-9      # even it out: a room tone mustn't come and go
         bed *= np.clip(np.median(env) / env, 0.5, db(24))
         bed *= db(speech_db - under - level(bed))
@@ -318,7 +316,7 @@ def main():
     w = int(0.4 * SR)
     speech_db = 20 * np.log10(np.percentile(np.sqrt(np.convolve(vo ** 2, np.ones(w) / w, mode="valid")), 85))
     fx = ffmpeg_filter(foley(n) * db(speech_db), "lowpass=f=12000")   # cue gains are against the speech level
-    dip = pop_dip(n)
+    dip = payoff_dips(n)
     mus = muffle(music(n, speech_db) * dip, n) if os.environ.get("MUSIC", "1") == "1" else np.zeros(n)
     amb = muffle(beds(n, speech_db) * dip, n)
     prs = pressure(n, speech_db)
