@@ -32,6 +32,8 @@ ed.render.resolution_percentage = pct
 if len(args) > 2:
     ed.frame_end = ed.frame_start + int(args[2]) - 1
 r = ed.render
+if hasattr(r.image_settings, "media_type"):   # Blender 5.x: pick the media type first
+    r.image_settings.media_type = "VIDEO"
 r.image_settings.file_format = "FFMPEG"
 r.ffmpeg.format, r.ffmpeg.codec, r.ffmpeg.constant_rate_factor = "MPEG4", "H264", "MEDIUM"
 r.ffmpeg.audio_codec, r.ffmpeg.audio_bitrate, r.ffmpeg.audio_channels = "AAC", 192, "STEREO"

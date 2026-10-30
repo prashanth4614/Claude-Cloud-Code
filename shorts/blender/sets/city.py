@@ -12,6 +12,8 @@ import bmesh
 import bpy
 from mathutils import Vector
 
+from rigs import fcurves
+
 from .pbr import LIB, plain
 
 BLOCK, STREET = 48.0, 10.0
@@ -250,6 +252,6 @@ def light_switch(f_start, f_end):
                           (f_end + 1, 1 - inside)):
             lamp.data.energy = on[lamp] * active
             lamp.data.keyframe_insert("energy", frame=f)
-        for fc in lamp.data.animation_data.action.fcurves:
+        for fc in fcurves(lamp.data):
             for kp in fc.keyframe_points:
                 kp.interpolation = "CONSTANT"

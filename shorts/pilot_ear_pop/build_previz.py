@@ -22,7 +22,7 @@ from mathutils import Vector
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "blender"))
 from greybox import CABIN, CITY, EAR, EAR_MAP, SKY, build_cabin, build_max as greybox_max, build_city, build_ear, build_sky, tube_point  # noqa: E402
-from rigs import bake_move, bezier, camera, collection, ease, handheld, impulse_shake, key, lerp  # noqa: E402
+from rigs import bake_move, bezier, camera, collection, ease, handheld, impulse_shake, key, lerp, output_format, fcurves  # noqa: E402
 sys.path.insert(0, str(HERE))
 import real_max  # noqa: E402
 from sets.cabin import build_cabin as real_cabin  # noqa: E402
@@ -58,7 +58,7 @@ def setup_film():
     sc.sync_mode = "AUDIO_SYNC"  # playback follows the voice: drops frames on slow machines instead of drifting
     # View > Viewport Render Animation then writes a synced MP4 (picture + voice + SFX) next to the .blend
     r = sc.render
-    r.image_settings.file_format = "FFMPEG"
+    output_format(r.image_settings, "FFMPEG")
     r.ffmpeg.format, r.ffmpeg.codec, r.ffmpeg.constant_rate_factor = "MPEG4", "H264", "MEDIUM"
     r.ffmpeg.audio_codec, r.ffmpeg.audio_bitrate, r.ffmpeg.audio_channels = "AAC", 192, "STEREO"
     r.filepath = "//pilot_ear_pop_previz_"
@@ -102,7 +102,7 @@ def animate_jet(jet):
 def jet_at(sid, t):
     jet = bpy.data.objects["Jet"]
     f0, f1 = rng(sid)
-    fc = [c for c in jet.animation_data.action.fcurves if c.data_path == "location"]
+    fc = [c for c in fcurves(jet) if c.data_path == "location"]
     fr = f0 + (f1 - f0) * t
     return Vector([c.evaluate(fr) for c in sorted(fc, key=lambda c: c.array_index)])
 
@@ -188,7 +188,7 @@ def animate_ear(e):
     for i, mol in enumerate(e["outside"] + e["inside"]):
         key(mol, "location", 1, Vector(mol.location))
         key(mol, "scale", 1, (0.11,) * 3)
-        for fc in mol.animation_data.action.fcurves:
+        for fc in fcurves(mol):
             if fc.data_path == "location":
                 n = fc.modifiers.new("NOISE")
                 n.scale, n.strength, n.phase = 40, 0.6 if fc.array_index != 0 or i >= 48 else 1.2, i * 3.1 + fc.array_index
@@ -406,13 +406,18 @@ def strips(seq):
 
 
 def effect(ss, name, kind, channel, start, end, a=None, b=None):
-    """new_effect across Blender versions (inputs were seq1/seq2 before 4.4, input1/input2 after)."""
+    """new_effect across Blender versions: inputs were seq1/seq2 before 4.4 and input1/input2 after;
+    5.x takes a length instead of frame_end."""
+    names = [p.identifier for p in ss.bl_rna.functions["new_effect"].parameters]
     kw = {}
     if a is not None:
-        names = [p.identifier for p in ss.bl_rna.functions["new_effect"].parameters]
         k1, k2 = ("input1", "input2") if "input1" in names else ("seq1", "seq2")
         kw = {k1: a, k2: b}
-    return ss.new_effect(name, kind, channel, frame_start=start, frame_end=end, **kw)
+    if "length" in names:
+        kw["length"] = end - start
+    else:
+        kw["frame_end"] = end
+    return ss.new_effect(name, kind, channel, frame_start=start, **kw)
 
 
 def build_edit(film, cams):

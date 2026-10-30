@@ -224,9 +224,37 @@ def seals(chamber, o, mat):
     collar = _open_cone("tympanic_collar_in", coll, o + Vector((-0.95, 0, 0)), centre + Vector((-1.9, 0, 0)),
                         1.6, 1.62, mat)
     d = (TUBE_PTS[0] + o - centre).normalized()
-    funnel = _open_cone("tube_mouth_in", coll, centre + d * 2.25, centre + d * 3.1, 0.78, 0.2, mat)
+    funnel = _open_cone("tube_mouth_in", coll, centre + d * 2.25, centre + d * 3.3, 0.78, 0.14, mat)  # tip tucks inside the closed tube (r 0.16)
     for ob in (collar, funnel):
         relief(ob, strength=0.05, scale=1.0, length_cuts=12)
+    # the tympanic annulus: the fibrous ring that holds the eardrum's edge. It also closes the seam
+    # where the drum (r 1.55), the canal's end (r 1.5) and the collar (r 1.6) meet.
+    import bmesh
+    import math
+    bm = bmesh.new()
+    segs, ring_segs, major, minor = 96, 12, 1.57, 0.13
+    rings = []
+    for i in range(segs):
+        a = 2 * math.pi * i / segs
+        rings.append([bm.verts.new((minor * math.cos(2 * math.pi * j / ring_segs),
+                                    (major + minor * math.sin(2 * math.pi * j / ring_segs)) * math.cos(a),
+                                    (major + minor * math.sin(2 * math.pi * j / ring_segs)) * math.sin(a)))
+                      for j in range(ring_segs)])
+    for i in range(segs):
+        r0, r1 = rings[i], rings[(i + 1) % segs]
+        for j in range(ring_segs):
+            k = (j + 1) % ring_segs
+            bm.faces.new((r0[j], r0[k], r1[k], r1[j]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    me = bpy.data.meshes.new("tympanic_annulus_in")
+    bm.to_mesh(me)
+    bm.free()
+    ring = bpy.data.objects.new("tympanic_annulus_in", me)
+    coll.objects.link(ring)
+    ring.location = o + Vector((-0.8, 0, 0))
+    me.materials.append(mat)
+    for p in me.polygons:
+        p.use_smooth = True
 
 
 def exit_glow(o, coll):

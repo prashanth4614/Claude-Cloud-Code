@@ -88,6 +88,19 @@ def empty(name, coll, loc=(0, 0, 0), parent=None):
     return ob
 
 
+def fcurves(idblock):
+    """F-curves of an ID's action on Blender 4.x and 5.x (5.x stores them in layered-action channelbags)."""
+    ad = getattr(idblock, "animation_data", None)
+    if not ad or not ad.action:
+        return []
+    act = ad.action
+    if hasattr(act, "fcurves"):
+        return list(act.fcurves)
+    from bpy_extras import anim_utils
+    bag = anim_utils.action_get_channelbag_for_slot(act, ad.action_slot)
+    return list(bag.fcurves) if bag else []
+
+
 def key(ob, path, frame, value, index=-1, interp=None):
     """Set a property and keyframe it. value may be a scalar or a vector."""
     target, attr = (ob, path) if "." not in path else (ob.path_resolve(path.rsplit(".", 1)[0]), path.rsplit(".", 1)[1])
@@ -96,10 +109,17 @@ def key(ob, path, frame, value, index=-1, interp=None):
     if interp:
         ad = (ob.id_data if hasattr(ob, "id_data") else ob).animation_data
         if ad and ad.action:
-            for fc in ad.action.fcurves:
+            for fc in fcurves(ob.id_data if hasattr(ob, "id_data") else ob):
                 for kp in fc.keyframe_points:
                     if int(round(kp.co.x)) == frame:
                         kp.interpolation = interp
+
+
+def output_format(image_settings, fmt):
+    """Set a render output format on Blender 4.x and 5.x (5.x first needs the media type)."""
+    if hasattr(image_settings, "media_type"):
+        image_settings.media_type = "VIDEO" if fmt == "FFMPEG" else "IMAGE"
+    image_settings.file_format = fmt
 
 
 # ----------------------------------------------------------------- cameras --
@@ -147,8 +167,7 @@ def bake_move(cam, f0, f1, move, step=3, focus=True):
 
 def handheld(cam, f0, f1, strength=0.2):
     """Subtle operator shake on rotation, limited to the shot's frames."""
-    ad = cam.animation_data
-    for fc in ad.action.fcurves:
+    for fc in fcurves(cam):
         if fc.data_path == "rotation_quaternion" and fc.array_index in (1, 2, 3):
             mod = fc.modifiers.new("NOISE")
             mod.scale, mod.strength = 18, 0.012 * strength * 5
@@ -163,7 +182,7 @@ def impulse_shake(cam, frame, frames=10, amp=0.05):
     import random
     rnd = random.Random(frame)
     base = {}
-    fc_loc = [fc for fc in cam.animation_data.action.fcurves if fc.data_path == "location"]
+    fc_loc = [fc for fc in fcurves(cam) if fc.data_path == "location"]
     for i in range(frames + 1):
         f = frame + i
         decay = (1 - i / frames) ** 2

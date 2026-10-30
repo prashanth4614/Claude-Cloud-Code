@@ -17,7 +17,7 @@ from mathutils import Vector
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "shorts" / "blender"))
 from build_max import aim_bone, set_expression, thumbs_up, THUMB_BONES  # noqa: E402
-from rigs import material  # noqa: E402
+from rigs import fcurves, material  # noqa: E402
 
 MAX_BLEND = ROOT / "assets" / "characters" / "max" / "max_v2.blend"
 SEAT_TOP = 0.53                      # greybox seat cushion top (z above the cabin floor)
@@ -219,8 +219,7 @@ def perform(m, beat, rng, sc):
 def _blinks(rig, timeline, end):
     """Natural blinks every 2.5-5 s (not while his eyes are already closed)."""
     body = next(o for o in rig.children if o.name.endswith(".body"))
-    act = body.data.shape_keys.animation_data.action
-    curves = [fc for fc in act.fcurves if fc.data_path in ('key_blocks["eyeBlinkLeft"].value',
+    curves = [fc for fc in fcurves(body.data.shape_keys) if fc.data_path in ('key_blocks["eyeBlinkLeft"].value',
                                                            'key_blocks["eyeBlinkRight"].value')]
     closed = {"wince", "yawn"}
     busy = sorted(f for f, n, _ in timeline if n in closed)

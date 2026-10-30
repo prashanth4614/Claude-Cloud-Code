@@ -59,6 +59,8 @@ def setup(sc, quality):
     gpu = use_gpu(sc)
     sc.render.use_persistent_data = True
     sc.render.use_sequencer = False
+    if hasattr(sc.render.image_settings, "media_type"):   # Blender 5.x: pick the media type first
+        sc.render.image_settings.media_type = "IMAGE"
     sc.render.image_settings.file_format = "PNG"
     sc.cycles.use_denoising = True
     sc.cycles.use_adaptive_sampling = True
