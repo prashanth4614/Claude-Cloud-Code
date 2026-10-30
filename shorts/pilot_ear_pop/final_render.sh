@@ -59,7 +59,7 @@ touch "$OUT/done.txt"
 python3 cloud/render_runpod.py --cloud "${RUNPOD_CLOUD:-SECURE}" --gpu-count "$GPUS" --blender-series 5.2 --no-pip --max-minutes "$MAXMIN" \
   --upload out/final/film_packed.blend --pull-frames "$OUT/frames" --include "$OUT/done.txt" \
   --only shorts/pilot_ear_pop/final_pod.sh shorts/pilot_ear_pop/render_final.py \
-  --gpu "NVIDIA GeForce RTX 4090" "NVIDIA RTX PRO 4500 Blackwell" "NVIDIA RTX PRO 4500 Blackwell Server Edition" \
+  --gpu "NVIDIA GeForce RTX 4090" "NVIDIA RTX PRO 4500 Blackwell" \
         "NVIDIA RTX A6000" "NVIDIA A40" "NVIDIA RTX 6000 Ada Generation" "NVIDIA L40S" \
   --out "$OUT/DONE" "$@" -- \
   bash shorts/pilot_ear_pop/final_pod.sh /work/upload/film_packed.blend "$OUT/frames" "$RANGES"
