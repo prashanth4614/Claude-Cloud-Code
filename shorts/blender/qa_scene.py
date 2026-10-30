@@ -88,7 +88,7 @@ def check_shots(scene, plan, nx, ny):
                 us, vs = [p[0] for p in gap_uv], [p[1] for p in gap_uv]
                 where = f"x {min(us):.2f}-{max(us):.2f}, y {min(vs):.2f}-{max(vs):.2f} (0,0 = bottom left)"
                 problems.append(f"{sh['id']} {tag} f{f}: GAP backdrop/void visible in {100 * gap / n:.0f}% of frame at {where}")
-            if near / n > 0.6 and not sh["move"].startswith("push_through") and sh["id"] not in ("S02", "S12b"):
+            if near / n > 0.6 and not sh["move"].startswith("push_through") and sh["id"] != "S02":
                 problems.append(f"{sh['id']} {tag} f{f}: INSIDE camera is inside a surface ({100 * near / n:.0f}% of rays)")
     return problems
 

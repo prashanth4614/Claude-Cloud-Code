@@ -5,6 +5,11 @@
 # shot:    what the Blender scene shows (drives shots.yaml / the scene build).
 # sfx:     designed accents, anchored to a spoken word or a time offset. Sparse on purpose.
 # bed:     which ambience bed plays under the line.
+# take:    where the audio comes from. [1, n] = line n of the approved take 1 (takes/take1.json, cached,
+#          free to rebuild); "until: <word>" keeps it only up to that word. [2] = generated in take 2
+#          (only the new lines, in order), so a rewrite never re-records the lines we kept.
+# pause_after: extra silence after the line (seconds), e.g. to let the POP land.
+# keywords: words whose caption chunk is highlighted.
 
 title: Why Your Ears Pop on a Plane
 voice: elevenlabs:x5ld1ovD8agu3EPB7Qpj
@@ -13,78 +18,92 @@ host: Max
 lines:
   - spoken: "[curious] Ever wondered why your ears pop on a plane?"
     caption: "Ever wondered why your ears pop on a plane?"
-    shot: "Exterior: airliner climbing through golden-hour clouds, camera tracking alongside."
+    take: [1, 1]
+    keywords: [pop]
+    shot: "Cold open on Max wincing, then the airliner climbing through clouds; push into Max's ear."
     bed: none
     sfx: [{at: 0.0, cue: jet_climb}]
 
-  - spoken: "Here's what's actually happening... inside your head."
-    caption: "Here's what's actually happening inside your head."
-    shot: "Cabin: Max in a window seat touches his ear; slow push-in to the ear."
-    bed: cabin
-
   - spoken: "Behind your eardrum sits a tiny pocket of air - your middle ear."
     caption: "Behind your eardrum sits a tiny pocket of air - your middle ear."
-    shot: "Transition through the ear into a cutaway: ear canal, eardrum, middle ear, ossicles."
+    take: [1, 3]
+    keywords: [eardrum, middle]
+    shot: "Fly down the ear canal to the eardrum; the middle ear behind it."
     bed: body
     sfx: [{at: 0.0, cue: into_ear}]
 
   - spoken: "On the ground, the pressure inside matches the air outside. Perfectly balanced."
-    caption: "On the ground, the pressure inside matches the air outside. Perfectly balanced."
-    shot: "Calm cutaway; air molecules evenly spread on both sides of a flat eardrum."
+    caption: "On the ground, the pressure inside matches the air outside."
+    take: [1, 4]
+    until: outside
+    keywords: [matches]
+    shot: "Through the eardrum into the middle ear; then the labelled x-ray map, inside = outside."
     bed: body
 
   - spoken: "But as the plane climbs... the cabin pressure drops."
     caption: "But as the plane climbs, the cabin pressure drops."
-    shot: "Outside molecules thin out; altitude badge counts up to 8,000 ft."
+    take: [1, 5]
+    keywords: [climbs, drops]
+    shot: "The airliner visibly climbing past the clouds; outside molecules thin beyond the eardrum."
     bed: body
 
   - spoken: "[slightly tense] The trapped air pushes outward... and your eardrum bulges, like a balloon."
     caption: "The trapped air pushes outward, and your eardrum bulges, like a balloon."
-    shot: "Eardrum stretches outward, strain glow at the rim."
+    take: [1, 6]
+    keywords: [outward, bulges]
+    shot: "Amber air crowds the eardrum; profile cutaway: the eardrum bulges out past its resting outline."
     bed: body
     sfx: [{word: bulges, cue: stretch}]
 
   - spoken: "[softly] That's the muffled, blocked feeling."
     caption: "That's the muffled, blocked feeling."
-    shot: "Cut to Max wincing, hand over his ear; the cabin sound goes muffled."
+    take: [1, 7]
+    keywords: [muffled]
+    shot: "Max wincing, hand over his ear; the cabin sound goes muffled."
     bed: cabin
     fx: muffle
 
   - spoken: "Then a tiny tube to your throat - the Eustachian tube - cracks open."
     caption: "Then a tiny tube to your throat - the Eustachian tube - cracks open."
-    shot: "Cutaway widens to show the Eustachian tube opening; air starts to flow down."
+    take: [1, 8]
+    keywords: [Eustachian, cracks]
+    shot: "Crane down to the tube; its closed slit parts and amber air leaves toward the throat."
     bed: body
     sfx: [{word: cracks, cue: tube_open}]
 
   - spoken: "Air escapes, the pressure evens out, and... [playful] pop!"
     caption: "Air escapes, the pressure evens out, and... POP!"
-    shot: "Air rushes out; the eardrum snaps flat with a soft light ripple."
+    take: [1, 9]
+    pause_after: 1.1
+    keywords: [POP]
+    shot: "Ride down the tube with the air; the eardrum snaps flat (held), then Max's relief."
     bed: body
     sfx: [{word: escapes, cue: air_release}, {word: pop, cue: ear_pop}]
 
-  - spoken: "[serious] Landing is actually worse."
-    caption: "Landing is actually worse."
+  - spoken: "[serious] Descending can be worse."
+    caption: "Descending can be worse."
+    take: [2]
+    keywords: [worse]
     shot: "Exterior: the airliner descends toward city lights at dusk, landing gear down."
     bed: none
     sfx: [{at: 0.0, cue: gear_down}]
 
-  - spoken: "The tube doesn't open on its own as easily... so your eardrum gets pushed inward."
-    caption: "The tube doesn't open on its own as easily, so your eardrum gets pushed inward."
-    shot: "Cutaway: eardrum pressed inward, tube pinched shut with a soft red warning glow."
+  - spoken: "Cabin pressure rises... but the tube stays shut - so your eardrum gets pushed inward."
+    caption: "Cabin pressure rises, but the tube stays shut, so your eardrum gets pushed inward."
+    take: [2]
+    keywords: [rises, shut, inward]
+    shot: "Outside air returns, the tube pinched shut and red; profile cutaway: the eardrum pushed in."
     bed: body
     sfx: [{word: inward, cue: squeeze}]
 
   - spoken: "[warm] That's why swallowing, yawning, or chewing gum helps - they pull the tube open."
     caption: "That's why swallowing, yawning, or chewing gum helps - they pull the tube open."
-    shot: "Max yawns, then smiles in relief; three tip cards appear."
+    take: [1, 12]
+    keywords: [swallowing, yawning, chewing, open]
+    shot: "Max close-up: swallow, yawn, chew; the tube opens, air flows up into the middle ear, the eardrum
+      returns flat; Max relieved, on-screen 'Follow for more' (no spoken outro), loops to the wince."
     bed: cabin
     sfx: [{word: yawning, cue: card_soft}]
-
-  - spoken: "[cheerful] Follow for more weird things your body does."
-    caption: "Follow for more weird things your body does."
-    shot: "Max smiles to camera and gives a thumbs-up; follow button."
-    bed: cabin
-    sfx: [{at: 0.2, cue: outro_chime}]
 
 # ElevenLabs Sound Effects prompts. Each one is generated once and cached in assets/sfx/.
 # Mixed per PIPELINE.md: soft, low, filtered.

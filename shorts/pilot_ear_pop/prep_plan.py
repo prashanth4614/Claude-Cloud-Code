@@ -12,10 +12,41 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 LEAD = 0.10  # cut this long before the first word of a shot
+GLUE = {"the", "a", "an", "as", "of", "to", "your", "and", "or", "but", "so", "on"}  # never end a caption chunk on these
 
 
 def norm(w):
     return "".join(c for c in w.lower() if c.isalnum())
+
+
+def captions(script, timing, f, most=3):
+    """Short caption chunks (at most 3 words, broken at punctuation), each shown from its first word
+    until the next chunk; a chunk with one of the line's keywords is highlighted."""
+    out = []
+    for ln, tl in zip(script["lines"], timing["lines"]):
+        hot = {norm(k) for k in ln.get("keywords", [])}
+        groups, cur = [], []
+        for w, s, e in tl["words"]:
+            if w in ("-", "—"):          # a dash ends a chunk but isn't shown on its own
+                if cur:
+                    groups.append(cur)
+                cur = []
+                continue
+            cur.append((w, s, e))
+            if w[-1] in ",.!?;:" or (len(cur) >= most and norm(w) not in GLUE) or len(cur) > most:
+                groups.append(cur)
+                cur = []
+        if cur:
+            groups.append(cur)
+        for g in groups:
+            out.append({"text": " ".join(w for w, _, _ in g), "start": f(g[0][1]),
+                        "hot": any(norm(w) in hot for w, _, _ in g)})
+        out[-1]["line_end"] = f(tl["end"])
+    for a, b in zip(out, out[1:] + [None]):
+        a["end"] = a.pop("line_end", None) or (b["start"] - 1 if b else a["start"] + 30)
+        if b is not None:
+            a["end"] = min(a["end"] + 8, b["start"] - 1)   # linger a moment after the line, never overlap
+    return out
 
 
 def main():
@@ -38,12 +69,12 @@ def main():
     for sh in shots["shots"]:
         ln = timing["lines"][sh["line"] - 1]
         t = word_time(sh["line"], sh["from_word"]) if "from_word" in sh else ln["start"]
-        starts.append(0.0 if not starts else max(0.0, t - LEAD))
-    end_total = timing["total"] + 0.6
+        t = t + sh["offset"] if "offset" in sh else t - LEAD   # an offset is exact: no lead
+        starts.append(0.0 if not starts else max(0.0, t))
+    end_total = timing["total"] + shots.get("tail", 0.6)
     plan = {"fps": fps, "resolution": shots["resolution"], "frame_end": f(end_total), "handles": 10,
             "voice": "audio/voice_take.wav", "motifs": shots.get("motifs", {}), "shots": [],
-            "captions": [{"text": ln["caption"], "start": f(ln["start"]), "end": f(ln["end"])}
-                         for ln in timing["lines"]],
+            "captions": captions(script, timing, f),
             "words": [{"line": li, "word": nw, "frame": f(s), "end": f(e)} for li, nw, s, e in words],
             "sfx": []}
     for k, sh in enumerate(shots["shots"]):
@@ -53,11 +84,13 @@ def main():
         for b in sh.get("beats", []):
             if "word" in b:
                 beats.append({"frame": f(word_time(sh["line"], b["word"])), "word": norm(b["word"]), "do": b["do"]})
+                if "key" in b:
+                    beats[-1]["key"] = b["key"]
             elif isinstance(b.get("at"), str):  # e.g. "pop-0.5"
                 w, off = b["at"].split("-")
                 beats.append({"frame": f(word_time(sh["line"], w) - float(off)), "do": b["do"]})
             else:
-                beats.append({"frame": f(t0 + b["at"]), "do": b["do"]})
+                beats.append({"frame": f(t0 + b["at"]), "do": b["do"], **({"key": b["key"]} if "key" in b else {})})
         plan["shots"].append({**{k2: v for k2, v in sh.items() if k2 != "beats"},
                               "start": f(t0), "end": f(t1) - 1, "beats": beats})
     for i, ln in enumerate(script["lines"], 1):

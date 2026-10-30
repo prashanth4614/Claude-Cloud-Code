@@ -4,7 +4,7 @@
   1080,
   1920
  ],
- "frame_end": 1566,
+ "frame_end": 1421,
  "handles": 10,
  "voice": "audio/voice_take.wav",
  "motifs": {
@@ -16,8 +16,29 @@
  },
  "shots": [
   {
+   "id": "S00",
+   "line": 1,
+   "set": "cabin",
+   "size": "CU",
+   "angle": "eye",
+   "lens_mm": 85,
+   "move": "handheld:0.3",
+   "mood": "discomfort",
+   "out": "cut",
+   "start": 1,
+   "end": 19,
+   "beats": [
+    {
+     "frame": 1,
+     "do": "Max already wincing, hand pressed to his ear",
+     "key": "wince"
+    }
+   ]
+  },
+  {
    "id": "S01",
    "line": 1,
+   "from_word": "why",
    "set": "sky_golden_hour",
    "size": "WS",
    "angle": "low",
@@ -31,13 +52,9 @@
    ],
    "mood": "golden, wonder",
    "out": "match_cut:window",
-   "start": 1,
-   "end": 86,
+   "start": 20,
+   "end": 68,
    "beats": [
-    {
-     "frame": 1,
-     "do": "jet already in motion (no static first frame, which is the hook)"
-    },
     {
      "frame": 53,
      "word": "pop",
@@ -47,7 +64,8 @@
   },
   {
    "id": "S02",
-   "line": 2,
+   "line": 1,
+   "from_word": "plane",
    "set": "cabin",
    "size": "MS",
    "angle": "eye",
@@ -59,24 +77,21 @@
    ],
    "mood": "curious",
    "out": "push_through",
-   "start": 87,
-   "end": 188,
+   "start": 69,
+   "end": 103,
    "beats": [
     {
-     "frame": 123,
-     "word": "happening",
-     "do": "Max touches his ear, then lowers his hand"
-    },
-    {
-     "frame": 137,
-     "word": "inside",
-     "do": "push accelerates into the ear opening"
+     "frame": 72,
+     "word": "plane",
+     "do": "Max touches his ear as the camera swings round",
+     "key": "touch"
     }
    ]
   },
   {
    "id": "S03",
-   "line": 3,
+   "line": 2,
+   "from_word": "eardrum",
    "set": "ear_inside",
    "size": "MACRO",
    "angle": "pov",
@@ -89,24 +104,24 @@
    ],
    "mood": "discovery",
    "out": "cut",
-   "start": 189,
-   "end": 329,
+   "start": 104,
+   "end": 227,
    "beats": [
     {
-     "frame": 209,
+     "frame": 107,
      "word": "eardrum",
-     "do": "the pearly eardrum ahead catches the light; label EARDRUM"
+     "do": "the pearly eardrum ahead catches the light"
     },
     {
-     "frame": 299,
+     "frame": 196,
      "word": "middle",
-     "do": "camera slows, face to face with the eardrum; label MIDDLE EAR"
+     "do": "camera slows, face to face with the eardrum"
     }
    ]
   },
   {
    "id": "S04",
-   "line": 4,
+   "line": 3,
    "set": "ear_inside",
    "size": "MACRO",
    "angle": "pov",
@@ -118,67 +133,62 @@
    ],
    "mood": "wonder",
    "out": "cut",
-   "start": 330,
-   "end": 388,
+   "start": 228,
+   "end": 286,
    "beats": [
     {
-     "frame": 345,
+     "frame": 243,
      "word": "ground",
-     "do": "altitude badge 0 FT"
+     "do": "into the middle ear"
     }
    ]
   },
   {
    "id": "S04m",
-   "line": 4,
+   "line": 3,
    "from_word": "matches",
    "set": "ear_map",
    "size": "MS",
    "angle": "eye",
    "lens_mm": 50,
-   "move": "static",
+   "move": "dolly_in",
    "fx": [
     "molecules",
     "xray_look"
    ],
    "mood": "calm, clear",
    "out": "cut",
-   "start": 389,
-   "end": 488,
+   "start": 287,
+   "end": 347,
    "beats": [
     {
-     "frame": 392,
+     "frame": 290,
      "word": "matches",
-     "do": "blue and amber molecules equal density; OUTSIDE = INSIDE badge"
-    },
-    {
-     "frame": 468,
-     "word": "balanced",
-     "do": "molecules settle; soft light pulse"
+     "do": "labels CANAL / EARDRUM / MIDDLE EAR / TUBE; badge OUTSIDE = INSIDE"
     }
    ]
   },
   {
    "id": "S05a",
-   "line": 5,
+   "line": 4,
    "set": "sky_high",
-   "size": "EWS",
+   "size": "WS",
    "angle": "aerial",
-   "lens_mm": 35,
-   "move": "drone_flyover",
+   "lens_mm": 50,
+   "move": "pan_follow",
    "fx": [
     "volumetric_clouds",
     "atmosphere_haze"
    ],
    "mood": "cold, vast",
    "out": "cut",
-   "start": 489,
-   "end": 544,
+   "start": 348,
+   "end": 403,
    "beats": []
   },
   {
    "id": "S05b",
-   "line": 5,
+   "line": 4,
    "from_word": "cabin",
    "set": "ear_inside",
    "size": "MS",
@@ -190,47 +200,65 @@
     "translucent_eardrum"
    ],
    "out": "cut",
-   "start": 545,
-   "end": 586,
+   "start": 404,
+   "end": 445,
    "beats": [
     {
-     "frame": 567,
+     "frame": 426,
      "word": "drops",
-     "do": "blue molecules beyond the eardrum thin out; altitude counts to 8,000 FT; OUTSIDE < INSIDE"
+     "do": "blue molecules beyond the eardrum thin out"
     }
    ]
   },
   {
-   "id": "S06",
-   "line": 6,
+   "id": "S06a",
+   "line": 5,
    "set": "ear_inside",
    "size": "CU",
    "angle": "low",
    "lens_mm": 24,
    "move": "dolly_in",
-   "tilt": "dutch:0->5",
    "fx": [
     "molecules",
-    "strain_glow",
     "shallow_dof"
    ],
    "mood": "tense",
    "out": "cut",
-   "start": 587,
-   "end": 735,
+   "start": 446,
+   "end": 514,
    "beats": [
     {
-     "frame": 622,
+     "frame": 481,
      "word": "pushes",
      "do": "amber molecules crowd against the eardrum"
-    },
+    }
+   ]
+  },
+  {
+   "id": "S06b",
+   "line": 5,
+   "from_word": "and",
+   "set": "ear_map",
+   "size": "CU",
+   "angle": "eye",
+   "lens_mm": 50,
+   "move": "dolly_in",
+   "fx": [
+    "xray_look",
+    "strain_glow"
+   ],
+   "mood": "tense",
+   "out": "cut",
+   "start": 515,
+   "end": 594,
+   "beats": [
     {
-     "frame": 683,
+     "frame": 542,
      "word": "bulges",
-     "do": "eardrum balloons outward, strain glow"
+     "do": "eardrum balloons outward past the outline; badge INSIDE > OUTSIDE"
     },
     {
-     "frame": 718,
+     "frame": 577,
      "word": "balloon",
      "do": "hold the bulge, a tiny wobble"
     }
@@ -238,7 +266,7 @@
   },
   {
    "id": "S07",
-   "line": 7,
+   "line": 6,
    "set": "cabin",
    "size": "CU",
    "angle": "eye",
@@ -250,19 +278,19 @@
    ],
    "mood": "discomfort",
    "out": "cut",
-   "start": 736,
-   "end": 809,
+   "start": 595,
+   "end": 668,
    "beats": [
     {
-     "frame": 757,
+     "frame": 616,
      "word": "muffled",
      "do": "Max winces, hand over his ear; audio muffle on"
     }
    ]
   },
   {
-   "id": "S08",
-   "line": 8,
+   "id": "S08a",
+   "line": 7,
    "set": "ear_inside",
    "size": "WS",
    "angle": "high",
@@ -270,29 +298,47 @@
    "move": "crane_down",
    "fx": [
     "molecules",
-    "subsurface_tissue",
-    "volumetric_haze"
+    "subsurface_tissue"
    ],
    "mood": "hope",
    "out": "cut",
-   "start": 810,
-   "end": 958,
+   "start": 669,
+   "end": 740,
    "beats": [
     {
-     "frame": 835,
+     "frame": 694,
      "word": "tube",
-     "do": "tube mouth highlighted; label EUSTACHIAN TUBE"
-    },
+     "do": "the tube mouth below, closed"
+    }
+   ]
+  },
+  {
+   "id": "S08b",
+   "line": 7,
+   "from_word": "Eustachian",
+   "set": "ear_inside",
+   "size": "CU",
+   "angle": "high",
+   "lens_mm": 28,
+   "move": "dolly_in",
+   "fx": [
+    "molecules"
+   ],
+   "mood": "hope",
+   "out": "cut",
+   "start": 741,
+   "end": 817,
+   "beats": [
     {
-     "frame": 927,
+     "frame": 786,
      "word": "cracks",
-     "do": "tube opens; first molecules slip in"
+     "do": "slit opens; amber air leaves the middle ear toward the throat"
     }
    ]
   },
   {
    "id": "S09a",
-   "line": 9,
+   "line": 8,
    "set": "ear_inside",
    "size": "MACRO",
    "angle": "pov",
@@ -304,24 +350,24 @@
    ],
    "mood": "release",
    "out": "whip:up",
-   "start": 959,
-   "end": 1037,
+   "start": 818,
+   "end": 896,
    "beats": [
     {
-     "frame": 968,
+     "frame": 827,
      "word": "escapes",
      "do": "amber molecules stream down the tube around the camera"
     },
     {
-     "frame": 1007,
+     "frame": 867,
      "word": "evens",
-     "do": "badge flips to OUTSIDE = INSIDE"
+     "do": "pressure evens"
     }
    ]
   },
   {
    "id": "S09b",
-   "line": 9,
+   "line": 8,
    "from_word": "and",
    "set": "ear_inside",
    "size": "CU",
@@ -330,24 +376,45 @@
    "move": "dolly_in",
    "fx": [
     "shockwave_ripple",
-    "bloom_flash",
-    "motion_blur"
+    "bloom_flash"
    ],
    "mood": "satisfying",
-   "out": "whip:right",
-   "start": 1038,
-   "end": 1072,
+   "out": "cut",
+   "start": 897,
+   "end": 937,
    "beats": [
     {
-     "frame": 1062,
+     "frame": 921,
      "word": "pop",
-     "do": "eardrum snaps flat; light ripple; camera shake impulse; bloom flash"
+     "do": "eardrum snaps flat (no burst); soft light ring; small camera jolt"
+    }
+   ]
+  },
+  {
+   "id": "S09c",
+   "line": 8,
+   "from_word": "pop",
+   "offset": 0.55,
+   "set": "cabin",
+   "size": "CU",
+   "angle": "eye",
+   "lens_mm": 85,
+   "move": "dolly_in",
+   "mood": "relief",
+   "out": "cut",
+   "start": 938,
+   "end": 964,
+   "beats": [
+    {
+     "frame": 938,
+     "do": "Max's relief: eyes open, a small exhale and smile",
+     "key": "relief"
     }
    ]
   },
   {
    "id": "S10",
-   "line": 10,
+   "line": 9,
    "set": "city_dusk",
    "size": "WS",
    "angle": "high",
@@ -360,18 +427,18 @@
    ],
    "mood": "serious, cooler grade",
    "out": "cut",
-   "start": 1073,
-   "end": 1130,
+   "start": 965,
+   "end": 1022,
    "beats": []
   },
   {
-   "id": "S11",
-   "line": 11,
+   "id": "S11a",
+   "line": 10,
    "set": "ear_inside",
    "size": "MS",
    "angle": "low",
    "lens_mm": 22,
-   "move": "arc:30",
+   "move": "arc:20",
    "tilt": "dutch:0->-5",
    "fx": [
     "molecules",
@@ -379,81 +446,114 @@
    ],
    "mood": "uneasy",
    "out": "cut",
-   "start": 1131,
-   "end": 1293,
+   "start": 1023,
+   "end": 1119,
    "beats": [
     {
-     "frame": 1158,
-     "word": "open",
-     "do": "tube pinches shut; red warning pulse"
+     "frame": 1044,
+     "word": "rises",
+     "do": "blue outside air thickens beyond the eardrum"
     },
     {
-     "frame": 1275,
+     "frame": 1099,
+     "word": "shut",
+     "do": "tube pinched shut; red warning pulse"
+    }
+   ]
+  },
+  {
+   "id": "S11b",
+   "line": 10,
+   "from_word": "so",
+   "set": "ear_map",
+   "size": "CU",
+   "angle": "eye",
+   "lens_mm": 50,
+   "move": "dolly_in",
+   "fx": [
+    "xray_look",
+    "warning_pulse"
+   ],
+   "mood": "uneasy",
+   "out": "cut",
+   "start": 1120,
+   "end": 1202,
+   "beats": [
+    {
+     "frame": 1179,
      "word": "inward",
-     "do": "eardrum caves in toward the camera"
+     "do": "eardrum pushed in; badge OUTSIDE > INSIDE"
     }
    ]
   },
   {
    "id": "S12a",
-   "line": 12,
-   "set": "ear_inside",
-   "size": "MACRO",
-   "angle": "pov",
-   "lens_mm": 20,
-   "move": "flythrough",
-   "fx": [
-    "motion_blur"
-   ],
-   "out": "push_through",
-   "start": 1294,
-   "end": 1340,
-   "beats": [
-    {
-     "frame": 1317,
-     "word": "swallowing",
-     "do": "tip card 1"
-    }
-   ]
-  },
-  {
-   "id": "S12b",
-   "line": 12,
-   "from_word": "yawning",
+   "line": 11,
    "set": "cabin",
-   "size": "MS",
+   "size": "CU",
    "angle": "eye",
-   "lens_mm": 35,
-   "move": "dolly_out",
+   "lens_mm": 70,
+   "move": "dolly_in",
    "fx": [
     "shallow_dof",
     "warm_shift"
    ],
    "mood": "relief",
    "out": "cut",
-   "start": 1341,
-   "end": 1460,
+   "start": 1203,
+   "end": 1318,
    "beats": [
     {
-     "frame": 1344,
+     "frame": 1226,
+     "word": "swallowing",
+     "do": "Max swallows"
+    },
+    {
+     "frame": 1253,
      "word": "yawning",
-     "do": "Max yawns; tip card 2"
+     "do": "Max yawns"
     },
     {
-     "frame": 1372,
+     "frame": 1281,
      "word": "chewing",
-     "do": "Max chews; tip card 3"
+     "do": "Max chews"
+    }
+   ]
+  },
+  {
+   "id": "S12b",
+   "line": 11,
+   "from_word": "they",
+   "set": "ear_map",
+   "size": "MS",
+   "angle": "eye",
+   "lens_mm": 40,
+   "move": "dolly_in",
+   "fx": [
+    "xray_look"
+   ],
+   "mood": "relief",
+   "out": "cut",
+   "start": 1319,
+   "end": 1364,
+   "beats": [
+    {
+     "frame": 1329,
+     "word": "pull",
+     "do": "tube opens; blue air rises into the middle ear"
     },
     {
-     "frame": 1438,
+     "frame": 1347,
      "word": "open",
-     "do": "relief smile; warmer light"
+     "do": "eardrum back to its resting outline; badge OUTSIDE = INSIDE"
     }
    ]
   },
   {
    "id": "S13",
-   "line": 13,
+   "line": 11,
+   "from_word": "open",
+   "offset": 0.6,
    "set": "cabin",
    "size": "CU",
    "angle": "eye",
@@ -463,82 +563,281 @@
     "shallow_dof"
    ],
    "mood": "warm",
-   "end": 1565,
-   "start": 1461,
+   "end": 1420,
+   "start": 1365,
    "beats": [
     {
-     "frame": 1468,
-     "word": "follow",
-     "do": "Max looks into the lens, thumbs up; follow button"
+     "frame": 1371,
+     "do": "Max relieved, grin and thumbs-up; FOLLOW card",
+     "key": "thumbs"
     }
    ]
   }
  ],
  "captions": [
   {
-   "text": "Ever wondered why your ears pop on a plane?",
-   "start": 1,
-   "end": 81
+   "text": "Ever wondered why",
+   "start": 5,
+   "hot": false,
+   "end": 36
   },
   {
-   "text": "Here's what's actually happening inside your head.",
-   "start": 89,
-   "end": 183
+   "text": "your ears pop",
+   "start": 37,
+   "hot": true,
+   "end": 59
   },
   {
-   "text": "Behind your eardrum sits a tiny pocket of air - your middle ear.",
-   "start": 192,
-   "end": 325
+   "text": "on a plane?",
+   "start": 60,
+   "hot": false,
+   "end": 89
   },
   {
-   "text": "On the ground, the pressure inside matches the air outside. Perfectly balanced.",
-   "start": 333,
-   "end": 483
+   "text": "Behind your eardrum",
+   "start": 93,
+   "hot": true,
+   "end": 120
   },
   {
-   "text": "But as the plane climbs, the cabin pressure drops.",
-   "start": 492,
-   "end": 581
+   "text": "sits a tiny",
+   "start": 121,
+   "hot": false,
+   "end": 148
   },
   {
-   "text": "The trapped air pushes outward, and your eardrum bulges, like a balloon.",
-   "start": 590,
-   "end": 731
+   "text": "pocket of air",
+   "start": 149,
+   "hot": false,
+   "end": 192
   },
   {
-   "text": "That's the muffled, blocked feeling.",
-   "start": 739,
-   "end": 805
+   "text": "your middle ear.",
+   "start": 193,
+   "hot": true,
+   "end": 230
   },
   {
-   "text": "Then a tiny tube to your throat - the Eustachian tube - cracks open.",
-   "start": 813,
-   "end": 953
+   "text": "On the ground,",
+   "start": 234,
+   "hot": false,
+   "end": 259
   },
   {
-   "text": "Air escapes, the pressure evens out, and... POP!",
-   "start": 962,
-   "end": 1067
+   "text": "the pressure inside",
+   "start": 260,
+   "hot": false,
+   "end": 289
   },
   {
-   "text": "Landing is actually worse.",
-   "start": 1076,
-   "end": 1125
+   "text": "matches the air",
+   "start": 290,
+   "hot": true,
+   "end": 324
   },
   {
-   "text": "The tube doesn't open on its own as easily, so your eardrum gets pushed inward.",
-   "start": 1134,
-   "end": 1289
+   "text": "outside.",
+   "start": 325,
+   "hot": false,
+   "end": 350
   },
   {
-   "text": "That's why swallowing, yawning, or chewing gum helps - they pull the tube open.",
+   "text": "But as the plane",
+   "start": 354,
+   "hot": false,
+   "end": 377
+  },
+  {
+   "text": "climbs,",
+   "start": 378,
+   "hot": true,
+   "end": 401
+  },
+  {
+   "text": "the cabin pressure",
+   "start": 402,
+   "hot": false,
+   "end": 425
+  },
+  {
+   "text": "drops.",
+   "start": 426,
+   "hot": true,
+   "end": 449
+  },
+  {
+   "text": "The trapped air",
+   "start": 453,
+   "hot": false,
+   "end": 480
+  },
+  {
+   "text": "pushes outward,",
+   "start": 481,
+   "hot": true,
+   "end": 517
+  },
+  {
+   "text": "and your eardrum",
+   "start": 518,
+   "hot": false,
+   "end": 541
+  },
+  {
+   "text": "bulges,",
+   "start": 542,
+   "hot": true,
+   "end": 566
+  },
+  {
+   "text": "like a balloon.",
+   "start": 567,
+   "hot": false,
+   "end": 598
+  },
+  {
+   "text": "That's the muffled,",
+   "start": 602,
+   "hot": true,
+   "end": 642
+  },
+  {
+   "text": "blocked feeling.",
+   "start": 643,
+   "hot": false,
+   "end": 672
+  },
+  {
+   "text": "Then a tiny",
+   "start": 676,
+   "hot": false,
+   "end": 693
+  },
+  {
+   "text": "tube to your throat",
+   "start": 694,
+   "hot": false,
+   "end": 740
+  },
+  {
+   "text": "the Eustachian tube",
+   "start": 741,
+   "hot": true,
+   "end": 785
+  },
+  {
+   "text": "cracks open.",
+   "start": 786,
+   "hot": true,
+   "end": 820
+  },
+  {
+   "text": "Air escapes,",
+   "start": 824,
+   "hot": false,
+   "end": 853
+  },
+  {
+   "text": "the pressure evens",
+   "start": 854,
+   "hot": false,
+   "end": 882
+  },
+  {
+   "text": "out,",
+   "start": 883,
+   "hot": false,
+   "end": 899
+  },
+  {
+   "text": "and...",
+   "start": 900,
+   "hot": false,
+   "end": 920
+  },
+  {
+   "text": "POP!",
+   "start": 921,
+   "hot": true,
+   "end": 935
+  },
+  {
+   "text": "Descending can be",
+   "start": 970,
+   "hot": false,
+   "end": 1000
+  },
+  {
+   "text": "worse.",
+   "start": 1001,
+   "hot": true,
+   "end": 1026
+  },
+  {
+   "text": "Cabin pressure rises,",
+   "start": 1030,
+   "hot": true,
+   "end": 1073
+  },
+  {
+   "text": "but the tube",
+   "start": 1074,
+   "hot": false,
+   "end": 1087
+  },
+  {
+   "text": "stays shut,",
+   "start": 1088,
+   "hot": true,
+   "end": 1122
+  },
+  {
+   "text": "so your eardrum",
+   "start": 1123,
+   "hot": false,
+   "end": 1150
+  },
+  {
+   "text": "gets pushed inward.",
+   "start": 1151,
+   "hot": true,
+   "end": 1206
+  },
+  {
+   "text": "That's why swallowing,",
+   "start": 1210,
+   "hot": true,
+   "end": 1252
+  },
+  {
+   "text": "yawning,",
+   "start": 1253,
+   "hot": true,
+   "end": 1276
+  },
+  {
+   "text": "or chewing gum",
+   "start": 1277,
+   "hot": true,
+   "end": 1296
+  },
+  {
+   "text": "helps",
    "start": 1297,
-   "end": 1456
+   "hot": false,
+   "end": 1321
   },
   {
-   "text": "Follow for more weird things your body does.",
-   "start": 1464,
-   "end": 1540
+   "text": "they pull the tube",
+   "start": 1322,
+   "hot": false,
+   "end": 1346
+  },
+  {
+   "text": "open.",
+   "start": 1347,
+   "hot": true,
+   "end": 1365
   }
  ],
  "words": [
@@ -598,729 +897,621 @@
   },
   {
    "line": 2,
-   "word": "heres",
+   "word": "behind",
    "frame": 93,
-   "end": 103
+   "end": 100
   },
   {
    "line": 2,
-   "word": "whats",
-   "frame": 103,
-   "end": 108
+   "word": "your",
+   "frame": 100,
+   "end": 107
   },
   {
    "line": 2,
-   "word": "actually",
-   "frame": 112,
-   "end": 123
+   "word": "eardrum",
+   "frame": 107,
+   "end": 122
   },
   {
    "line": 2,
-   "word": "happening",
-   "frame": 123,
+   "word": "sits",
+   "frame": 121,
+   "end": 132
+  },
+  {
+   "line": 2,
+   "word": "a",
+   "frame": 132,
    "end": 137
   },
   {
    "line": 2,
-   "word": "inside",
-   "frame": 137,
-   "end": 162
-  },
-  {
-   "line": 2,
-   "word": "your",
-   "frame": 162,
-   "end": 171
-  },
-  {
-   "line": 2,
-   "word": "head",
-   "frame": 171,
-   "end": 180
-  },
-  {
-   "line": 3,
-   "word": "behind",
-   "frame": 195,
-   "end": 202
-  },
-  {
-   "line": 3,
-   "word": "your",
-   "frame": 202,
-   "end": 209
-  },
-  {
-   "line": 3,
-   "word": "eardrum",
-   "frame": 209,
-   "end": 224
-  },
-  {
-   "line": 3,
-   "word": "sits",
-   "frame": 224,
-   "end": 235
-  },
-  {
-   "line": 3,
-   "word": "a",
-   "frame": 234,
-   "end": 240
-  },
-  {
-   "line": 3,
    "word": "tiny",
+   "frame": 141,
+   "end": 150
+  },
+  {
+   "line": 2,
+   "word": "pocket",
+   "frame": 149,
+   "end": 157
+  },
+  {
+   "line": 2,
+   "word": "of",
+   "frame": 159,
+   "end": 165
+  },
+  {
+   "line": 2,
+   "word": "air",
+   "frame": 170,
+   "end": 177
+  },
+  {
+   "line": 2,
+   "word": "",
+   "frame": 178,
+   "end": 194
+  },
+  {
+   "line": 2,
+   "word": "your",
+   "frame": 193,
+   "end": 197
+  },
+  {
+   "line": 2,
+   "word": "middle",
+   "frame": 196,
+   "end": 207
+  },
+  {
+   "line": 2,
+   "word": "ear",
+   "frame": 207,
+   "end": 219
+  },
+  {
+   "line": 3,
+   "word": "on",
+   "frame": 234,
+   "end": 238
+  },
+  {
+   "line": 3,
+   "word": "the",
+   "frame": 238,
+   "end": 243
+  },
+  {
+   "line": 3,
+   "word": "ground",
    "frame": 243,
    "end": 252
   },
   {
    "line": 3,
-   "word": "pocket",
-   "frame": 252,
-   "end": 259
+   "word": "the",
+   "frame": 260,
+   "end": 263
   },
   {
    "line": 3,
-   "word": "of",
-   "frame": 262,
-   "end": 267
+   "word": "pressure",
+   "frame": 266,
+   "end": 273
+  },
+  {
+   "line": 3,
+   "word": "inside",
+   "frame": 273,
+   "end": 290
+  },
+  {
+   "line": 3,
+   "word": "matches",
+   "frame": 290,
+   "end": 307
+  },
+  {
+   "line": 3,
+   "word": "the",
+   "frame": 307,
+   "end": 314
   },
   {
    "line": 3,
    "word": "air",
-   "frame": 273,
-   "end": 279
+   "frame": 317,
+   "end": 323
   },
   {
    "line": 3,
-   "word": "",
-   "frame": 280,
-   "end": 296
-  },
-  {
-   "line": 3,
-   "word": "your",
-   "frame": 296,
-   "end": 299
-  },
-  {
-   "line": 3,
-   "word": "middle",
-   "frame": 299,
-   "end": 309
-  },
-  {
-   "line": 3,
-   "word": "ear",
-   "frame": 309,
-   "end": 321
+   "word": "outside",
+   "frame": 325,
+   "end": 339
   },
   {
    "line": 4,
-   "word": "on",
-   "frame": 337,
-   "end": 341
+   "word": "but",
+   "frame": 354,
+   "end": 359
   },
   {
    "line": 4,
-   "word": "the",
-   "frame": 340,
-   "end": 345
-  },
-  {
-   "line": 4,
-   "word": "ground",
-   "frame": 345,
-   "end": 354
-  },
-  {
-   "line": 4,
-   "word": "the",
-   "frame": 363,
+   "word": "as",
+   "frame": 359,
    "end": 365
   },
   {
    "line": 4,
-   "word": "pressure",
-   "frame": 368,
-   "end": 375
-  },
-  {
-   "line": 4,
-   "word": "inside",
-   "frame": 375,
-   "end": 392
-  },
-  {
-   "line": 4,
-   "word": "matches",
-   "frame": 392,
-   "end": 410
-  },
-  {
-   "line": 4,
    "word": "the",
-   "frame": 409,
-   "end": 416
+   "frame": 365,
+   "end": 370
   },
   {
    "line": 4,
-   "word": "air",
-   "frame": 419,
-   "end": 425
-  },
-  {
-   "line": 4,
-   "word": "outside",
-   "frame": 428,
-   "end": 441
-  },
-  {
-   "line": 4,
-   "word": "perfectly",
-   "frame": 453,
-   "end": 469
-  },
-  {
-   "line": 4,
-   "word": "balanced",
-   "frame": 468,
-   "end": 480
-  },
-  {
-   "line": 5,
-   "word": "but",
-   "frame": 495,
-   "end": 500
-  },
-  {
-   "line": 5,
-   "word": "as",
-   "frame": 500,
-   "end": 507
-  },
-  {
-   "line": 5,
-   "word": "the",
-   "frame": 506,
-   "end": 511
-  },
-  {
-   "line": 5,
    "word": "plane",
-   "frame": 514,
-   "end": 520
+   "frame": 373,
+   "end": 379
   },
   {
-   "line": 5,
+   "line": 4,
    "word": "climbs",
-   "frame": 519,
-   "end": 531
+   "frame": 378,
+   "end": 390
+  },
+  {
+   "line": 4,
+   "word": "the",
+   "frame": 402,
+   "end": 404
+  },
+  {
+   "line": 4,
+   "word": "cabin",
+   "frame": 407,
+   "end": 414
+  },
+  {
+   "line": 4,
+   "word": "pressure",
+   "frame": 414,
+   "end": 426
+  },
+  {
+   "line": 4,
+   "word": "drops",
+   "frame": 426,
+   "end": 437
   },
   {
    "line": 5,
    "word": "the",
-   "frame": 543,
-   "end": 545
+   "frame": 453,
+   "end": 454
   },
   {
    "line": 5,
-   "word": "cabin",
-   "frame": 548,
+   "word": "trapped",
+   "frame": 457,
+   "end": 464
+  },
+  {
+   "line": 5,
+   "word": "air",
+   "frame": 464,
+   "end": 475
+  },
+  {
+   "line": 5,
+   "word": "pushes",
+   "frame": 481,
+   "end": 488
+  },
+  {
+   "line": 5,
+   "word": "outward",
+   "frame": 487,
+   "end": 506
+  },
+  {
+   "line": 5,
+   "word": "and",
+   "frame": 518,
+   "end": 521
+  },
+  {
+   "line": 5,
+   "word": "your",
+   "frame": 521,
+   "end": 525
+  },
+  {
+   "line": 5,
+   "word": "eardrum",
+   "frame": 528,
+   "end": 542
+  },
+  {
+   "line": 5,
+   "word": "bulges",
+   "frame": 542,
    "end": 555
   },
   {
    "line": 5,
-   "word": "pressure",
-   "frame": 555,
-   "end": 567
+   "word": "like",
+   "frame": 567,
+   "end": 572
   },
   {
    "line": 5,
-   "word": "drops",
-   "frame": 567,
-   "end": 578
-  },
-  {
-   "line": 6,
-   "word": "the",
-   "frame": 593,
-   "end": 595
-  },
-  {
-   "line": 6,
-   "word": "trapped",
-   "frame": 598,
-   "end": 605
-  },
-  {
-   "line": 6,
-   "word": "air",
-   "frame": 605,
-   "end": 616
-  },
-  {
-   "line": 6,
-   "word": "pushes",
-   "frame": 622,
-   "end": 629
-  },
-  {
-   "line": 6,
-   "word": "outward",
-   "frame": 628,
-   "end": 647
-  },
-  {
-   "line": 6,
-   "word": "and",
-   "frame": 659,
-   "end": 663
-  },
-  {
-   "line": 6,
-   "word": "your",
-   "frame": 662,
-   "end": 666
-  },
-  {
-   "line": 6,
-   "word": "eardrum",
-   "frame": 669,
-   "end": 683
-  },
-  {
-   "line": 6,
-   "word": "bulges",
-   "frame": 683,
-   "end": 696
-  },
-  {
-   "line": 6,
-   "word": "like",
-   "frame": 708,
-   "end": 713
-  },
-  {
-   "line": 6,
    "word": "a",
-   "frame": 712,
-   "end": 718
+   "frame": 571,
+   "end": 577
   },
   {
-   "line": 6,
+   "line": 5,
    "word": "balloon",
-   "frame": 718,
-   "end": 727
+   "frame": 577,
+   "end": 586
   },
   {
-   "line": 7,
+   "line": 6,
    "word": "thats",
-   "frame": 743,
-   "end": 752
+   "frame": 602,
+   "end": 611
   },
   {
-   "line": 7,
+   "line": 6,
    "word": "the",
-   "frame": 755,
-   "end": 758
+   "frame": 614,
+   "end": 617
   },
   {
-   "line": 7,
+   "line": 6,
    "word": "muffled",
-   "frame": 757,
-   "end": 772
+   "frame": 616,
+   "end": 631
   },
   {
-   "line": 7,
+   "line": 6,
    "word": "blocked",
-   "frame": 784,
-   "end": 785
+   "frame": 643,
+   "end": 645
+  },
+  {
+   "line": 6,
+   "word": "feeling",
+   "frame": 648,
+   "end": 660
   },
   {
    "line": 7,
-   "word": "feeling",
-   "frame": 789,
-   "end": 801
-  },
-  {
-   "line": 8,
    "word": "then",
-   "frame": 817,
-   "end": 821
+   "frame": 676,
+   "end": 680
   },
   {
-   "line": 8,
+   "line": 7,
    "word": "a",
-   "frame": 821,
-   "end": 825
+   "frame": 680,
+   "end": 684
   },
   {
-   "line": 8,
+   "line": 7,
    "word": "tiny",
-   "frame": 826,
-   "end": 835
+   "frame": 685,
+   "end": 694
   },
   {
-   "line": 8,
+   "line": 7,
    "word": "tube",
-   "frame": 835,
-   "end": 845
+   "frame": 694,
+   "end": 704
   },
   {
-   "line": 8,
+   "line": 7,
    "word": "to",
-   "frame": 849,
-   "end": 852
+   "frame": 708,
+   "end": 711
   },
   {
-   "line": 8,
+   "line": 7,
    "word": "your",
-   "frame": 852,
-   "end": 857
+   "frame": 711,
+   "end": 716
   },
   {
-   "line": 8,
+   "line": 7,
    "word": "throat",
-   "frame": 860,
-   "end": 866
+   "frame": 719,
+   "end": 725
   },
   {
-   "line": 8,
+   "line": 7,
    "word": "",
-   "frame": 867,
-   "end": 880
+   "frame": 726,
+   "end": 739
   },
   {
-   "line": 8,
+   "line": 7,
    "word": "the",
-   "frame": 882,
-   "end": 885
+   "frame": 741,
+   "end": 744
   },
   {
-   "line": 8,
+   "line": 7,
    "word": "eustachian",
-   "frame": 885,
-   "end": 906
+   "frame": 744,
+   "end": 765
   },
   {
-   "line": 8,
+   "line": 7,
    "word": "tube",
-   "frame": 909,
-   "end": 915
+   "frame": 767,
+   "end": 774
   },
   {
-   "line": 8,
+   "line": 7,
    "word": "",
-   "frame": 915,
-   "end": 916
+   "frame": 774,
+   "end": 775
   },
   {
-   "line": 8,
+   "line": 7,
    "word": "cracks",
-   "frame": 927,
-   "end": 933
+   "frame": 786,
+   "end": 792
+  },
+  {
+   "line": 7,
+   "word": "open",
+   "frame": 794,
+   "end": 809
   },
   {
    "line": 8,
-   "word": "open",
-   "frame": 935,
-   "end": 950
-  },
-  {
-   "line": 9,
    "word": "air",
-   "frame": 965,
-   "end": 969
+   "frame": 824,
+   "end": 827
   },
   {
-   "line": 9,
+   "line": 8,
    "word": "escapes",
-   "frame": 968,
-   "end": 983
+   "frame": 827,
+   "end": 842
   },
   {
-   "line": 9,
+   "line": 8,
    "word": "the",
-   "frame": 995,
-   "end": 996
+   "frame": 854,
+   "end": 855
   },
   {
-   "line": 9,
+   "line": 8,
    "word": "pressure",
-   "frame": 999,
-   "end": 1008
+   "frame": 858,
+   "end": 867
   },
   {
-   "line": 9,
+   "line": 8,
    "word": "evens",
-   "frame": 1007,
-   "end": 1024
+   "frame": 867,
+   "end": 883
   },
   {
-   "line": 9,
+   "line": 8,
    "word": "out",
-   "frame": 1024,
-   "end": 1029
+   "frame": 883,
+   "end": 888
+  },
+  {
+   "line": 8,
+   "word": "and",
+   "frame": 900,
+   "end": 921
+  },
+  {
+   "line": 8,
+   "word": "pop",
+   "frame": 921,
+   "end": 923
   },
   {
    "line": 9,
-   "word": "and",
-   "frame": 1041,
+   "word": "descending",
+   "frame": 970,
+   "end": 985
+  },
+  {
+   "line": 9,
+   "word": "can",
+   "frame": 985,
+   "end": 995
+  },
+  {
+   "line": 9,
+   "word": "be",
+   "frame": 995,
+   "end": 1001
+  },
+  {
+   "line": 9,
+   "word": "worse",
+   "frame": 1001,
+   "end": 1014
+  },
+  {
+   "line": 10,
+   "word": "cabin",
+   "frame": 1030,
+   "end": 1034
+  },
+  {
+   "line": 10,
+   "word": "pressure",
+   "frame": 1034,
+   "end": 1044
+  },
+  {
+   "line": 10,
+   "word": "rises",
+   "frame": 1044,
    "end": 1062
   },
   {
-   "line": 9,
-   "word": "pop",
-   "frame": 1062,
-   "end": 1064
+   "line": 10,
+   "word": "but",
+   "frame": 1074,
+   "end": 1076
   },
   {
    "line": 10,
-   "word": "landing",
-   "frame": 1079,
-   "end": 1088
+   "word": "the",
+   "frame": 1076,
+   "end": 1080
   },
   {
    "line": 10,
-   "word": "is",
+   "word": "tube",
+   "frame": 1083,
+   "end": 1089
+  },
+  {
+   "line": 10,
+   "word": "stays",
    "frame": 1088,
-   "end": 1096
+   "end": 1099
   },
   {
    "line": 10,
-   "word": "actually",
+   "word": "shut",
    "frame": 1099,
    "end": 1111
   },
   {
    "line": 10,
-   "word": "worse",
-   "frame": 1111,
-   "end": 1122
+   "word": "so",
+   "frame": 1123,
+   "end": 1127
   },
   {
-   "line": 11,
-   "word": "the",
-   "frame": 1137,
-   "end": 1139
+   "line": 10,
+   "word": "your",
+   "frame": 1127,
+   "end": 1134
   },
   {
-   "line": 11,
-   "word": "tube",
-   "frame": 1143,
-   "end": 1149
+   "line": 10,
+   "word": "eardrum",
+   "frame": 1134,
+   "end": 1151
   },
   {
-   "line": 11,
-   "word": "doesnt",
-   "frame": 1148,
-   "end": 1158
-  },
-  {
-   "line": 11,
-   "word": "open",
-   "frame": 1158,
+   "line": 10,
+   "word": "gets",
+   "frame": 1151,
    "end": 1168
   },
   {
-   "line": 11,
-   "word": "on",
-   "frame": 1168,
-   "end": 1177
-  },
-  {
-   "line": 11,
-   "word": "its",
-   "frame": 1176,
-   "end": 1182
-  },
-  {
-   "line": 11,
-   "word": "own",
-   "frame": 1182,
-   "end": 1191
-  },
-  {
-   "line": 11,
-   "word": "as",
-   "frame": 1191,
-   "end": 1201
-  },
-  {
-   "line": 11,
-   "word": "easily",
-   "frame": 1200,
-   "end": 1215
-  },
-  {
-   "line": 11,
-   "word": "so",
-   "frame": 1227,
-   "end": 1229
-  },
-  {
-   "line": 11,
-   "word": "your",
-   "frame": 1229,
-   "end": 1235
-  },
-  {
-   "line": 11,
-   "word": "eardrum",
-   "frame": 1235,
-   "end": 1251
-  },
-  {
-   "line": 11,
-   "word": "gets",
-   "frame": 1251,
-   "end": 1259
-  },
-  {
-   "line": 11,
+   "line": 10,
    "word": "pushed",
-   "frame": 1260,
-   "end": 1270
+   "frame": 1168,
+   "end": 1180
+  },
+  {
+   "line": 10,
+   "word": "inward",
+   "frame": 1179,
+   "end": 1194
   },
   {
    "line": 11,
-   "word": "inward",
-   "frame": 1275,
-   "end": 1285
+   "word": "thats",
+   "frame": 1210,
+   "end": 1219
   },
   {
-   "line": 12,
-   "word": "thats",
-   "frame": 1301,
+   "line": 11,
+   "word": "why",
+   "frame": 1221,
+   "end": 1226
+  },
+  {
+   "line": 11,
+   "word": "swallowing",
+   "frame": 1226,
+   "end": 1242
+  },
+  {
+   "line": 11,
+   "word": "yawning",
+   "frame": 1253,
+   "end": 1269
+  },
+  {
+   "line": 11,
+   "word": "or",
+   "frame": 1277,
+   "end": 1278
+  },
+  {
+   "line": 11,
+   "word": "chewing",
+   "frame": 1281,
+   "end": 1289
+  },
+  {
+   "line": 11,
+   "word": "gum",
+   "frame": 1289,
+   "end": 1298
+  },
+  {
+   "line": 11,
+   "word": "helps",
+   "frame": 1297,
+   "end": 1307
+  },
+  {
+   "line": 11,
+   "word": "",
+   "frame": 1309,
    "end": 1310
   },
   {
-   "line": 12,
-   "word": "why",
-   "frame": 1312,
-   "end": 1317
-  },
-  {
-   "line": 12,
-   "word": "swallowing",
-   "frame": 1317,
-   "end": 1333
-  },
-  {
-   "line": 12,
-   "word": "yawning",
-   "frame": 1344,
-   "end": 1360
-  },
-  {
-   "line": 12,
-   "word": "or",
-   "frame": 1368,
-   "end": 1369
-  },
-  {
-   "line": 12,
-   "word": "chewing",
-   "frame": 1372,
-   "end": 1380
-  },
-  {
-   "line": 12,
-   "word": "gum",
-   "frame": 1380,
-   "end": 1389
-  },
-  {
-   "line": 12,
-   "word": "helps",
-   "frame": 1388,
-   "end": 1397
-  },
-  {
-   "line": 12,
-   "word": "",
-   "frame": 1400,
-   "end": 1401
-  },
-  {
-   "line": 12,
+   "line": 11,
    "word": "they",
-   "frame": 1413,
-   "end": 1416
+   "frame": 1322,
+   "end": 1325
   },
   {
-   "line": 12,
+   "line": 11,
    "word": "pull",
-   "frame": 1419,
-   "end": 1423
+   "frame": 1329,
+   "end": 1332
   },
   {
-   "line": 12,
+   "line": 11,
    "word": "the",
-   "frame": 1423,
-   "end": 1428
+   "frame": 1332,
+   "end": 1337
   },
   {
-   "line": 12,
+   "line": 11,
    "word": "tube",
-   "frame": 1432,
-   "end": 1438
+   "frame": 1341,
+   "end": 1347
   },
   {
-   "line": 12,
+   "line": 11,
    "word": "open",
-   "frame": 1438,
-   "end": 1452
-  },
-  {
-   "line": 13,
-   "word": "follow",
-   "frame": 1468,
-   "end": 1470
-  },
-  {
-   "line": 13,
-   "word": "for",
-   "frame": 1470,
-   "end": 1479
-  },
-  {
-   "line": 13,
-   "word": "more",
-   "frame": 1478,
-   "end": 1488
-  },
-  {
-   "line": 13,
-   "word": "weird",
-   "frame": 1488,
-   "end": 1498
-  },
-  {
-   "line": 13,
-   "word": "things",
-   "frame": 1498,
-   "end": 1509
-  },
-  {
-   "line": 13,
-   "word": "your",
-   "frame": 1516,
-   "end": 1521
-  },
-  {
-   "line": 13,
-   "word": "body",
-   "frame": 1521,
-   "end": 1528
-  },
-  {
-   "line": 13,
-   "word": "does",
-   "frame": 1528,
-   "end": 1536
+   "frame": 1347,
+   "end": 1361
   }
  ],
  "sfx": [
@@ -1331,48 +1522,43 @@
   },
   {
    "cue": "into_ear",
-   "frame": 192,
+   "frame": 89,
    "file": "audio/sfx/into_ear.mp3"
   },
   {
    "cue": "stretch",
-   "frame": 683,
+   "frame": 542,
    "file": "audio/sfx/stretch.mp3"
   },
   {
    "cue": "tube_open",
-   "frame": 927,
+   "frame": 786,
    "file": "audio/sfx/tube_open.mp3"
   },
   {
    "cue": "air_release",
-   "frame": 968,
+   "frame": 827,
    "file": "audio/sfx/air_release.mp3"
   },
   {
    "cue": "ear_pop",
-   "frame": 1062,
+   "frame": 921,
    "file": "audio/sfx/ear_pop.mp3"
   },
   {
    "cue": "gear_down",
-   "frame": 1076,
+   "frame": 968,
    "file": "audio/sfx/gear_down.mp3"
   },
   {
    "cue": "squeeze",
-   "frame": 1275,
+   "frame": 1179,
    "file": "audio/sfx/squeeze.mp3"
   },
   {
    "cue": "card_soft",
-   "frame": 1344,
+   "frame": 1253,
    "file": "audio/sfx/card_soft.mp3"
-  },
-  {
-   "cue": "outro_chime",
-   "frame": 1470,
-   "file": "audio/sfx/outro_chime.mp3"
   }
  ],
  "beds": [
@@ -1382,7 +1568,7 @@
   },
   {
    "line": 2,
-   "bed": "cabin"
+   "bed": "body"
   },
   {
    "line": 3,
@@ -1398,11 +1584,11 @@
   },
   {
    "line": 6,
-   "bed": "body"
+   "bed": "cabin"
   },
   {
    "line": 7,
-   "bed": "cabin"
+   "bed": "body"
   },
   {
    "line": 8,
@@ -1410,22 +1596,14 @@
   },
   {
    "line": 9,
-   "bed": "body"
-  },
-  {
-   "line": 10,
    "bed": "none"
   },
   {
-   "line": 11,
+   "line": 10,
    "bed": "body"
   },
   {
-   "line": 12,
-   "bed": "cabin"
-  },
-  {
-   "line": 13,
+   "line": 11,
    "bed": "cabin"
   }
  ]

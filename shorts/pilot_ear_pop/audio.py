@@ -50,13 +50,39 @@ def speech_match(audio, script_text):
     return difflib.SequenceMatcher(None, words(script_text), words(" ".join(x.text for x in segs))).ratio()
 
 
+def take_parts(voice_id):
+    """Audio + word spans for every script line, from the takes named in its `take:` field.
+    Take 1 is the approved recording (takes/take1.json; its ElevenLabs response is cached, so it
+    costs nothing); take 2 holds only the rewritten lines, so a rewrite never re-records the rest."""
+    take1 = json.loads((HERE / "takes" / "take1.json").read_text())
+    new = [(ln["spoken"], ln["caption"]) for ln in SCRIPT["lines"] if ln["take"] == [2]]
+    t1 = elevenlabs_script([(x["spoken"], x["caption"]) for x in take1], voice_id, WORK)
+    t2 = iter(elevenlabs_script(new, voice_id, WORK / "take2") if new else [])
+    parts = []
+    for ln in SCRIPT["lines"]:
+        a, spans = t1[ln["take"][1] - 1] if ln["take"][0] == 1 else next(t2)
+        if "until" in ln:   # keep the line only up to that word (plus a short breath)
+            k = next(i for i, (w, _, _) in enumerate(spans) if w.strip(".,!?").lower() == ln["until"].lower())
+            spans = spans[:k + 1]
+            a = a[: int((spans[-1][2] + 0.12) * SR)]
+            fade = min(len(a), int(0.03 * SR))
+            a = a.copy()
+            a[-fade:] *= np.linspace(1, 0, fade)
+        if [w for w, _, _ in spans] != ln["caption"].split():
+            raise SystemExit(f"caption doesn't match its take's words: {ln['caption']}")
+        parts.append((a, spans))
+    return parts
+
+
 def voice():
     lines = [(ln["spoken"], ln["caption"]) for ln in SCRIPT["lines"]]
     voice_id = SCRIPT["voice"].split(":", 1)[1]
     WORK.mkdir(parents=True, exist_ok=True)
-    parts = elevenlabs_script(lines, voice_id, WORK)
+    (WORK / "take2").mkdir(exist_ok=True)
+    parts = take_parts(voice_id)
     gap = np.zeros(int(0.28 * SR), dtype=np.float32)  # breath between lines, like the edit
-    take = np.concatenate([p for a, _ in parts for p in (a, gap)])
+    pauses = [np.zeros(int(ln.get("pause_after", 0) * SR), dtype=np.float32) for ln in SCRIPT["lines"]]
+    take = np.concatenate([p for (a, _), extra in zip(parts, pauses) for p in (a, gap, extra)])
     polished = ffmpeg_filter(take, VOICE_CHAIN)
     score = speech_match(polished, " ".join(cap for _, cap in lines))
     if score < 0.9:  # never hand over a take that isn't the script (e.g. a broken filter)
@@ -71,10 +97,10 @@ def voice():
     (OUT / "voice_take.json").write_text(json.dumps(report, indent=1))
     # Absolute timing of every line and word inside voice_take.wav (drives the Blender build).
     t, timing = 0.0, []
-    for (a, spans), ln in zip(parts, SCRIPT["lines"]):
+    for (a, spans), ln, extra in zip(parts, SCRIPT["lines"], pauses):
         timing.append({"start": round(t, 3), "end": round(t + len(a) / SR, 3), "caption": ln["caption"],
                        "words": [[w, round(t + s, 3), round(t + e, 3)] for w, s, e in spans]})
-        t += len(a) / SR + len(gap) / SR
+        t += (len(a) + len(gap) + len(extra)) / SR
     (OUT / "voice_timing.json").write_text(json.dumps({"total": round(len(take) / SR, 3), "lines": timing}, indent=1))
     print(f"total {len(take) / SR:.1f}s -> {OUT / 'voice_take.wav'}")
 

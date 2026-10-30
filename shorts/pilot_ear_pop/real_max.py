@@ -158,17 +158,17 @@ def perform(m, beat, rng, sc):
         aim_bone(rig, "wrist.L", (-0.25, 0.1, 1) if cover else (-0.4, 0.2, 1))
         _key(rig, ARM_L, f)
 
-    face(1, "neutral")
-    # S02 "Here's what's actually happening": a puzzled touch of the ear, hand gone before the fly-in
-    fh = beat("S02", "happening")
-    face(fh - 6, "neutral")
-    face(fh + 6, "puzzled")
-    face(fh + 30, "puzzled", 0.6)
-    face(fh + 40, "neutral")
-    arm_lap("L", fh - 4)
-    hand_to_ear(fh + 8)
-    hand_to_ear(fh + 20)
-    arm_lap("L", fh + 34)
+    # S00 cold open: already wincing, hand cupping his ear; during S01 (the plane) the hand goes back
+    # to his lap, so it's clear of his ear before S02's camera flies into it
+    s0_end = rng("S00")[1]
+    face(1, "wince")
+    face(s0_end, "wince", 0.9)
+    hand_to_ear(1, cover=True)
+    hand_to_ear(s0_end, cover=True)
+    arm_lap("L", rng("S01")[0] + 20)
+    fh = beat("S02", "touch")              # S02: a puzzled look as the camera swings round to his ear
+    face(fh - 10, "neutral")
+    face(fh + 4, "puzzled")
     # S07 "That's the muffled, blocked feeling": wince, hand cupping the ear
     fm = beat("S07", "muffled")
     s7_end = rng("S07")[1]
@@ -180,24 +180,28 @@ def perform(m, beat, rng, sc):
     hand_to_ear(fm + 2, cover=True)
     hand_to_ear(s7_end, cover=True)
     arm_lap("L", s7_end + 10)
-    # S12 "That's why swallowing, yawning, or chewing gum helps - they pull the tube open."
-    fs = beat("S12a", "swallowing")
-    fy, fc, fo = (beat("S12b", w) for w in ("yawning", "chewing", "open"))
+    # S09c, right after the POP: relief
+    fr = beat("S09c", "relief")
+    face(fr - 2, "neutral")
+    face(fr + 8, "relief_smile")
+    face(rng("S09c")[1] + 6, "relief_smile", 0.6)
+    face(rng("S12a")[0] - 6, "neutral")
+    # S12a "That's why swallowing, yawning, or chewing gum helps": one sustained close-up
+    fs, fy, fc = (beat("S12a", w) for w in ("swallowing", "yawning", "chewing"))
     face(fs - 3, "neutral")
     face(fs + 4, "swallow")
     face(fs + 12, "neutral")
     face(fy - 2, "neutral")
     face(fy + 10, "yawn")
-    face(fc + 10, "yawn", 0.9)        # hold the yawn until the camera has pulled out far enough to see it
-    face(fc + 16, "chew_b")
+    face(fc - 2, "yawn", 0.8)
+    face(fc + 4, "chew_b")
     for i in range(4):
-        face(fc + 19 + i * 8, "chew")
-        face(fc + 23 + i * 8, "chew_b")
-    face(fo - 3, "neutral")
-    face(fo + 6, "relief_smile")
-    # S13 "Follow for more weird things your body does": grin and thumbs up to the lens
-    ff = beat("S13", "follow")
-    face(ff - 6, "relief_smile")
+        face(fc + 7 + i * 8, "chew")
+        face(fc + 11 + i * 8, "chew_b")
+    face(rng("S12a")[1], "neutral")
+    # S13 (tail, no spoken outro): relieved grin and a thumbs-up to the lens, with the follow card
+    ff = beat("S13", "thumbs")
+    face(rng("S13")[0], "relief_smile")
     face(ff + 6, "thumbs_up")
     face(rng("S13")[1], "thumbs_up")
     sc.frame_set(ff - 5)

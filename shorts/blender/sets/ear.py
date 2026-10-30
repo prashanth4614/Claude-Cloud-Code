@@ -227,6 +227,23 @@ def seals(chamber, o, mat):
     funnel = _open_cone("tube_mouth_in", coll, centre + d * 2.25, centre + d * 3.3, 0.78, 0.14, mat)  # tip tucks inside the closed tube (r 0.16)
     for ob in (collar, funnel):
         relief(ob, strength=0.05, scale=1.0, length_cuts=12)
+    # the tube's valve: soft lips closing the funnel's tip while the tube is shut (the build parts them
+    # by scaling "tube_valve_in" to 0 when the tube cracks open)
+    import bmesh as _bm
+    vm = bpy.data.meshes.new("tube_valve_in")
+    b = _bm.new()
+    _bm.ops.create_uvsphere(b, u_segments=32, v_segments=16, radius=1.0)
+    b.to_mesh(vm)
+    b.free()
+    valve = bpy.data.objects.new("tube_valve_in", vm)
+    coll.objects.link(valve)
+    valve.location = centre + d * 3.22
+    valve.rotation_mode = "QUATERNION"
+    valve.rotation_quaternion = d.to_track_quat("Z", "Y")
+    valve.scale = (0.24, 0.24, 0.1)
+    vm.materials.append(mat)
+    for p in vm.polygons:
+        p.use_smooth = True
     # the tympanic annulus: the fibrous ring that holds the eardrum's edge. It also closes the seam
     # where the drum (r 1.55), the canal's end (r 1.5) and the collar (r 1.6) meet.
     import bmesh
@@ -368,6 +385,30 @@ def trim_tube_start(tube, o, chamber_centre, start_dist=3.15):
     return u
 
 
+def ossicle_knobs(e):
+    """The three tiny bones read as a pencil when they're plain rods: give the chain its silhouette
+    (the malleus head, the incus body, the stapes footplate) with rounded knobs at the joints.
+    Stand-in until the real BodyParts3D bones."""
+    import bmesh
+    from mathutils import Vector
+    tag, o = e["tag"], e["origin"]
+    k = 1.0 if tag == "in" else 1.4                    # the map's bones are drawn thicker
+    coll = e["drum"].users_collection[0]
+    bone_mat = bpy.data.materials["ossicle"]
+    for name, at, size in (("malleus_head", (0.6, 0.2, 0.9), (0.24, 0.2, 0.3)),
+                           ("incus_body", (1.4, 0.3, 0.8), (0.2, 0.17, 0.22)),
+                           ("stapes_foot", (2.2, 0.3, 0.1), (0.07, 0.2, 0.16))):
+        me = bpy.data.meshes.new(f"ossicle_{name}_{tag}")
+        bm = bmesh.new()
+        bmesh.ops.create_uvsphere(bm, u_segments=24, v_segments=12, radius=1.0)
+        bm.to_mesh(me)
+        bm.free()
+        ob = bpy.data.objects.new(f"ossicle_{name}_{tag}", me)
+        ob.location, ob.scale = o + Vector(at), [s * k for s in size]
+        me.materials.append(bone_mat)
+        coll.objects.link(ob)
+
+
 def apply(e):
     """Realism pass on one ear set (the dict build_ear returned)."""
     tag = e["tag"]
@@ -422,6 +463,7 @@ def apply(e):
             if not ob.modifiers.get("smooth"):
                 sm = ob.modifiers.new("smooth", "SUBSURF")
                 sm.levels = sm.render_levels = 1
+    ossicle_knobs(e)
     for ob in bpy.data.objects:
         if ob.name.startswith(f"ossicle_") and ob.name.endswith(tag):
             s = ob.modifiers.new("smooth", "SUBSURF")

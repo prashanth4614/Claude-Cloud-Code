@@ -18,7 +18,7 @@ Material Preview is only for checking motion.
 1. Top right, make sure the **Scene** is **`FILM`**.
 2. Hover over the 3D viewport: **View ▸ Cameras ▸ Active Camera** (or Numpad 0).
 3. Viewport shading: **Material Preview** (third sphere icon, top right of the viewport).
-4. Set the frame to 1 and press **Space**. The cameras cut at the markers `S01`…`S13`.
+4. Set the frame to 1 and press **Space**. The cameras cut at the markers `S00`…`S13`.
    If it stutters: Playback ▸ Sync ▸ **Frame Dropping**.
 
 **With captions and the dissolve: the EDIT scene.** In a Video Sequencer area
@@ -26,7 +26,7 @@ Material Preview is only for checking motion.
 has its own scene selector in its header, separate from the window's scene. Then play.
 
 ## Inspect or tweak the 3D shots
-- Scene **`FILM`**: press **Numpad 0** (camera view) and play. The timeline markers `S01`…`S13`
+- Scene **`FILM`**: press **Numpad 0** (camera view) and play. The timeline markers `S00`…`S13`
   switch cameras, so you see every cut in the real 3D scene.
 - Each shot's camera is `CAM_Sxx` (collection `CAMERAS`). Every move is baked keyframes, so
   you can move or re-time keys freely.
@@ -42,13 +42,14 @@ In `FILM`, camera view, Material Preview: **View ▸ Viewport Render Animation**
 frame timing. It takes a few minutes and costs nothing.
 
 ## Max (the real character)
-The cabin shots use the real rigged Max (`assets/characters/max/max_v2.blend`), seated in his seat,
+The cabin shots use the real rigged Max (`assets/characters/max/max_v3.blend`), seated in his seat,
 with his acting hand-keyed to the voice (`real_max.py`):
-- S02 "happening": puzzled, touches his ear; the camera then pushes into his real ear (ends black).
+- S00 (cold open): already wincing, hand cupping his ear.
+- S02 "plane": a puzzled look as the camera swings round and flies into his ear.
 - S07 "muffled": wince, hand cupping the ear.
-- S12 "swallowing" / "yawning" / "chewing" / "open": swallow, a big yawn revealed as the camera
-  pulls out of his ear, chewing, then a relief smile.
-- S13 "Follow": grin and thumbs-up to the lens.
+- S09c (right after the POP): relief.
+- S12a "swallowing" / "yawning" / "chewing": one close-up: swallow, a big yawn, chewing.
+- S13 (the end, no spoken outro): relieved grin and thumbs-up, with the follow card.
 - Natural blinks throughout.
 
 His expressions are named face shapes (`shorts/blender/max_expressions.py`), so you can retime or
