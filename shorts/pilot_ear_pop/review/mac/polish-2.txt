@@ -1,0 +1,6 @@
+ 1 (row 1, col 1): S04m:0.5 f438
+ 2 (row 1, col 2): S05a:0.5 f516
+ 3 (row 1, col 3): S01:0.5 f43
+ 4 (row 1, col 4): S08:cracks f935
+ 5 (row 1, col 5): S08:0.8 f928
+ 6 (row 1, col 6): S12a:0.6 f1321
