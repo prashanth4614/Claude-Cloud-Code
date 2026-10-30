@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT / "shorts" / "blender"))
 from build_max import aim_bone, set_expression, thumbs_up, THUMB_BONES  # noqa: E402
 from rigs import fcurves, material  # noqa: E402
 
-MAX_BLEND = ROOT / "assets" / "characters" / "max" / "max_v2.blend"
+MAX_BLEND = ROOT / "assets" / "characters" / "max" / "max_v3.blend"
 SEAT_TOP = 0.53                      # greybox seat cushion top (z above the cabin floor)
 STANDIN_HEAD = Vector((0.0, 0.35, 1.66))   # where the grey-box cameras expected his head (cabin space)
 

@@ -501,6 +501,23 @@ def stills(film, cams, out_dir):
     film.frame_set(1)
 
 
+def eye_lights(film, cams, shots):
+    """Animator's eye light: a small soft light riding with the close-up camera, on only during that
+    shot, so Max's eyes get a catchlight and read alive."""
+    for sid in shots:
+        cam = cams[sid]
+        ld = bpy.data.lights.new(f"eye_light_{sid}", "AREA")
+        ld.size, ld.color = 0.12, (1.0, 0.96, 0.9)
+        lt = bpy.data.objects.new(f"eye_light_{sid}", ld)
+        film.collection.objects.link(lt)
+        lt.parent = cam
+        lt.location = (0.0, 0.06, 0.0)            # just above the lens, pointing where the camera points
+        lt.visible_camera = False
+        f0, f1 = rng(sid)
+        for f, e in ((1, 0.0), (f0 - 1, 0.0), (f0, 2.5), (f1, 2.5), (f1 + 1, 0.0)):
+            key(ld, "energy", f, e, interp="CONSTANT")
+
+
 def main():
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     film = setup_film()
@@ -530,6 +547,8 @@ def main():
     animate_ear(e)
     animate_ear(e_map)
     cams = build_cameras(film, m)
+    if m.get("real"):
+        eye_lights(film, cams, ("S07", "S13"))
     film_sound(film)
     build_edit(film, cams)
     viewports(film)

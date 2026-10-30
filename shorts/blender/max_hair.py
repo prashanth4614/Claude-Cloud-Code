@@ -19,11 +19,11 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
 SEED = 7
-GUIDES = 2600
-CHILDREN = 55                 # rendered children per guide
+GUIDES = 1800                 # fewer, chunkier locks (stylized, reads in wide shots)
+CHILDREN = 70                 # rendered children per guide
 TOP_LEN, SIDE_LEN, BACK_LEN = 0.058, 0.026, 0.022
 SWEEP = Vector((0.5, -0.2, 0.42))   # front/top flow: up off the forehead and over to his left (+X)
-HAIR_MELANIN, HAIR_REDNESS = 0.9, 0.12
+HAIR_MELANIN, HAIR_REDNESS = 0.9, 0.12     # dark brown, highlights without orange tips
 STUBBLE_COUNT, STUBBLE_LEN = 14000, 0.0022
 
 
@@ -112,7 +112,7 @@ def beard_weight(p, eye, mouth, head):
 
 
 # --------------------------------------------------------------- materials --
-def hair_material(name, melanin, redness, rough=0.35):
+def hair_material(name, melanin, redness, rough=0.28):
     m = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     m.use_nodes = True
     nt = m.node_tree
@@ -211,13 +211,14 @@ def groom(rig, body):
     s.child_type = "INTERPOLATED"
     s.child_percent, s.rendered_child_count = 8, CHILDREN
     s.virtual_parents = 0.0
-    s.clump_factor, s.clump_shape = 0.55, 0.25
-    s.roughness_1, s.roughness_1_size = 0.0025, 1.0
-    s.roughness_endpoint, s.roughness_end_shape = 0.006, 1.0
-    s.roughness_2, s.roughness_2_size, s.roughness_2_threshold = 0.004, 1.0, 0.75
+    s.clump_factor, s.clump_shape = 0.7, -0.1        # defined locks with soft, rounded ends (not spikes)
+    s.roughness_1, s.roughness_1_size = 0.0012, 1.0
+    s.roughness_endpoint, s.roughness_end_shape = 0.003, 1.0
+    s.roughness_2, s.roughness_2_size, s.roughness_2_threshold = 0.0015, 1.0, 0.85   # few flyaways
     s.child_length_threshold = 0.25
-    s.root_radius, s.tip_radius, s.radius_scale = 1.0, 0.1, 0.00035
+    s.root_radius, s.tip_radius, s.radius_scale = 1.0, 0.45, 0.0005   # blunt lock ends: soft, not spiky
     s.use_close_tip = True
+    s.kink, s.kink_amplitude, s.kink_frequency, s.kink_shape = "WAVE", 0.0012, 1.2, 0.0   # a soft wave, not curls
     _activate_edit(body)
     roots, oe, me, pe = _evaluated(body, "Max hair")
     sweep = SWEEP.normalized()
@@ -292,7 +293,7 @@ def report(body):
 
 def build_scalp_cap(rig, body, co, polys, weights):
     """Dark-brown cap 1.5 mm over the scalp, skinned to the head bone (no skin between strands)."""
-    keep = {i for i, w in weights.items() if w > 0.35}
+    keep = {i for i, w in weights.items() if w > 0.7}     # inset from the hairline: its edge never shows
     faces = [f for f in polys if all(v in keep for v in f)]
     used = sorted({v for f in faces for v in f})
     remap = {v: i for i, v in enumerate(used)}
@@ -314,7 +315,7 @@ def build_scalp_cap(rig, body, co, polys, weights):
     mat = bpy.data.materials.new("Max_scalp")
     mat.use_nodes = True
     b = mat.node_tree.nodes["Principled BSDF"]
-    b.inputs["Base Color"].default_value = (0.022, 0.013, 0.008, 1)
+    b.inputs["Base Color"].default_value = (0.035, 0.021, 0.013, 1)       # matches the hair at the root
     b.inputs["Roughness"].default_value = 0.7
     mat.diffuse_color = (0.022, 0.013, 0.008, 1)
     me.materials.append(mat)

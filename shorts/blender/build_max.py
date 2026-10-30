@@ -49,7 +49,7 @@ HUMAN = {
     "phenotype": PHENOTYPE,
     "rig": "default",
     "eyes": "high-poly.mhclo",
-    "eyebrows": "mindfront_eyebrows_06.mhclo",
+    "eyebrows": "eyebrow009.mhclo",
     "eyelashes": "eyelashes01.mhclo",
     "teeth": "teeth_base.mhclo",
     "tongue": "tongue01.mhclo",

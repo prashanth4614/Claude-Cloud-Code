@@ -2,7 +2,7 @@
 
 - `max_reference.png`: the look we match (teal tee, dark jeans, white sneakers, messy dark-brown hair,
   light stubble, big brown eyes, stylized-realistic).
-- `max_v2.blend`: the rigged 3D Max, everything packed. Open it in Blender 4.5 or later; no add-ons needed.
+- `max_v3.blend`: the rigged 3D Max, everything packed. Open it in Blender 4.5 or later; no add-ons needed.
 - `review/`: turnaround and expression sheets for each version (v1: first pass; v2: groomed hair, stubble).
 - `textures/max_outfit_diffuse.png`: the CC0 MakeHuman casual suit, recoloured by `shorts/blender/max_textures.py`.
 
@@ -27,7 +27,7 @@ To rebuild (only needed when changing him):
 2. In MPFB's asset-pack panel, install the CC0 packs: makehuman_system_assets, skins01, hair01,
    eyebrows01, eyelashes01, faceunits01 (static.makehumancommunity.org/assets/assetpacks).
 3. `python3 shorts/blender/max_textures.py`
-4. `blender -b -P shorts/blender/build_max.py -- --out assets/characters/max/max_v2.blend --sheet out/characters/max/sheet`
+4. `blender -b -P shorts/blender/build_max.py -- --out assets/characters/max/max_v3.blend --sheet out/characters/max/sheet`
 
 ## Posing him by hand in Blender
 - Select **Max.body** ▸ Object Data properties ▸ **Shape Keys**: drag `jawOpen`, `eyeBlinkLeft`,
