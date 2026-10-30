@@ -421,12 +421,18 @@ def realistic_sky(scene, origin):
             lobe.rotation_euler = (0, 0, rnd.uniform(0, 2 * math.pi))
     for ob in [o for o in bpy.data.objects if o.name.startswith("cloud_") and o.name[6:8].isdigit()]:
         ob.data = ob.data.copy() if ob.data.users > 1 else ob.data
+        from mathutils import Matrix
+        size = max(ob.scale)
+        ob.data.transform(Matrix.Diagonal((*ob.scale, 1.0)))     # bake the squash: relief must not stretch
+        ob.scale = (1, 1, 1)
         ob.data.materials.clear()
         ob.data.materials.append(mat)
         s = ob.modifiers.new("round", "SUBSURF")
-        s.levels = s.render_levels = 2
+        s.levels = s.render_levels = 3
         d = ob.modifiers.new("cauliflower", "DISPLACE")
-        d.texture, d.strength, d.texture_coords = _cloud_tex("cloud_cauli", 1.6, 5), 0.9, "GLOBAL"
+        # soft billows, not crumpled paper: relief scaled to the lobe's size, few octaves
+        d.texture, d.texture_coords = _cloud_tex("cloud_cauli", 3.2, 2), "GLOBAL"
+        d.strength = 0.09 * size                                 # world units, in proportion to the lobe
         for p in ob.data.polygons:
             p.use_smooth = True
     sun = bpy.data.objects.get("Sun")
