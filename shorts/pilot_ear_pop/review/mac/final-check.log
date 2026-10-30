@@ -1,0 +1,40 @@
+== pull
+== assets (only downloads what's missing)
+hdri: qwantani_sunset_puresky
+hdri: syferfontein_6d_clear_puresky
+hdri: qwantani_dusk_2_puresky
+polyhaven_tex: poly_wool_herringbone
+polyhaven_tex: leather_white
+polyhaven_tex: fabric_leather_02
+ambientcg_tex: Carpet012
+ambientcg_tex: Plastic010
+== build film
+[sets] sky: cached (sky.blend)
+[sets] cabin: cached (cabin.blend)
+[sets] ear_in: built and cached
+[sets] ear_map: built and cached
+[sets] city: cached (city.blend)
+[max] seated; eyes (300.0, 0.427, 1.374), ear (300.07, 0.498, 1.334)
+[build] declutter (mid-shot beads in frame, of 84 per set): S03 67 in frame (48 hidden at times), S04 4 in frame (59 hidden at times), S05b 20 in frame (25 hidden at times), S06a 27 in frame (15 hidden at times), S08a 1 in frame (76 hidden at times), S08b 0 in frame (29 hidden at times), S09a 0 in frame (18 hidden at times), S09b 20 in frame (19 hidden at times), S11a 48 in frame (24 hidden at times)
+[build] WARNING: voice_take.wav not found, no 'voice' audio in this build
+[build] WARNING: voice_take.wav not found, no 'voice' audio in this build
+[build] saved /Users/prashanthmogili/My Files/Claude-Cloud-Code/out/pilot_ear_pop/pilot_ear_pop_previz.blend
+shorts/tools/guard.sh: line 7: 19643 Terminated: 15          sleep "$limit"
+build: 20 s
+== qa
+[qa] all shots clean
+[qa] 0 problem(s)
+qa: 8 s
+== render (draft): S02:0.97,S03:0.02,S03:0.97,S04:0.05,S08b:0.3,S09b:0.65,S11a:0.85
+[review] GPU: METAL (Apple M4 (GPU - 10 cores))
+[review] S02:0.97 (frame 101) 3.0s
+[review] S03:0.02 (frame 106) 1.4s
+[review] S03:0.97 (frame 223) 1.4s
+[review] S04:0.05 (frame 230) 1.3s
+[review] S08b:0.3 (frame 763) 1.2s
+[review] S09b:0.65 (frame 923) 1.3s
+[review] S11a:0.85 (frame 1104) 1.2s
+[review] 7 frames in 11s -> shorts/pilot_ear_pop/review/mac/final-check.jpg
+render: 13 s
+total: 48 s on Apple M4
+STATUS: OK
