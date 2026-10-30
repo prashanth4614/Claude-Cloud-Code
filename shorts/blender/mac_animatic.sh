@@ -43,7 +43,7 @@ publish() {   # always push the log (and the sheet if there is one), so the clou
 }
 trap 'echo "failed at line $LINENO: $BASH_COMMAND" | tee -a "$LOG"; publish FAILED' ERR
 # Never waits on input: stdin is closed for every step, and every step has a hard time cap
-# (assets 15 min, build 15 min, render RENDER_LIMIT or 60 min).
+# (assets 15 min, build 15 min, render RENDER_LIMIT or 100 min).
 
 T0=$(t)
 step "pull"
@@ -64,14 +64,16 @@ echo "build: $(( $(t) - T )) s" | tee -a "$LOG"
 
 step "render animatic${FRAMES:+ (first $FRAMES frames)}"; T=$(t)
 RAW="out/animatic_$JOB.txt"
-capped "${RENDER_LIMIT:-3600}" "$BLENDER" -b out/pilot_ear_pop/pilot_ear_pop_previz.blend \
+# default cap 100 min: the full film takes ~85 min at 4 samples on the M4
+capped "${RENDER_LIMIT:-6000}" "$BLENDER" -b out/pilot_ear_pop/pilot_ear_pop_previz.blend \
   -P shorts/pilot_ear_pop/render_animatic.py -- "$PWD/$OUT/$JOB.mp4" 50 $FRAMES > "$RAW" 2>&1 \
   || echo "blender exit code $? (124 = hit the render cap)" | tee -a "$LOG"
 grep -E "\[animatic\]|Error|Traceback|Append frame|Fra:1 " "$RAW" | tail -5 | tee -a "$LOG" || true
 [ -f "$OUT/$JOB.mp4" ] || { echo "-- last 40 lines of Blender output:" >> "$LOG"; tail -40 "$RAW" >> "$LOG"; }
 N="${FRAMES:-1566}"
 SECS=$(( $(t) - T ))
-echo "render: $SECS s for $N frames ($(awk "BEGIN{printf \"%.2f\", $SECS/($N>0?$N:1)}") s/frame)" | tee -a "$LOG"
+# (no ">" inside awk's printf: awk reads it as an output redirect, which is why this printed blank)
+echo "render: $SECS s for $N frames ($(awk -v s="$SECS" -v n="$N" 'BEGIN{if (n < 1) n = 1; printf "%.2f", s / n}') s/frame)" | tee -a "$LOG"
 echo "size: $(du -h "$OUT/$JOB.mp4" 2>/dev/null | cut -f1)" | tee -a "$LOG"
 echo "total: $(( $(t) - T0 )) s on $(sysctl -n machdep.cpu.brand_string 2>/dev/null || uname -m)" | tee -a "$LOG"
 
