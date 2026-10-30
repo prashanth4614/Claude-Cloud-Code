@@ -24,13 +24,8 @@ if [ "$MODE" = assemble ]; then
   F=out/final/full/frames
   n=$(find "$F" -name 'f_*.jpg' -size +0 | wc -l)
   [ "$n" -eq "$END" ] || { echo "only $n of $END frames in $F"; exit 1; }
-  # the exact voice + SFX mix of the EDIT scene, frame-accurate
-  "$BLENDER" -b out/final/film_packed.blend --python-expr "
-import bpy
-ed = bpy.data.scenes['EDIT']
-with bpy.context.temp_override(scene=ed):
-    bpy.ops.sound.mixdown(filepath='$PWD/out/final/mix.wav', container='WAV', codec='PCM', format='S16', mixrate=48000)
-" 2>&1 | grep -iE "error" || true
+  # the sound mix: voice + ambience beds + effects + muffle, timed to the plan (mix.py)
+  python3 shorts/pilot_ear_pop/mix.py out/final/mix.wav
   [ -s out/final/mix.wav ] || { echo "audio mixdown failed"; exit 1; }
   ffmpeg -v error -y -framerate 30 -i "$F/f_%04d.jpg" -i out/final/mix.wav \
     -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p -c:a aac -b:a 256k -shortest \
