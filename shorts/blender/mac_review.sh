@@ -4,6 +4,7 @@
 #   shorts/blender/mac_review.sh <job-name> "<shot specs>" [draft|look]
 #   shorts/blender/mac_review.sh sets-v2 all look
 #
+# Test the script itself without pushing anything: NO_PUBLISH=1 BLENDER=/path/to/blender ...
 # Pulls the branch, fetches the free CC0 assets once, builds the film (sets come from the cache
 # unless their code changed), runs the QA checks, renders the frames, and commits only the contact
 # sheet + legend + log to shorts/pilot_ear_pop/review/mac/<job-name>.*, then pushes.
@@ -33,6 +34,7 @@ publish() {   # always push the log (and the sheet if there is one), so the clou
   local status="$1"
   trap - ERR
   echo "STATUS: $status" | tee -a "$LOG"
+  if [ -n "${NO_PUBLISH:-}" ]; then echo "NO_PUBLISH set: not committing ($status)"; return 0; fi
   git add "$LOG"
   [ -f "$OUT/$JOB.jpg" ] && git add "$OUT/$JOB.jpg" "$OUT/$JOB.txt"
   git commit -q -m "Mac review render: $JOB ($QUALITY) $status" -m "Rendered on the Mac by shorts/blender/mac_review.sh." || true

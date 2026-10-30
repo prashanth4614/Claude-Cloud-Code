@@ -4,15 +4,17 @@
 #   push_with_retry <branch>    pull --no-rebase + push, retried with back-off (2, 4, 8, 16 s)
 #   take_lock <name>            one job at a time per checkout (waits up to 30 min for the previous one)
 
-capped() {
+capped() {   # safe under `set -eE` + ERR traps: nothing in here returns non-zero by accident
   local limit="$1"; shift
-  local mark; mark="$(mktemp "${TMPDIR:-/tmp}/capped.XXXXXX")"; rm -f "$mark"
+  local mark rc=0 pid dog
+  mark="$(mktemp "${TMPDIR:-/tmp}/capped.XXXXXX")" && rm -f "$mark"
   "$@" < /dev/null &
-  local pid=$!
+  pid=$!
   ( sleep "$limit" && touch "$mark" && kill -TERM "$pid" 2>/dev/null && sleep 10 && kill -KILL "$pid" 2>/dev/null ) &
-  local dog=$!
-  wait "$pid"; local rc=$?
-  kill "$dog" 2>/dev/null; wait "$dog" 2>/dev/null
+  dog=$!
+  wait "$pid" || rc=$?
+  kill "$dog" 2>/dev/null || true
+  wait "$dog" 2>/dev/null || true
   if [ -e "$mark" ]; then rm -f "$mark"; rc=124; fi
   return "$rc"
 }
