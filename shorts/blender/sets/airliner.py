@@ -409,6 +409,14 @@ def realistic_sky(scene, origin):
         d.texture, d.strength, d.texture_coords = _cloud_tex("cloud_cauli", 1.6, 5), 0.9, "GLOBAL"
         for p in ob.data.polygons:
             p.use_smooth = True
+    sun = bpy.data.objects.get("Sun")
+    if sun:                                  # low golden sun: warm key, long soft shadows on the cloud tops
+        sun.data.energy, sun.data.color = 3.2, (1.0, 0.68, 0.42)
+        sun.rotation_euler = (math.radians(78), 0, math.radians(60))
+
+
+def sky_world(scene):
+    """Scene-level part of the sky (not cached with the set): HDRI world light and the film look."""
     hdri = LIB / "hdri" / "qwantani_sunset_puresky_2k.exr"
     if hdri.exists():
         w = scene.world
@@ -422,8 +430,4 @@ def realistic_sky(scene, origin):
         nt.links.new(mapping.outputs["Vector"], env.inputs["Vector"])
         nt.links.new(env.outputs["Color"], nt.nodes["Background"].inputs["Color"])
         nt.nodes["Background"].inputs["Strength"].default_value = 0.7
-    sun = bpy.data.objects.get("Sun")
-    if sun:                                  # low golden sun: warm key, long soft shadows on the cloud tops
-        sun.data.energy, sun.data.color = 3.2, (1.0, 0.68, 0.42)
-        sun.rotation_euler = (math.radians(78), 0, math.radians(60))
     scene.view_settings.look = "AgX - Medium High Contrast"

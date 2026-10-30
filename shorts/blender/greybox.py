@@ -301,7 +301,7 @@ def tube_point(t, origin=EAR):
 
 
 # ------------------------------------------------------------------- city ---
-def build_city(scene):
+def build_city(scene, blocks=True):
     coll = collection("SET_city", scene.collection)
     o = CITY
     dusk = material("dusk_dome", (0.10, 0.09, 0.22), emission=1.0)
@@ -313,7 +313,7 @@ def build_city(scene):
     bld = material("building", (0.05, 0.05, 0.07), rough=0.8)
     lights = material("city_lights", (1.0, 0.75, 0.35), emission=6.0)
     rnd = random.Random(5)
-    for i in range(160):
+    for i in range(160 if blocks else 0):   # the realistic city (sets/city.py) brings its own buildings
         x, y = rnd.uniform(-60, 120), rnd.uniform(-40, 160)
         h = rnd.uniform(2, 14)
         prim("cube", f"bld_{i:03d}", coll, o + Vector((x, y, h / 2)), (rnd.uniform(1, 3), rnd.uniform(1, 3), h / 2), mat=bld)

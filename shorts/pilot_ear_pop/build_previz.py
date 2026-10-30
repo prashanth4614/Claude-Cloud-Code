@@ -21,7 +21,7 @@ from mathutils import Vector
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "blender"))
-from greybox import CABIN, CITY, EAR, EAR_MAP, SKY, build_cabin, build_city, build_ear, build_sky, tube_point  # noqa: E402
+from greybox import CABIN, CITY, EAR, EAR_MAP, SKY, build_cabin, build_max as greybox_max, build_city, build_ear, build_sky, tube_point  # noqa: E402
 from rigs import bake_move, bezier, camera, collection, ease, handheld, impulse_shake, key, lerp  # noqa: E402
 sys.path.insert(0, str(HERE))
 import real_max  # noqa: E402
@@ -29,6 +29,7 @@ from sets.cabin import build_cabin as real_cabin  # noqa: E402
 from sets import ear as ear_real  # noqa: E402
 from sets import airliner  # noqa: E402
 from sets import city as city_real  # noqa: E402
+from sets import cache as set_cache  # noqa: E402
 
 PLAN = json.loads((HERE / "plan.json").read_text())
 OUT = HERE.parent.parent / "out" / "pilot_ear_pop"
@@ -493,29 +494,58 @@ def stills(film, cams, out_dir):
     film.frame_set(1)
 
 
+BLENDER_DIR = HERE.parent / "blender"
+COMMON = [BLENDER_DIR / "greybox.py", BLENDER_DIR / "rigs.py", BLENDER_DIR / "sets" / "pbr.py",
+          BLENDER_DIR / "sets" / "cache.py"]
+
+
+def realistic_sets(film):
+    """Each set comes from its cache (out/sets/*.blend) unless its source changed: only the set
+    you are working on is rebuilt."""
+    sets_dir = BLENDER_DIR / "sets"
+    set_cache.get("sky", ["SET_sky", "ASSET_jet"], COMMON + [sets_dir / "airliner.py"],
+                  lambda: (build_sky(film), airliner.build_airliner(film), airliner.realistic_sky(film, SKY)))
+    airliner.sky_world(film)
+    set_cache.get("cabin", ["SET_cabin"], COMMON + [sets_dir / "cabin.py"], lambda: real_cabin(film, CABIN))
+    set_cache.get("ear_in", ["SET_ear_in"], COMMON + [sets_dir / "ear.py"],
+                  lambda: ear_real.apply(build_ear(film, EAR, inside=True)))
+    set_cache.get("ear_map", ["SET_ear_map"], COMMON + [sets_dir / "ear.py"],
+                  lambda: ear_real.apply(build_ear(film, EAR_MAP, inside=False)))
+    set_cache.get("city", ["SET_city"], COMMON + [sets_dir / "city.py"],
+                  lambda: (build_city(film, blocks=False), city_real.build_city(film, CITY)))
+
+
+def ear_dict(tag, origin):
+    """The handles animate_ear needs, found by name in a (possibly cached) ear set."""
+    obs = bpy.data.collections[f"SET_ear_{tag}"].all_objects
+
+    def named(prefix):
+        return sorted((o for o in obs if o.name.startswith(prefix) and o.name.endswith(f"_{tag}")), key=lambda o: o.name)
+    return {"drum": obs[f"Eardrum_{tag}"], "tube": obs[f"Eustachian_tube_{tag}"], "outside": named("air_out_"),
+            "inside": named("air_in_"), "flow": named("air_flow_"), "flash": obs[f"pop_flash_{tag}"],
+            "ring": obs[f"pop_ring_{tag}"], "origin": origin, "tag": tag}
+
+
 def main():
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     film = setup_film()
-    sky = build_sky(film)
-    if "--greybox-sets" not in args:
-        airliner.build_airliner(film)
-        airliner.realistic_sky(film, SKY)
+    greybox_sets = "--greybox-sets" in args
+    if greybox_sets:
+        sky = build_sky(film)
+    else:
+        realistic_sets(film)
+        sky = {"jet": bpy.data.objects["Jet"]}
     if "--standin" in args or not real_max.MAX_BLEND.exists():
-        m = build_cabin(film)
+        m = build_cabin(film) if greybox_sets else greybox_max(film, CABIN + Vector((0.0, 0.35, 0.0)))
     else:
         m = real_max.load(film, CABIN)
-        if "--greybox-sets" in args:
+        if greybox_sets:
             build_cabin(film, with_max=False, window_z=1.75 + m["offset"].z)
-        else:
-            real_cabin(film, CABIN)
-    e = build_ear(film, EAR, inside=True)
-    e_map = build_ear(film, EAR_MAP, inside=False)
-    if "--greybox-sets" not in args:
-        ear_real.apply(e)
-        ear_real.apply(e_map)
-    build_city(film)
-    if "--greybox-sets" not in args:
-        city_real.build_city(film, CITY)
+    if greybox_sets:
+        e, e_map = build_ear(film, EAR, inside=True), build_ear(film, EAR_MAP, inside=False)
+        build_city(film)
+    else:
+        e, e_map = ear_dict("in", EAR), ear_dict("map", EAR_MAP)
         city_real.light_switch(*rng("S10"))
     animate_jet(sky["jet"])
     if m.get("real"):
