@@ -249,7 +249,7 @@ def animate_ear(e):
     key(drum_mat.inputs["Emission Strength"], "default_value", fpop - 1, 2.5)
     key(drum_mat.inputs["Emission Strength"], "default_value", fpop + 4, 0.0)
     key(e["flash"].data, "energy", fpop - 1, 0.0)
-    key(e["flash"].data, "energy", fpop + 1, 3000.0)
+    key(e["flash"].data, "energy", fpop + 1, 700.0)     # a soft bloom: 3000 washed the frame out white
     key(e["flash"].data, "energy", fpop + 12, 0.0)
     key(e["ring"], "scale", fpop, (0.0,) * 3, interp="CONSTANT")
     key(e["ring"], "scale", fpop + 1, (0.3,) * 3)
@@ -446,7 +446,7 @@ def build_cameras(sc, m):
     shot("S02", s02, 45, step=1, clip=0.002)
 
     def s03(t):  # out of the dark, gliding down the glowing canal, slowing at the eardrum
-        x = lerp(-18.5, -2.4, ease(t))
+        x = lerp(-17.0, -2.4, ease(t))       # starts just inside the entrance, past the exit glow disc (-17.6)
         wob = Vector((0, 0.12 * math.sin(t * 7), 0.15 + 0.1 * math.sin(t * 5)))
         return {"pos": I + Vector((x, 0, 0)) + wob, "target": I + Vector((x + 6, 0, 0.05)), "lens": 20}
     shot("S03", s03, 20, step=2)
@@ -587,7 +587,7 @@ def build_edit(film, cams):
     seq = ed.sequence_editor_create()
     ss = strips(seq)
     total = film.frame_end
-    prev = None
+    prev, strips_by_id = None, {}
     for i, sh in enumerate(PLAN["shots"]):
         ch = 2 + i % 2
         st = ss.new_scene(sh["id"], film, ch, 1)
@@ -600,6 +600,16 @@ def build_edit(film, cams):
             n = int(prev[1].split(":")[1])
             effect(ss, f"dissolve_{prev[0].name}", "CROSS", 4, sh["start"], sh["start"] + n, prev[0], st)
         prev = (st, out)
+        strips_by_id[sh["id"]] = st
+    # the push into Max's ear dips through black into the canal (the camera ends against his skin)
+    black = ss.new_effect("dip_black", "COLOR", 1, frame_start=1, **({"length": total} if "length" in
+                          [x.identifier for x in ss.bl_rna.functions["new_effect"].parameters] else {"frame_end": total}))
+    black.color = (0, 0, 0)
+    a, b = strips_by_id["S02"], strips_by_id["S03"]
+    for st, f, v in ((a, SHOT["S02"]["end"] - 8, 1.0), (a, SHOT["S02"]["end"], 0.0),
+                     (b, SHOT["S03"]["start"], 0.0), (b, SHOT["S03"]["start"] + 8, 1.0)):
+        st.blend_alpha = v
+        st.keyframe_insert("blend_alpha", frame=f)
     for i, c in enumerate(PLAN["captions"]):   # Shorts style: short bold chunks, keyword in yellow, above the UI
         t = effect(ss, f"cap_{i + 1:02d}", "TEXT", 6, c["start"], c["end"] + 1)
         style_text(t, c["text"], 92, (0.5, 0.37), (1.0, 0.86, 0.1, 1) if c["hot"] else (1, 1, 1, 1))
