@@ -2,34 +2,50 @@
 # Mac side: answer one Codex question from the cloud session (read-only second opinion).
 #   shorts/tools/ask_codex.sh <id>
 # Reads shorts/tools/codex/requests/<id>.md, runs `codex exec` read-only in the repo (it can read
-# any file, change none), and pushes shorts/tools/codex/answers/<id>.md ending in a STATUS line.
-# Model and effort: CODEX_MODEL (default: Codex's configured default), CODEX_EFFORT (default high).
+# any file, change none), and pushes shorts/tools/codex/answers/<id>.md ending in a STATUS line:
+#   OK | FAILED (error lines included) | TIMEOUT (partial output included) | REJECTED (bad request)
+# Never waits on input: stdin is closed, approvals are off, and a hard cap kills a stuck run.
+# Env: CODEX_MODEL (default gpt-6.1-sol), CODEX_EFFORT (default high), CODEX_LIMIT seconds (default 600).
+{   # whole script parsed before it runs: a git pull can't change it mid-run
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
+source shorts/tools/guard.sh
 ID="${1:?request id}"
 BRANCH="claude/youtube-video-production-4ic14n"
 REQ="shorts/tools/codex/requests/$ID.md"
 ANS="shorts/tools/codex/answers/$ID.md"
-git pull --no-rebase -q origin "$BRANCH"
-[ -f "$REQ" ] || { echo "no request $REQ"; exit 1; }
-MODEL_ARGS=(); [ -n "${CODEX_MODEL:-}" ] && MODEL_ARGS=(--model "$CODEX_MODEL")
+MODEL="${CODEX_MODEL:-gpt-6.1-sol}"; EFFORT="${CODEX_EFFORT:-high}"; LIMIT="${CODEX_LIMIT:-600}"
+take_lock codex
+capped 60 git pull --no-rebase -q origin "$BRANCH" || true
+OUTF="${TMPDIR:-/tmp}/codex_$ID.out"; ERRF="${TMPDIR:-/tmp}/codex_$ID.err"; LAST="${TMPDIR:-/tmp}/codex_$ID.last"
+: > "$OUTF"; : > "$ERRF"; rm -f "$LAST"
 T=$(date +%s)
+if [ ! -f "$REQ" ]; then
+  STATUS=REJECTED; echo "no request file $REQ" > "$ERRF"
+elif [ "$(wc -c < "$REQ")" -gt 20000 ]; then
+  STATUS=REJECTED; echo "request is $(wc -c < "$REQ") bytes; keep requests under 20 KB" > "$ERRF"
+else
+  capped "$LIMIT" codex exec --model "$MODEL" -c model_reasoning_effort="$EFFORT" -c approval_policy=never \
+    --sandbox read-only --skip-git-repo-check --output-last-message "$LAST" "$(cat "$REQ")" > "$OUTF" 2> "$ERRF"
+  rc=$?
+  if [ "$rc" -eq 0 ]; then STATUS=OK; elif [ "$rc" -eq 124 ]; then STATUS=TIMEOUT; else STATUS=FAILED; fi
+fi
 {
   echo "# Codex answer: $ID"
   echo
-  echo "_model: ${CODEX_MODEL:-codex default}, reasoning effort: ${CODEX_EFFORT:-high}, read-only_"
+  echo "_model: $MODEL, reasoning effort: $EFFORT, read-only, cap ${LIMIT}s_"
   echo
-  if codex exec "${MODEL_ARGS[@]}" -c model_reasoning_effort="${CODEX_EFFORT:-high}" \
-       --sandbox read-only --skip-git-repo-check "$(cat "$REQ")" 2>/tmp/codex_$ID.err; then
-    STATUS=OK
-  else
-    STATUS=FAILED; echo; echo '```'; tail -30 /tmp/codex_$ID.err; echo '```'
+  if [ -s "$LAST" ]; then cat "$LAST"; else cat "$OUTF"; fi
+  if [ "$STATUS" != OK ]; then
+    echo; echo "**$STATUS**: last lines of Codex's log:"; echo '```'; tail -30 "$ERRF"; echo '```'
   fi
   echo
   echo "_took $(( $(date +%s) - T )) s_"
-  echo "STATUS: ${STATUS}"
+  echo "STATUS: $STATUS"
 } > "$ANS"
 git add "$ANS"
-git commit -q -m "Codex answer: $ID" || true
-git pull --no-rebase -q origin "$BRANCH" && git push -q origin "$BRANCH"
+git commit -q -m "Codex answer: $ID ($STATUS)" || true
+push_with_retry "$BRANCH"
 tail -1 "$ANS"
+exit
+}

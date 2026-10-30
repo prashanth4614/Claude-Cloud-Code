@@ -7,8 +7,11 @@
 # Pulls the branch, fetches the free CC0 assets once, builds the film (sets come from the cache
 # unless their code changed), runs the QA checks, renders the frames, and commits only the contact
 # sheet + legend + log to shorts/pilot_ear_pop/review/mac/<job-name>.*, then pushes.
+{   # whole script parsed before it runs: a git pull can't change it mid-run
 set -eEuo pipefail
 cd "$(git rev-parse --show-toplevel)"
+source shorts/tools/guard.sh
+take_lock render
 
 JOB="${1:?job name}"; SHOTS="${2:-all}"; QUALITY="${3:-look}"
 BRANCH="claude/youtube-video-production-4ic14n"
@@ -33,36 +36,42 @@ publish() {   # always push the log (and the sheet if there is one), so the clou
   git add "$LOG"
   [ -f "$OUT/$JOB.jpg" ] && git add "$OUT/$JOB.jpg" "$OUT/$JOB.txt"
   git commit -q -m "Mac review render: $JOB ($QUALITY) $status" -m "Rendered on the Mac by shorts/blender/mac_review.sh." || true
-  git pull --no-rebase -q origin "$BRANCH" && git push -q origin "$BRANCH"
+  push_with_retry "$BRANCH" || true
   echo "published $LOG ($status)"
 }
 trap 'echo "failed at line $LINENO: $BASH_COMMAND" | tee -a "$LOG"; publish FAILED' ERR
+# Never waits on input: stdin is closed for every step, and every step has a hard time cap
+# (assets 15 min, build 15 min, QA 5 min, render RENDER_LIMIT or 30 min).
 
 T0=$(t)
 step "pull"
-git pull --no-rebase -q origin "$BRANCH"
+capped 120 git pull --no-rebase -q origin "$BRANCH"
 
 step "assets (only downloads what's missing)"
-"$BLENDER" -b --factory-startup --python-expr \
+capped 900 "$BLENDER" -b --factory-startup --python-expr \
   "import runpy, sys; sys.argv = ['fetch']; runpy.run_path('assets/fetch_assets.py', run_name='__main__')" \
-  2>&1 | grep -E "^(hdri|polyhaven|ambientcg|  )" | tee -a "$LOG" || true
+  > out/assets_$JOB.txt 2>&1 || echo "asset fetch exit $?" | tee -a "$LOG"
+grep -E "^(hdri|polyhaven|ambientcg|  )" out/assets_$JOB.txt | tee -a "$LOG" || true
 
 step "build film"; T=$(t)
-"$BLENDER" -b --factory-startup -P shorts/pilot_ear_pop/build_previz.py 2>&1 \
-  | grep -E "\[sets\]|\[max\]|\[build\]|Error|Traceback|line [0-9]+" | tee -a "$LOG"
+capped 900 "$BLENDER" -b --factory-startup -P shorts/pilot_ear_pop/build_previz.py > out/build_$JOB.txt 2>&1 \
+  || echo "build exit $? (124 = hit the 15 min cap)" | tee -a "$LOG"
+grep -E "\[sets\]|\[max\]|\[build\]|Error|Traceback|line [0-9]+" out/build_$JOB.txt | tee -a "$LOG" || true
 grep -q "\[build\] saved" "$LOG" || false      # no saved .blend = the build failed (trap publishes FAILED)
 echo "build: $(( $(t) - T )) s" | tee -a "$LOG"
 
 step "qa"; T=$(t)
-"$BLENDER" -b out/pilot_ear_pop/pilot_ear_pop_previz.blend -P shorts/blender/qa_scene.py 2>&1 \
-  | grep -E "^\[qa\]|Error|Traceback" | tee -a "$LOG" || true
+capped 300 "$BLENDER" -b out/pilot_ear_pop/pilot_ear_pop_previz.blend -P shorts/blender/qa_scene.py \
+  > out/qa_$JOB.txt 2>&1 || true
+grep -E "^\[qa\]|Error|Traceback" out/qa_$JOB.txt | tee -a "$LOG" || true
 echo "qa: $(( $(t) - T )) s" | tee -a "$LOG"
 
 step "render ($QUALITY): $SHOTS"; T=$(t)
 if [ "$SHOTS" = "all" ]; then SEL=(--all); else SEL=(--shots "$SHOTS"); fi
 RAW="out/review_render_$JOB.txt"                 # Blender's full output (the tail goes into the log on failure)
-"$BLENDER" -b out/pilot_ear_pop/pilot_ear_pop_previz.blend -P shorts/blender/review_render.py -- \
-  "${SEL[@]}" --quality "$QUALITY" --sheet "$OUT/$JOB.jpg" > "$RAW" 2>&1 || echo "blender exit code $?" | tee -a "$LOG"
+capped "${RENDER_LIMIT:-1800}" "$BLENDER" -b out/pilot_ear_pop/pilot_ear_pop_previz.blend -P shorts/blender/review_render.py -- \
+  "${SEL[@]}" --quality "$QUALITY" --sheet "$OUT/$JOB.jpg" > "$RAW" 2>&1 \
+  || echo "blender exit code $? (124 = hit the render cap)" | tee -a "$LOG"
 grep -E "\[review\]|Error|Traceback" "$RAW" | tee -a "$LOG" || true
 [ -f "$OUT/$JOB.jpg" ] || { echo "-- last 40 lines of Blender output:" >> "$LOG"; tail -40 "$RAW" >> "$LOG"; }
 echo "render: $(( $(t) - T )) s" | tee -a "$LOG"
@@ -71,3 +80,5 @@ echo "total: $(( $(t) - T0 )) s on $(sysctl -n machdep.cpu.brand_string 2>/dev/n
 [ -f "$OUT/$JOB.jpg" ] || false                  # no sheet = the render failed
 trap - ERR
 publish OK
+exit
+}
