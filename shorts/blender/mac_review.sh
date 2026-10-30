@@ -60,8 +60,11 @@ echo "qa: $(( $(t) - T )) s" | tee -a "$LOG"
 
 step "render ($QUALITY): $SHOTS"; T=$(t)
 if [ "$SHOTS" = "all" ]; then SEL=(--all); else SEL=(--shots "$SHOTS"); fi
+RAW="out/review_render_$JOB.txt"                 # Blender's full output (the tail goes into the log on failure)
 "$BLENDER" -b out/pilot_ear_pop/pilot_ear_pop_previz.blend -P shorts/blender/review_render.py -- \
-  "${SEL[@]}" --quality "$QUALITY" --sheet "$OUT/$JOB.jpg" 2>&1 | grep -E "\[review\]|Error|Traceback" | tee -a "$LOG"
+  "${SEL[@]}" --quality "$QUALITY" --sheet "$OUT/$JOB.jpg" > "$RAW" 2>&1 || echo "blender exit code $?" | tee -a "$LOG"
+grep -E "\[review\]|Error|Traceback" "$RAW" | tee -a "$LOG" || true
+[ -f "$OUT/$JOB.jpg" ] || { echo "-- last 40 lines of Blender output:" >> "$LOG"; tail -40 "$RAW" >> "$LOG"; }
 echo "render: $(( $(t) - T )) s" | tee -a "$LOG"
 echo "total: $(( $(t) - T0 )) s on $(sysctl -n machdep.cpu.brand_string 2>/dev/null || uname -m)" | tee -a "$LOG"
 
