@@ -181,7 +181,7 @@ def main():
             "containerDiskInGb": 40, "volumeInGb": 0, "ports": ["8000/http"], "minRAMPerGPU": 16, "minVCPUPerGPU": 4,
             "env": env, "dockerStartCmd": ["bash", "-c", "echo \"$BOOT_B64\" | base64 -d > /boot.sh && bash /boot.sh"]}
     if a.blender_series.startswith("5"):   # Blender 5.x needs NVIDIA driver >= 575 (CUDA 12.9+): only such hosts
-        spec["allowedCudaVersions"] = ["12.9", "13.0", "13.1", "13.2"]
+        spec["allowedCudaVersions"] = ["12.9", "13.0"]          # the values RunPod accepts today
     gpus, spent = list(a.gpu), 0.0
     for attempt in range(3):               # a pod whose GPU fails the boot test is replaced (different GPU type)
         spec["gpuTypeIds"] = gpus
