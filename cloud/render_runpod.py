@@ -40,18 +40,62 @@ def http(method, url, body=None, headers=None, raw=False, timeout=120):
     return out if raw else (json.loads(out) if out else {})
 
 
-def api(method, path, body=None):
+def api(method, path, body=None, soft=False):
     key = os.environ.get("RUNPOD_API_KEY")
     if not key:
         sys.exit("RUNPOD_API_KEY is not set (add it as an environment secret)")
     try:
         return http(method, API + path, body, {"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
     except urllib.error.HTTPError as e:
-        sys.exit(f"RunPod {method} {path} -> HTTP {e.code}: {e.read().decode()[:500]}")
+        msg = f"RunPod {method} {path} -> HTTP {e.code}: {e.read().decode()[:500]}"
+        if soft:
+            print(msg)
+            return None
+        sys.exit(msg)
 
 
-def bundle(cmd, output, includes, env):
+def upload(url, hdr, path, chunk=40 << 20):
+    """Big files go up in chunks: RunPod's HTTPS proxy refuses request bodies over ~100 MB."""
+    data = Path(path).read_bytes()
+    for i in range(0, max(1, len(data)), chunk):
+        for attempt in range(4):
+            try:
+                http("POST", f"{url}/upload?name={Path(path).name}&part={i // chunk}", data[i:i + chunk],
+                     {**hdr, "Content-Type": "application/octet-stream"}, timeout=600)
+                break
+            except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+                if attempt == 3:
+                    raise
+                print(f"  upload retry ({e})")
+                time.sleep(2 ** attempt * 2)
+    print(f"uploaded {Path(path).name} ({len(data) / 1e6:.0f} MB)")
+
+
+def pull_frames(url, hdr, remote_dir, local):
+    """Fetch the frames finished since the last call (a pod lost mid-render costs only unfinished ones)."""
+    got = 0
+    while True:
+        try:
+            raw = http("GET", f"{url}/frames?dir={remote_dir}&max=60", headers=hdr, raw=True, timeout=300)
+        except (urllib.error.URLError, TimeoutError, ConnectionError):
+            return got
+        if not raw:
+            return got
+        with tarfile.open(fileobj=io.BytesIO(raw)) as tf:
+            names = tf.getnames()
+            if not names:
+                return got
+            local.mkdir(parents=True, exist_ok=True)
+            tf.extractall(local, filter="data")
+        got += len(names)
+        with open(local.parent / "done.txt", "a") as f:
+            f.writelines(f"{int(n[2:6])}\n" for n in names)
+
+
+def bundle(cmd, output, includes, env, only=()):
     files = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
+    if only:                               # just the files the job needs (e.g. two scripts next to a packed .blend)
+        files = [f for f in files if any(f == o or f.startswith(o.rstrip("/") + "/") for o in only)]
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as tf:
         for f in files:
@@ -82,26 +126,45 @@ def main():
     ap.add_argument("--engine", choices=["auto", "eevee", "cycles"], default="auto",
                     help="auto: EEVEE if the pod has the NVIDIA graphics driver, else Cycles+OptiX")
     ap.add_argument("--dry-run", action="store_true", help="build the bundle and print the plan, no pod")
+    ap.add_argument("--gpu-count", type=int, default=1, help="GPUs on the one pod (falls back to 1 if none are free)")
+    ap.add_argument("--upload", nargs="*", default=[], help="big files (e.g. a packed .blend) sent in chunks to /work/upload/")
+    ap.add_argument("--pull-frames", help="frames dir (relative to repo) to download while the job runs")
+    ap.add_argument("--only", nargs="*", default=[], help="bundle only these tracked paths (default: the whole repo)")
+    ap.add_argument("--no-pip", action="store_true", help="skip the 2D/TTS Python deps on the pod (Blender-only jobs)")
     ap.add_argument("cmd", nargs=argparse.REMAINDER)
     a = ap.parse_args()
     cmd = a.cmd[1:] if a.cmd[:1] == ["--"] else a.cmd
     if not cmd:
         sys.exit("give the command to run after --")
-    data = bundle(cmd, a.out, a.include, {} if a.engine == "auto" else {"SHORTS_ENGINE": a.engine.upper()})
+    job_env = {} if a.engine == "auto" else {"SHORTS_ENGINE": a.engine.upper()}
+    job_env.update({k: v for k, v in os.environ.items() if k.startswith("FINAL_")})   # render settings, e.g. FINAL_SAMPLES
+    data = bundle(cmd, a.out, a.include, job_env, a.only)
+    if job_env:
+        print(f"job env: {job_env}")
     print(f"bundle: {len(data) / 1e6:.1f} MB, command: {' '.join(cmd)}")
+    for f in a.upload:
+        if not Path(f).is_file():
+            sys.exit(f"--upload {f} does not exist")
+        print(f"upload: {f} ({Path(f).stat().st_size / 1e6:.0f} MB, chunked)")
+    print(f"plan: {a.gpu_count}x {a.gpu[0]} ({a.cloud.lower()} cloud), Blender {a.blender_series}, "
+          f"cost guard {a.max_minutes:.0f} min (+ in-pod self-delete at {a.max_minutes + 10:.0f} min)")
     if a.dry_run:
         return True
 
     token = os.environ.get("RUNPOD_TEST_TOKEN") or secrets.token_urlsafe(24)
     here = Path(__file__).parent
     env = {"JOB_TOKEN": token, "NVIDIA_DRIVER_CAPABILITIES": "all", "BLENDER_SERIES": a.blender_series,
+           "POD_MAX_SECONDS": str(int((a.max_minutes + 10) * 60)), "BOOT_PIP": "0" if a.no_pip else "1",
            "BOOT_B64": base64.b64encode((here / "bootstrap.sh").read_bytes()).decode(),
            "AGENT_B64": base64.b64encode((here / "pod_agent.py").read_bytes()).decode()}
-    pod = api("POST", "/pods", {
-        "name": "shorts-render", "imageName": "ubuntu:24.04", "computeType": "GPU", "gpuCount": 1,
-        "gpuTypeIds": a.gpu, "gpuTypePriority": "custom", "cloudType": a.cloud,
-        "containerDiskInGb": 40, "volumeInGb": 0, "ports": ["8000/http"], "minRAMPerGPU": 16, "minVCPUPerGPU": 4,
-        "env": env, "dockerStartCmd": ["bash", "-c", "echo \"$BOOT_B64\" | base64 -d > /boot.sh && bash /boot.sh"]})
+    spec = {"name": "shorts-render", "imageName": "ubuntu:24.04", "computeType": "GPU", "gpuCount": a.gpu_count,
+            "gpuTypeIds": a.gpu, "gpuTypePriority": "custom", "cloudType": a.cloud,
+            "containerDiskInGb": 40, "volumeInGb": 0, "ports": ["8000/http"], "minRAMPerGPU": 16, "minVCPUPerGPU": 4,
+            "env": env, "dockerStartCmd": ["bash", "-c", "echo \"$BOOT_B64\" | base64 -d > /boot.sh && bash /boot.sh"]}
+    pod = api("POST", "/pods", spec, soft=a.gpu_count > 1)
+    if pod is None:                        # no multi-GPU machine free: one GPU, same cost, longer
+        print(f"no {a.gpu_count}-GPU pod available; falling back to 1 GPU")
+        pod = api("POST", "/pods", {**spec, "gpuCount": 1})
     pid, t0 = pod["id"], time.time()
     rate = pod.get("adjustedCostPerHr") or pod.get("costPerHr") or 0
     gpu = (pod.get("gpu") or {}).get("displayName") or (pod.get("machine") or {}).get("gpuDisplayName") or "GPU"
@@ -125,7 +188,11 @@ def main():
                 pass
             time.sleep(float(os.environ.get("RUNPOD_POLL", "10")))
         print(f"ready after {(time.time() - t0) / 60:.1f} min; uploading job")
+        for f in a.upload:
+            upload(url, hdr, f)
         http("POST", url + "/job", data, {**hdr, "Content-Type": "application/gzip"}, timeout=300)
+        frames_dir = ROOT / a.pull_frames if a.pull_frames else None
+        pulled, last_pull = 0, time.time()
         last = None
         while True:
             if time.time() > deadline:
@@ -140,6 +207,11 @@ def main():
             for ln in lines[max(0, start):]:
                 print("  | " + ln, flush=True)
             last = lines[-1] if lines else last
+            if frames_dir and (time.time() - last_pull > 60 or st["state"] in ("done", "failed")):
+                n = pull_frames(url, hdr, a.pull_frames, frames_dir)
+                pulled, last_pull = pulled + n, time.time()
+                if n:
+                    print(f"  pulled {n} frames ({pulled} so far) -> {a.pull_frames}", flush=True)
             if st["state"] in ("done", "failed"):
                 break
         if st["state"] != "done":

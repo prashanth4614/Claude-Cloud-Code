@@ -5,6 +5,10 @@
   POST /job      -> body: job.tar.gz with job.json {"cmd": [...], "output": "out/x.mp4"}
   GET  /status   -> {"state": idle|running|done|failed, "rc": int, "log": tail}
   GET  /result   -> the output file
+  POST /upload?name=F&part=I   -> appends a chunk to /work/upload/F (part 0 starts the file), so big
+                                  files fit under the HTTPS proxy's request size limit
+  GET  /frames?dir=D&have=N    -> tar of finished frames in job dir D (non-empty, settled for 3 s)
+                                  not yet fetched; the driver pulls them as the render goes
 Every endpoint except /health requires the X-Token header to match JOB_TOKEN.
 """
 import io
@@ -13,6 +17,7 @@ import os
 import subprocess
 import tarfile
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -20,6 +25,8 @@ WORK = Path(os.environ.get("POD_WORK", "/work"))
 JOB = WORK / "job"
 TOKEN = os.environ.get("JOB_TOKEN", "")
 state = {"state": "idle", "rc": None, "output": None}
+UPLOAD = WORK / "upload"
+sent = set()          # frames already handed to the driver
 
 
 def tail(path, n=40):
@@ -66,11 +73,40 @@ class H(BaseHTTPRequestHandler):
             return
         if self.path == "/status":
             return self.reply(200, dict(state, log=tail(WORK / "job.log")))
+        if self.path.startswith("/frames"):
+            from urllib.parse import parse_qs, urlparse
+            q = parse_qs(urlparse(self.path).query)
+            d = (JOB / q.get("dir", ["out/final/frames"])[0]).resolve()
+            if not str(d).startswith(str(JOB.resolve())) or not d.is_dir():
+                return self.reply(200, body=b"", ctype="application/x-tar")
+            now, buf, batch = time.time(), io.BytesIO(), []
+            for f in sorted(d.glob("*.jpg")):
+                st = f.stat()
+                if f.name not in sent and st.st_size > 0 and now - st.st_mtime > 3:
+                    batch.append(f)
+                if len(batch) >= int(q.get("max", ["60"])[0]):
+                    break
+            with tarfile.open(fileobj=buf, mode="w") as tf:
+                for f in batch:
+                    tf.add(f, arcname=f.name)
+            sent.update(f.name for f in batch)
+            return self.reply(200, body=buf.getvalue(), ctype="application/x-tar")
         if self.path == "/result" and state["state"] == "done":
             return self.reply(200, body=(JOB / state["output"]).read_bytes(), ctype="application/octet-stream")
         self.reply(404, {"error": "not found"})
 
     def do_POST(self):
+        if self.path.startswith("/upload"):
+            if not self.authed():
+                return
+            from urllib.parse import parse_qs, urlparse
+            q = parse_qs(urlparse(self.path).query)
+            name = Path(q["name"][0]).name
+            UPLOAD.mkdir(parents=True, exist_ok=True)
+            data = self.rfile.read(int(self.headers["Content-Length"]))
+            with open(UPLOAD / name, "wb" if q["part"][0] == "0" else "ab") as f:
+                f.write(data)
+            return self.reply(200, {"size": (UPLOAD / name).stat().st_size})
         if self.path != "/job" or not self.authed():
             return
         if not (WORK / "READY").exists():

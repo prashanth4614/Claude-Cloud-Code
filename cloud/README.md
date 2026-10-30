@@ -64,6 +64,25 @@ Useful flags:
 Any other command works too. Everything after `--` runs on the pod from the repo root,
 for example the 2D or Three.js versions.
 
+## Final render of the Blender pilot (Blender 5.2, all Cycles)
+
+```bash
+shorts/pilot_ear_pop/final_render.sh bench --dry-run   # plan only, no pod
+shorts/pilot_ear_pop/final_render.sh bench             # 64 frames (8 per set) on 1x 4090: s/frame, look check
+FINAL_SAMPLES=64 shorts/pilot_ear_pop/final_render.sh full   # every frame on 2x 4090 (falls back to 1x)
+shorts/pilot_ear_pop/final_render.sh assemble          # frames + the EDIT scene's voice/SFX mix -> MP4
+```
+
+- The film is built here and packed into one .blend (~105 MB), uploaded in chunks (the HTTPS proxy
+  caps request bodies at ~100 MB). The job bundle holds only the two pod scripts.
+- One Blender per GPU (`CUDA_VISIBLE_DEVICES`) works through the same frame ranges; Blender's
+  placeholders stop them repeating frames. No GPU usable (driver < 575 for Blender 5.2): it fails at once.
+- Frames (JPEG q95) stream back to `out/final/<mode>/frames` every minute, so a lost pod costs only
+  unfinished frames. Running the same mode again skips every frame already downloaded (`done.txt`).
+- Three deletes: the driver's `finally`, `--max-minutes`, and a self-delete timer inside the pod
+  (`POD_MAX_SECONDS`, RunPod's pod-scoped key), so the pod goes even if this session dies.
+- Render settings come from `FINAL_*` env vars (see `shorts/pilot_ear_pop/render_final.py`).
+
 ## If something goes wrong
 
 - If the driver prints `could not delete pod`, delete it in the RunPod console right away.
