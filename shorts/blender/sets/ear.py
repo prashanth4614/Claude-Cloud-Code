@@ -240,10 +240,25 @@ def seals(chamber, o, mat):
     valve.location = centre + d * 3.22
     valve.rotation_mode = "QUATERNION"
     valve.rotation_quaternion = d.to_track_quat("Z", "Y")
-    valve.scale = (0.24, 0.24, 0.1)
+    valve.scale = (0.26, 0.26, 0.05)
     vm.materials.append(mat)
     for p in vm.polygons:
         p.use_smooth = True
+    # the slit: a dark crease across the lips, so it reads as a closed opening, not a ball
+    sm = bpy.data.meshes.new("tube_valve_slit_in")
+    b = _bm.new()
+    _bm.ops.create_cube(b, size=2.0)
+    b.to_mesh(sm)
+    b.free()
+    slit = bpy.data.objects.new("tube_valve_slit_in", sm)
+    coll.objects.link(slit)
+    slit.parent = valve                       # scales away with the valve when the tube opens
+    slit.scale = (0.85, 0.06, 1.15)           # in the valve's space: across it, thin, through its thickness
+    dark = bpy.data.materials.new("tube_slit")
+    dark.diffuse_color = (0.12, 0.02, 0.03, 1)
+    dark.use_nodes = True
+    dark.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.12, 0.02, 0.03, 1)
+    sm.materials.append(dark)
     # the tympanic annulus: the fibrous ring that holds the eardrum's edge. It also closes the seam
     # where the drum (r 1.55), the canal's end (r 1.5) and the collar (r 1.6) meet.
     import bmesh

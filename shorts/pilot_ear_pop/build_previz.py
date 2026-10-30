@@ -191,7 +191,7 @@ def animate_ear(e):
     def tube_shut(f, shut):
         key(tube.data, "bevel_depth", f, CLOSED if shut else 0.55)
         if valve:
-            key(valve, "scale", f, (0.24, 0.24, 0.1) if shut else (0.0, 0.0, 0.0))
+            key(valve, "scale", f, (0.26, 0.26, 0.05) if shut else (0.0, 0.0, 0.0))
     for i, mol in enumerate(e["outside"] + e["inside"]):
         if i < len(e["outside"]) and mol.location.x > o.x - 2.4:
             mol.location.x = o.x - 2.4      # canal air keeps clear of the eardrum: air never passes through it
@@ -518,7 +518,12 @@ def build_cameras(sc, m):
         k = ease(t)
         pos = bezier(I + Vector((3.4, -1.2, -0.6)), I + Vector((3.8, -0.6, -0.8)), I + Vector((3.9, 0.1, -0.75)),
                      I + Vector((3.6, 0.6, -0.55)), k)
-        return {"pos": pos, "target": I + Vector((0.6, 0, -0.9)), "lens": 22, "roll": -5 * k}
+        # "rises": on the eardrum (outside air thickening beyond it); then tilt down to the shut, red valve
+        tilt = ease(min(1.0, max(0.0, (t - 0.4) / 0.35)))
+        tgt = lerp(I + Vector((0.6, 0, -0.9)), valve_at, tilt)
+        return {"pos": pos, "target": tgt, "lens": 22, "roll": -5 * k * (1 - tilt)}
+    valve_ob = bpy.data.objects.get("tube_valve_in")
+    valve_at = valve_ob.matrix_world.translation.copy() if valve_ob else I + Vector((2.5, 0.15, -3.0))
     shot("S11a", s11a, 22)
 
     profile("S11b")
