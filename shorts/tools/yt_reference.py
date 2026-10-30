@@ -3,6 +3,7 @@
 
   python3 shorts/tools/yt_reference.py search "zack d films ear"      # list Shorts links from a search
   python3 shorts/tools/yt_reference.py study URL_OR_ID [--every 0.5]  # play it once, frames + tab audio
+  python3 shorts/tools/yt_reference.py grid URL NAME [--pages 3]      # screenshots of a channel grid
 
 `study` plays the Short from 0 to its end in the page, takes a screenshot of the player every
 `--every` s and records ONLY that <video> element's own playback (MediaRecorder on captureStream()).
@@ -63,6 +64,29 @@ def search(q):
             if i not in seen:
                 seen.add(i)
                 print(i, "|", title, "|", ctx_text)
+        ctx.close()
+
+
+def grid(url, name, pages=3):
+    """Screenshot a channel's Shorts/Videos grid, one viewport per scroll, into out/reference/grid_<name>/."""
+    out = ROOT / f"grid_{name}"
+    out.mkdir(parents=True, exist_ok=True)
+    with sync_playwright() as p:
+        ctx = browser(p)
+        page = ctx.new_page()
+        page.set_viewport_size({"width": 1400, "height": 1000})
+        page.goto(url)
+        consent(page)
+        page.wait_for_timeout(4000)
+        for k in range(pages):
+            page.screenshot(path=str(out / f"{k:02d}.png"))
+            page.mouse.wheel(0, 850)
+            page.wait_for_timeout(2500)
+        titles = page.evaluate("""() => [...document.querySelectorAll('a#video-title-link, a#video-title,'
+            + ' h3 a[href*="/shorts/"], a[href*="/shorts/"][title]')].map(a => [a.getAttribute('href'),
+            (a.getAttribute('title') || a.innerText || '').trim()]).filter(x => x[1])""")
+        (out / "titles.json").write_text(json.dumps(titles, indent=1))
+        print(f"[ref] {pages} screenshots + {len(titles)} titles -> {out}")
         ctx.close()
 
 
@@ -132,5 +156,7 @@ if __name__ == "__main__":
         search(" ".join(a[1:]))
     elif a[:1] == ["study"]:
         study(a[1], float(a[a.index("--every") + 1]) if "--every" in a else 0.5)
+    elif a[:1] == ["grid"]:
+        grid(a[1], a[2], int(a[a.index("--pages") + 1]) if "--pages" in a else 3)
     else:
         print(__doc__)

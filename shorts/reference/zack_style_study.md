@@ -210,3 +210,109 @@ The first cut comes by 0.9–1.9 s.
    in the bottom 25 %.
 8. **Hook.** Frame 0 should already be loud and in action: pained face plus jet boom, voice starting on
    frame 0, first cut by about 1 s.
+
+## Thumbnails (2026-10-30)
+
+Sources:
+- the @zackdfilms **Shorts** tab, Latest sort: 35 thumbnails, counted from screenshots of the grid;
+- the **Videos** tab: all 12 long videos that loaded (the tab ends there);
+- 3 Shorts played and compared frame by frame with their thumbnails, using 0.25 s screenshots:
+  How Horseflies Bite You (6mRR91AbxjQ), How Mantises Kill Huge Prey (XffxtLGdXUQ) and
+  How Motion Blindness Works (rnCmPVin8wE).
+
+All screenshots have been deleted.
+
+### Shorts thumbnails are a frame from the video, nothing added
+
+All 3 of 3 thumbnails are an exact frame from the video, including the video's own burned-in caption.
+There is no separate render, no extra graphics and no headline.
+
+| Short | Thumbnail | Frame in the video |
+|---|---|---|
+| Horseflies | man in side profile, horse fly on his shoulder, caption "When a horse fly" | 1.0 s (4 % in), the hook |
+| Mantises | mantis gripping the lizard, lizard's jaws open, caption "And since its jaws" | about 16.5 s (66 % in), the peak of the action |
+| Motion Blindness | close-up of the man's face (blue eyes, sky-blue background), caption "Now your eyes" | about 12.6 s (45 % in), the frame where the caption has just changed |
+
+So the frame comes from the hook or from the most physical moment, not from a fixed position in the video.
+
+### Counts across the 35 Shorts thumbnails
+
+**Text: only the video's own caption chunk.**
+- 33 of 35 carry one caption chunk (2 show none).
+- Each chunk is 1–4 words, typically 2–3, and usually mid-sentence ("but then", "feel normal",
+  "to eat her son").
+- Same style as in the videos: white bold rounded sans-serif in sentence case, a soft dark drop shadow,
+  no outline box, no colour highlight.
+- Position: centred, at about 80–83 % of the visible tile height.
+- There is never a headline or title text, and never an emoji on the image.
+
+**Subject and framing**
+- A person is the main subject in about 28 of 35, an animal in about 5, an object in about 2.
+- The subject is centred and big, filling 50–90 % of the tile width. Faces sit in the upper-middle,
+  with the eyes about 25–40 % from the top.
+- It is often the "moment of action": a bite, the jaws, a scream, a fall, an object in a hand.
+  Sometimes it is simply the hook frame: character plus problem, as in the horse fly on the shoulder.
+
+**Graphics**
+- About 2 of 35 show an arrow, and both arrows are part of the video's own animation (a red arrow, a
+  glowing path).
+- No circles, magnifier insets, before/after splits or added glow.
+
+**Look**
+- The same look as the video: bright high-key CG and soft light.
+- Saturated sky-blue or teal skies and backgrounds appear in more than half.
+- Backgrounds are sharp or only gently blurred; close-ups have shallow depth of field.
+- Medium contrast, no visible extra sharpening or added saturation.
+
+**Emotion**
+- Mostly mild: curious, worried or neutral faces.
+- About 5 of 35 show clear shock, pain or fear (screaming boy in a crocodile's mouth, bloodied fighter).
+- Gore is low: a little blood at most.
+- The curiosity comes from the odd situation plus the half-sentence caption, not from added text.
+
+**Grid crop**
+- The channel's Shorts grid shows tiles at about 2:3, cropped from the centre of the 9:16 frame. About
+  8 % is lost at the top and at the bottom.
+- The caption at about 80 % of the frame and the face survive that crop.
+
+### Long-video thumbnails (12) are designed, unlike the Shorts
+
+- **Headline text on 4 of 12.** 1–4 words, all caps, a heavy sans-serif with a thick black outline or
+  shadow. Colours are white, red-orange with a gradient ("FICTION") or brand red. Mostly along the top
+  edge.
+- **Zack's own exaggerated face on 4 of 12.** These are CG renders of him with a huge grin or a scream.
+  They appear in compilation collages with 3–5 characters.
+- **Arrows on 3 of 12**: a white curved arrow, a yellow arrow, a white curved arrow.
+- **Before/after split on 1 of 12** (cup → logo).
+- **Real photos on about 4 of 12**, as photo composites.
+- Higher saturation and contrast, sometimes a dark vignette.
+
+**So the difference is this:** the Shorts use the video frame plus its caption, while the long videos
+are designed posters (text, arrows, collage).
+
+### Recommendation for the ear-pop thumbnail (`thumbnail.py`)
+
+Do it the Shorts way: one frame of the film plus the video's own caption chunk.
+
+1. **Frame: 15** (S00, Max wincing in the cabin; the cold-open hook).
+   - It is a human face plus a clear problem that reads at a glance, the same recipe as the horse fly
+     Short.
+   - The inside-the-ear frames (547 bulging eardrum, 921–925 POP flash) are abstract without context.
+     Keep **547** as the alternate for an A/B test, because it is the "moment of action" choice.
+   - Skip the POP flash: it is mostly white glare at thumbnail size.
+2. **Text:** one 2–3 word chunk in **the exact caption style of our video** (same font, size, shadow,
+   and our yellow keyword highlight). Use a chunk that shows the hook, e.g. "your ears pop", with "pop"
+   highlighted.
+   - Put it at about 78 % of the height, centred: the same spot as in the video, and inside the 2:3
+     crop.
+   - Drop the big headline ("WHY EARS / POP?!" at the top). No emoji.
+3. **Graphics:** none. Remove the magnifier inset. If the coordinating session wants to keep it, make
+   it the B variant, not the main thumbnail.
+4. **Layout and crop:**
+   - Max's eyes at 30–40 % from the top, his face and the hand at his ear filling about 60–75 % of the
+     width, centred.
+   - Keep everything that matters between 10 % and 88 % of the height; the 2:3 grid crop removes the
+     top and bottom 8 %.
+5. **Look:** the film's own grade at 2x; no extra saturation, sharpening or vignette. The pain
+   expression must be clearly readable: strong brows, squint, hand pressed to the ear. If frame 15
+   reads mild, pick the frame of S00 (1–19) where the wince peaks.
