@@ -11,7 +11,7 @@
   happens on screen: the eardrum's shape keys, the tube opening, the camera reaching the ear, Max's
   face keys (swallow, yawn, chew; see real_max.py), not on the spoken words.
 - Muffle: in the cold open and the "muffled" shot, the music and Foley go dull (low-pass); the voice
-  stays clear. No noise beds: the only ambience is a very low cabin tone in the cabin shots.
+  stays clear. No ambience beds.
 Loudness: two-pass -14 LUFS, -1.5 dBTP on the complete mix, 48 kHz stereo. --stems also writes the
 voice, music and Foley stems for checking against the picture.
 """
@@ -29,9 +29,13 @@ from engine import SR, decode, ffmpeg_filter  # noqa: E402
 PLAN = json.loads((HERE / "plan.json").read_text())
 FPS = PLAN["fps"]
 SHOT = {s["id"]: s for s in PLAN["shots"]}
-VOICE_CHAIN = ("highpass=f=90,equalizer=f=300:t=q:w=1.0:g=-3,equalizer=f=3500:t=q:w=1.2:g=4,"
-               "highshelf=f=10000:g=2,acompressor=threshold=-22dB:ratio=4:attack=12:release=90:makeup=5:knee=3,"
-               "deesser=i=0.4:m=0.5:f=0.5,alimiter=limit=0.9:attack=2:release=40")
+# Presence and body without squashing: a 3:1 compressor that keeps the consonants' attack (15 ms) and a
+# safety limiter that only catches stray peaks. No auto-level: alimiter's default level=true pushed the
+# whole voice into the limiter (64k samples at full scale: the "buffering" grit under every line).
+VOICE_CHAIN = ("highpass=f=80,equalizer=f=300:t=q:w=1:g=-2,equalizer=f=3200:t=q:w=0.9:g=3,"
+               "highshelf=f=9000:g=1.5,deesser=i=0.3:m=0.4:f=0.5,"
+               "acompressor=threshold=-20dB:ratio=3:attack=15:release=120:makeup=2:knee=4,"
+               "alimiter=limit=0.89:attack=5:release=60:level=false")
 MUSIC_UNDER = 21          # dB below the voice's speech level (Codex: 18-24)
 MUFFLED = ("S00", "S07")
 
@@ -93,10 +97,10 @@ def foley(n):
     place(fx, c["jet_climb"], S("S05a"), -12, 0.8)              # the jet climbs past
     place(fx, c["v3_air"], beat("S05b", "drops"), -18)          # outside air thins
     place(fx, c["v3_stretch"], beat("S06a", "pushes"), -16, 0.2)
-    place(fx, c["v3_stretch"], beat("S06b", "bulges") + 6, -8)  # the bulge (shape key rising to word+12)
+    place(fx, c["v3_stretch"], beat("S06b", "bulges") - 2, -8)  # mid-bulge (measured: steady swell, frames 517-547)
     place(fx, c["v3_pluck"], beat("S06b", "bulges"), -16)       # badge
     fk = beat("S08b", "cracks")
-    place(fx, c["v3_valve"], fk + 2, -5)                        # the valve parts (key fk-2 -> fk+10)
+    place(fx, c["v3_valve"], fk + 3, -5)                        # the valve parts (measured: motion peaks 789-791)
     place(fx, c["v3_air"], beat("S09a", "escapes"), -9)         # air escapes down the tube
     place(fx, c["v3_whip"], E("S09a") - 3, -9)                  # whip up into the POP shot
     fpop = beat("S09b", "pop")
@@ -104,13 +108,13 @@ def foley(n):
     place(fx, c["ear_pop"], fpop + 1, -10)                      #   with the softer generated pop under it
     place(fx, c["gear_down"], S("S10"), -9, 0.9)                # the landing gear
     place(fx, c["v3_thud"], beat("S11a", "shut") + 8, -12)      # the tube clamps shut, turns red
-    place(fx, c["v3_stretch"], beat("S11b", "inward") + 4, -9)  # eardrum pushed in (keys word-6 -> word+14)
+    place(fx, c["v3_stretch"], beat("S11b", "inward") + 2, -9)  # eardrum pushed in (measured: peak motion word+2)
     place(fx, c["v3_pluck"], beat("S11b", "inward"), -16)       # badge
     fs, fy, fc = (beat("S12a", w) for w in ("swallowing", "yawning", "chewing"))
     place(fx, c["v3_swallow"], fs + 4, -9)                      # swallow face key at word+4
     place(fx, c["v3_yawn"], fy - 2, -12)                        # yawn opens from word-2 to word+10
-    for i in range(4):                                          # chew keys at word+7+8i (real_max.perform)
-        place(fx, c["v3_chew"], fc + 7 + i * 8, -14)
+    for i in range(4):                                          # the bites: jaw closes on chew_b, word+11+8i
+        place(fx, c["v3_chew"], fc + 11 + i * 8, -14)           # (real_max.perform; jawOpen 0.04 vs 0.22)
     fu, fr = beat("S12b", "pull"), beat("S12b", "open")
     place(fx, c["v3_valve"], fu + 1, -8)                        # the tube opens again
     place(fx, c["v3_air"], fu + 4, -14)                         # cabin air rises into the middle ear
@@ -126,10 +130,14 @@ def music(n, vo, speech_db):
     w = int(0.4 * SR)                                  # loudness of the music while it plays (0.4 s windows)
     m_level = 20 * np.log10(np.percentile(np.sqrt(np.convolve(m ** 2, np.ones(w) / w, mode="valid")), 70))
     m = m * db(speech_db - MUSIC_UNDER - m_level)
-    # duck 3 dB while he speaks (attack ~30 ms, release ~250 ms)
-    talk = np.convolve(np.abs(vo), np.ones(int(0.03 * SR)) / int(0.03 * SR), mode="same") > 0.02
-    g = np.where(talk, db(-3), 1.0)
-    g = np.convolve(g, np.ones(int(0.25 * SR)) / int(0.25 * SR), mode="same")
+    # duck 3 dB for each spoken LINE (from the voice timing), not each syllable: per-syllable ducking
+    # made the music pump under the voice. 150 ms ramps.
+    timing = json.loads((HERE / "audio" / "voice_timing.json").read_text())
+    g = np.ones(n)
+    for ln in timing["lines"]:
+        a, b = int(ln["start"] * SR), min(n, int(ln["end"] * SR))
+        g[a:b] = db(-3)
+    g = np.convolve(g, np.ones(int(0.15 * SR)) / int(0.15 * SR), mode="same")
     # dip 9 dB for 0.25 s before the POP (silence before the payoff), back up after it
     pop = int(t_of(beat("S09b", "pop")) * SR)
     dip = np.ones(n)
@@ -183,14 +191,8 @@ def main():
     speech_db = 20 * np.log10(np.percentile(np.sqrt(np.convolve(vo ** 2, np.ones(w) / w, mode="valid")), 85))
     fx = foley(n) * db(speech_db - 20 * np.log10(0.25))      # cue gains are relative to the voice's speech level
     mus = music(n, vo, speech_db)
-    cabin = decode(HERE / "audio/beds/cabin.mp3")
-    tone = np.zeros(n)
-    for s in PLAN["shots"]:                                   # a very low cabin tone in the cabin shots only
-        if s["set"] == "cabin":
-            i, j = int(t_of(s["start"]) * SR), min(n, int(t_of(s["end"] + 1) * SR))
-            seg = np.tile(cabin, (j - i) // len(cabin) + 1)[: j - i]
-            tone[i:j] = seg / rms(cabin) * db(speech_db - 34)
-    bus = muffle(fx + mus + tone, n)
+    # no ambience bed at all: the cabin hum under the cabin shots read as noise under the voice
+    bus = muffle(fx + mus, n)
     write(out, vo + bus)
     if "--stems" in a:
         d = Path(a[a.index("--stems") + 1])
