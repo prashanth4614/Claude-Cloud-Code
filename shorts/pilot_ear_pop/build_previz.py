@@ -478,8 +478,9 @@ def build_cameras(sc, m):
 
     def profile(sid, d0=12.5, d1=10.8, lens=50):
         """Profile cutaway on the x-ray map: the eardrum edge-on against its resting line."""
-        return shot(sid, lambda t: {"pos": M + Vector((-1.0, -lerp(d0, d1, ease(t)), 0.05)),
-                                    "target": M + Vector((-1.0, 0, 0.0)), "lens": lens}, lens)
+        # aimed a little below the drum, so it sits in the upper 3/4 of the frame, clear of the captions
+        return shot(sid, lambda t: {"pos": M + Vector((-1.0, -lerp(d0, d1, ease(t)), -0.4)),
+                                    "target": M + Vector((-1.0, 0, -0.45)), "lens": lens}, lens)
     profile("S06b")
 
     face_cu("S07", shake=0.2)
@@ -531,8 +532,8 @@ def build_cameras(sc, m):
     face_cu("S12a", lens=70, near=-1.0, far=-1.15, aim=Vector((0, 0, -0.03)))   # swallow, yawn, chew
 
     # the fix, on the map: tube opens, blue air rises into the middle ear, the eardrum returns
-    shot("S12b", lambda t: {"pos": M + Vector((1.0, -lerp(19.0, 17.0, ease(t)), -2.2)),
-                            "target": M + Vector((1.0, 0, -2.2)), "lens": 40}, 40)
+    shot("S12b", lambda t: {"pos": M + Vector((1.0, -lerp(19.0, 17.0, ease(t)), -3.2)),
+                            "target": M + Vector((1.0, 0, -3.2)), "lens": 40}, 40)   # drum + tube above the captions
 
     shot("S13", lambda t: {"pos": lerp(cab(0.05, -1.55, 1.62), cab(0.05, -1.15, 1.63), ease(t)),
                            "target": head() + (Vector((-0.04, 0, -0.07)) if m.get("real") else Vector((0, 0, -0.04))),
@@ -612,7 +613,7 @@ def build_edit(film, cams):
         st.keyframe_insert("blend_alpha", frame=f)
     for i, c in enumerate(PLAN["captions"]):   # Shorts style: short bold chunks, keyword in yellow, above the UI
         t = effect(ss, f"cap_{i + 1:02d}", "TEXT", 6, c["start"], c["end"] + 1)
-        style_text(t, c["text"], 92, (0.5, 0.37), (1.0, 0.86, 0.1, 1) if c["hot"] else (1, 1, 1, 1))
+        style_text(t, c["text"], 92, (0.5, CAPTION_Y), (1.0, 0.86, 0.1, 1) if c["hot"] else (1, 1, 1, 1))
     for i, (text, f0, f1, y) in enumerate(overlays(film, cams)):
         t = effect(ss, f"card_{i + 1:02d}", "TEXT", 7 + i % 2, f0, f1)
         label = isinstance(y, tuple)                     # a map label at (x, y), or a centred card at height y
@@ -624,6 +625,9 @@ def build_edit(film, cams):
     for b in (b for sh in PLAN["shots"] for b in sh["beats"] if b.get("word")):
         ed.timeline_markers.new(b["word"], frame=b["frame"])
     return ed
+
+
+CAPTION_Y = 0.2      # captions sit low (20% up): below Max's face and the diagrams, above the Shorts UI
 
 
 def caption_font():
@@ -663,10 +667,10 @@ def overlays(film, cams):
     f0, f1 = rng("S04m")
     film.frame_set((f0 + f1) // 2)
     for text, p in (("CANAL", M + Vector((-2.8, 0, 1.9))), ("EARDRUM", M + Vector((-0.8, 0, 2.3))),
-                    ("MIDDLE EAR", M + Vector((2.2, 0, 3.1))), ("TUBE", tube_point(0.45, M) + Vector((1.1, 0, 0)))):
+                    ("MIDDLE EAR", M + Vector((2.2, 0, 3.1))), ("TUBE", tube_point(0.25, M) + Vector((1.1, 0, 0)))):
         v = world_to_camera_view(film, cams["S04m"], p)
         if 0.05 < v.x < 0.95 and 0.05 < v.y < 0.95:   # kept inside the safe area (edges, Shorts UI at the bottom)
-            out.append((text, f0, f1, (round(min(max(v.x, 0.15), 0.85), 3), round(min(max(v.y, 0.2), 0.82), 3))))
+            out.append((text, f0, f1, (round(min(max(v.x, 0.15), 0.85), 3), round(min(max(v.y, CAPTION_Y + 0.1), 0.82), 3))))
         else:
             print(f"[build] WARNING: map label {text} is off-screen ({v.x:.2f}, {v.y:.2f}); not shown")
     badge = 0.92
