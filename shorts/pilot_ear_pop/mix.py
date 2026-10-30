@@ -69,8 +69,10 @@ class Cue:
     """A Foley file, normalised by its LOUDNESS (its loudest 100 ms), with its anchor (the hit) measured
     once. Peak-normalising made short hits (a chew, a click) 25-35 dB quieter than the voice: inaudible."""
 
-    def __init__(self, name, anchor="peak"):
+    def __init__(self, name, anchor="peak", filt=None):
         a = decode(HERE / "audio" / "sfx" / f"{name}.mp3")
+        if filt:
+            a = ffmpeg_filter(a, filt)
         w = int(0.01 * SR)
         env = np.sqrt(np.convolve(a ** 2, np.ones(w) / w, mode="same"))
         self.anchor = (np.argmax(env > env.max() * 0.25) if anchor == "onset" else np.argmax(env)) / SR
@@ -104,17 +106,17 @@ class Designed:
         self.anchor, self.name = rise, name
 
 
-def place(bus, cue, frame, gain_db, offset=0.0, since=None, until=None):
+def place(bus, cue, frame, gain_db, offset=0.0, since=None, until=None, fade=0.1):
     """Put the cue's hit on `frame` (+ offset seconds), its loudest 100 ms `gain_db` against the speech
     level. `since`/`until` (frames, i.e. cuts) keep it inside its shot: it fades in over the 0.1 s before
-    `since` and out over the 0.1 s before `until`, so a jet doesn't ring on into the next world."""
+    `since` and out over the `fade` s before `until`, so a jet doesn't ring on into the next world."""
     i = int(round((t_of(frame) + offset - cue.anchor) * SR))
     a = cue.audio * db(gain_db)
     t = (i + np.arange(len(a))) / SR
     if since is not None:
         a = a * np.clip((t - t_of(since) + 0.1) / 0.1, 0, 1)
     if until is not None:
-        a = a * np.clip((t_of(until) - t) / 0.1, 0, 1)
+        a = a * np.clip((t_of(until) - t) / fade, 0, 1)
     if i < 0:
         a, i = a[-i:], 0
     a = a[: max(0, len(bus) - i)]
@@ -130,9 +132,10 @@ def foley(n):
     are each cue's loudest 100 ms against the speech level: about -10 dB is clearly heard under the
     voice (the owner, on v6: the jet at -13 was right, cues at -25 to -34 were "barely audible")."""
     c = {k: Cue(k) for k in ("v3_pop", "v3_air", "v3_thud", "v3_swallow", "v3_chew", "jet_climb", "outro_chime",
-                             "ear_pop", "v6_jet_swell", "v6_plane_descend", "v6_exhale", "v6_release")}
+                             "ear_pop", "v6_jet_swell", "v6_exhale", "v6_release")}
     c["v3_yawn"] = Cue("v3_yawn", anchor="onset")
     c["v8_boom"] = Cue("v8_boom", anchor="onset")
+    c["v6_plane_descend"] = Cue("v6_plane_descend", anchor="onset", filt="highpass=f=160,lowpass=f=3000")
     fx = np.zeros(n)
     S = lambda sid: SHOT[sid]["start"]   # noqa: E731
     E = lambda sid: SHOT[sid]["end"]     # noqa: E731
@@ -145,8 +148,10 @@ def foley(n):
     place(fx, dive, S("S03"), -9)                               # through the ear, peak on the first ear frame
     # a whoosh where the film travels to another world, peaking exactly on the cut. Not on cuts to the
     # diagram, to Max talking, the relief or the end card, nor on "muffled" (the owner, on v8)
-    for sid in ("S05b", "S08a", "S10", "S11a"):
+    for sid in ("S05b", "S08a", "S11a"):
         place(fx, whoosh, S(sid), -11)
+    # down to the city ("Descending can be worse"): a deeper, darker whoosh that sinks after the cut
+    place(fx, Designed("descend", 0.5, 0.55, 300, 2500, start=17.0), S("S10"), -12)
     place(fx, move, S("S03"), -16, 0.35)                        # on down the canal
     place(fx, move, beat("S04", "ground"), -15, -0.05)          # through the eardrum
     place(fx, c["v6_jet_swell"], S("S05a"), -12, 0.8, until=S("S05b"))  # the jet climbs past; stops at the cut
@@ -162,7 +167,9 @@ def foley(n):
     place(fx, c["ear_pop"], fpop + 1, -10)                      #   with the softer generated pop under it
     place(fx, c["v6_release"], fpop + 3, -12)                   #   and the pressure letting go
     place(fx, c["v6_exhale"], beat("S09c", "relief") + 3, -11)  # Max's relief (relief_smile at relief+8)
-    place(fx, c["v6_plane_descend"], S("S10"), -13, 1.2, since=S("S10"), until=S("S11a"))  # the plane over the city
+    # the plane over the city: enters from its own fade-in just after the whoosh's peak (it used to be cut
+    # in mid-swell, at full level), kept out of the voice's low-mids, and eased out into the next cut
+    place(fx, c["v6_plane_descend"], S("S10"), -17, 0.12, until=S("S11a"), fade=0.5)
     place(fx, c["v3_thud"], beat("S11a", "shut") + 8, -11)      # the tube clamps shut, turns red
     place(fx, Designed("inward", 0.6, 0.35, 200, 800, start=13.0), beat("S11b", "inward") + 2, -12)  # pushed in (peak word+2)
     fs, fy, fc = (beat("S12a", w) for w in ("swallowing", "yawning", "chewing"))
