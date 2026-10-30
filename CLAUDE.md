@@ -25,6 +25,14 @@ YouTube Shorts production pipeline. **The agreed production pipeline is `PIPELIN
   character sheet as `shorts/ai/<video>/<name>_sheet.png`. Then assemble with
   `shorts/ear_pop_ai.py`, or that video's equivalent assembler.
 
+## Codex helper (code review only)
+
+- The user allowed (2026-10-30) a Codex second opinion through the **Codex CLI on their Mac**
+  (`shorts/tools/ask_codex.sh`, read-only sandbox), for code review and help with stubborn bugs.
+  Requests go in `shorts/tools/codex/requests/<id>.md`; answers come back in `.../answers/<id>.md`.
+- This is not image or video generation; that pause above still stands. Verify any Codex
+  suggestion before applying it; Claude stays the only one editing the repo.
+
 ## Voice
 
 - Narration uses the user's ElevenLabs cloned voice: `--voice elevenlabs:x5ld1ovD8agu3EPB7Qpj`.
