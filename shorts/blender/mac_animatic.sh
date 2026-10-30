@@ -73,7 +73,7 @@ capped "${RENDER_LIMIT:-6000}" "$BLENDER" -b out/pilot_ear_pop/pilot_ear_pop_pre
 [ "$RC" -eq 0 ] || { echo "blender exit code $RC (124 = hit the render cap, 143 = terminated)" | tee -a "$LOG"; rm -f "$OUT/$JOB.mp4"; }
 grep -E "\[animatic\]|Error|Traceback|Append frame|Fra:1 " "$RAW" | tail -5 | tee -a "$LOG" || true
 [ -f "$OUT/$JOB.mp4" ] || { echo "-- last 40 lines of Blender output:" >> "$LOG"; tail -40 "$RAW" >> "$LOG"; }
-N="${FRAMES:-1566}"
+N="${FRAMES:-$(python3 -c 'import json; print(json.load(open("shorts/pilot_ear_pop/plan.json"))["frame_end"])' 2>/dev/null || echo 1)}"
 SECS=$(( $(t) - T ))
 # (no ">" inside awk's printf: awk reads it as an output redirect, which is why this printed blank)
 echo "render: $SECS s for $N frames ($(awk -v s="$SECS" -v n="$N" 'BEGIN{if (n < 1) n = 1; printf "%.2f", s / n}') s/frame)" | tee -a "$LOG"
