@@ -1,0 +1,6 @@
+ 1 (row 1, col 1): S02:0.1 f97
+ 2 (row 1, col 2): S02:happening f131
+ 3 (row 1, col 3): S07:muffled f765
+ 4 (row 1, col 4): S12b:open f1446
+ 5 (row 1, col 5): S13:follow f1476
+ 6 (row 1, col 6): S13:0.95 f1559
