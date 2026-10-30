@@ -400,7 +400,27 @@ def realistic_sky(scene, origin):
         d.texture, d.strength, d.texture_coords = _cloud_tex("cloud_billows", 14.0), 5.0, "GLOBAL"
         d2 = sea.modifiers.new("puffs", "DISPLACE")
         d2.texture, d2.strength, d2.texture_coords = _cloud_tex("cloud_puffs", 3.0, 6), 1.4, "GLOBAL"
-    for ob in [o for o in bpy.data.objects if o.name.startswith("cloud_") and o.name[6:].isdigit()]:
+        d3 = sea.modifiers.new("swell", "DISPLACE")       # broad rises and troughs: no even carpet from above
+        d3.texture, d3.strength, d3.texture_coords = _cloud_tex("cloud_swell", 70.0, 2), 9.0, "GLOBAL"
+    import random
+    rnd = random.Random(21)
+    puffs = [o for o in bpy.data.objects if o.name.startswith("cloud_") and o.name[6:].isdigit()]
+    for ob in puffs:            # every cumulus a cluster of 3-5 lobes, each squashed and turned differently
+        sx, sy, sz = ob.scale
+        ob.scale = (sx * rnd.uniform(0.7, 1.4), sy * rnd.uniform(0.6, 1.5), sz * rnd.uniform(0.7, 1.6))
+        ob.rotation_euler = (0, 0, rnd.uniform(0, 2 * math.pi))
+        for k in range(rnd.randint(2, 4)):
+            lobe = ob.copy()
+            lobe.name = f"{ob.name}_lobe{k}"
+            ob.users_collection[0].objects.link(lobe)
+            a = rnd.uniform(0, 2 * math.pi)
+            r = rnd.uniform(0.4, 0.9) * max(sx, sy)
+            lobe.location = ob.location + Vector((math.cos(a) * r, math.sin(a) * r, rnd.uniform(-0.2, 0.6) * sz))
+            f = rnd.uniform(0.45, 0.8)
+            lobe.scale = (ob.scale[0] * f, ob.scale[1] * f * rnd.uniform(0.8, 1.2), ob.scale[2] * f * rnd.uniform(0.9, 1.4))
+            lobe.rotation_euler = (0, 0, rnd.uniform(0, 2 * math.pi))
+    for ob in [o for o in bpy.data.objects if o.name.startswith("cloud_") and o.name[6:8].isdigit()]:
+        ob.data = ob.data.copy() if ob.data.users > 1 else ob.data
         ob.data.materials.clear()
         ob.data.materials.append(mat)
         s = ob.modifiers.new("round", "SUBSURF")

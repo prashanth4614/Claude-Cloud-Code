@@ -268,9 +268,29 @@ def exit_glow(o, coll):
     nt.nodes.clear()
     out = nt.nodes.new("ShaderNodeOutputMaterial")
     em = nt.nodes.new("ShaderNodeEmission")
-    em.inputs["Color"].default_value = (1.0, 0.86, 0.7, 1)
-    em.inputs["Strength"].default_value = 3.0
-    nt.links.new(em.outputs[0], out.inputs["Surface"])
+    em.inputs["Color"].default_value = (1.0, 0.84, 0.66, 1)
+    clear = nt.nodes.new("ShaderNodeBsdfTransparent")
+    coord = nt.nodes.new("ShaderNodeTexCoord")
+    grad = nt.nodes.new("ShaderNodeTexGradient")               # 1 at the centre -> 0 at the rim
+    grad.gradient_type = "SPHERICAL"
+    scale = nt.nodes.new("ShaderNodeMapping")
+    scale.inputs["Scale"].default_value = (1 / 2.4, 1 / 2.4, 1 / 2.4)
+    nt.links.new(coord.outputs["Object"], scale.inputs["Vector"])
+    nt.links.new(scale.outputs["Vector"], grad.inputs["Vector"])
+    soft = nt.nodes.new("ShaderNodeMath")                      # soft falloff: glow ** 1.8
+    soft.operation, soft.inputs[1].default_value = "POWER", 1.8
+    nt.links.new(grad.outputs["Fac"], soft.inputs[0])
+    strength = nt.nodes.new("ShaderNodeMath")
+    strength.operation, strength.inputs[1].default_value = "MULTIPLY", 5.0
+    nt.links.new(soft.outputs[0], strength.inputs[0])
+    nt.links.new(strength.outputs[0], em.inputs["Strength"])
+    mix = nt.nodes.new("ShaderNodeMixShader")
+    nt.links.new(soft.outputs[0], mix.inputs["Fac"])
+    nt.links.new(clear.outputs[0], mix.inputs[1])
+    nt.links.new(em.outputs[0], mix.inputs[2])
+    nt.links.new(mix.outputs[0], out.inputs["Surface"])
+    if hasattr(m, "surface_render_method"):
+        m.surface_render_method = "BLENDED"
     bm = bmesh.new()
     bmesh.ops.create_circle(bm, cap_ends=True, segments=64, radius=2.4)
     me = bpy.data.meshes.new("ear_exit_glow_in")
@@ -284,6 +304,70 @@ def exit_glow(o, coll):
     return ob
 
 
+def xray(name, color=(0.45, 0.85, 1.0)):
+    """X-ray scan look: walls glow at grazing angles (outlines), nearly clear face-on."""
+    m = bpy.data.materials.get(name) or bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.clear()
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    lw = nt.nodes.new("ShaderNodeLayerWeight")
+    lw.inputs["Blend"].default_value = 0.35
+    edge = nt.nodes.new("ShaderNodeMath")
+    edge.operation, edge.inputs[1].default_value = "POWER", 1.6
+    nt.links.new(lw.outputs["Facing"], edge.inputs[0])
+    em = nt.nodes.new("ShaderNodeEmission")
+    em.inputs["Color"].default_value = (*color, 1)
+    st = nt.nodes.new("ShaderNodeMath")
+    st.operation, st.inputs[1].default_value = "MULTIPLY", 3.0
+    nt.links.new(edge.outputs[0], st.inputs[0])
+    nt.links.new(st.outputs[0], em.inputs["Strength"])
+    clear = nt.nodes.new("ShaderNodeBsdfTransparent")
+    alpha = nt.nodes.new("ShaderNodeMapRange")
+    alpha.inputs["To Min"].default_value, alpha.inputs["To Max"].default_value = 0.12, 1.0
+    nt.links.new(edge.outputs[0], alpha.inputs["Value"])
+    mix = nt.nodes.new("ShaderNodeMixShader")
+    nt.links.new(alpha.outputs["Result"], mix.inputs["Fac"])
+    nt.links.new(clear.outputs[0], mix.inputs[1])
+    nt.links.new(em.outputs[0], mix.inputs[2])
+    nt.links.new(mix.outputs[0], out.inputs["Surface"])
+    if hasattr(m, "surface_render_method"):
+        m.surface_render_method = "BLENDED"
+    m.diffuse_color = (*color, 0.4)
+    return m
+
+
+def xray_backdrop(dome):
+    """Deep navy scan backdrop, a little brighter at the centre of view."""
+    m = bpy.data.materials.new("xray_backdrop")
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.clear()
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    em = nt.nodes.new("ShaderNodeEmission")
+    lw = nt.nodes.new("ShaderNodeLayerWeight")       # facing the camera = centre of the dome in view
+    ramp = nt.nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.elements[0].color = (0.035, 0.07, 0.14, 1)
+    ramp.color_ramp.elements[1].color = (0.005, 0.01, 0.03, 1)
+    nt.links.new(lw.outputs["Facing"], ramp.inputs["Fac"])
+    nt.links.new(ramp.outputs["Color"], em.inputs["Color"])
+    nt.links.new(em.outputs[0], out.inputs["Surface"])
+    dome.data.materials.clear()
+    dome.data.materials.append(m)
+
+
+def trim_tube_start(tube, o, chamber_centre, start_dist=3.15):
+    """Start the Eustachian tube's visible surface where the mouth funnel ends, so no tube end
+    sits inside the funnel. The tube's path (and the camera ride along it) is unchanged."""
+    from greybox import tube_point
+    u = 0.0
+    while u < 0.5 and (tube_point(u, o) - chamber_centre).length < start_dist:
+        u += 0.002
+    tube.data.bevel_factor_mapping_start = "SPLINE"
+    tube.data.bevel_factor_start = u
+    return u
+
+
 def apply(e):
     """Realism pass on one ear set (the dict build_ear returned)."""
     tag = e["tag"]
@@ -291,12 +375,19 @@ def apply(e):
     glow = 0.12 if inside else 0.0
     get = bpy.data.objects.get
     canal, chamber, throat = get(f"ear_canal_{tag}"), get(f"middle_ear_{tag}"), get(f"throat_{tag}")
-    canal_mat = bpy.data.materials.new(f"canal_skin_{tag}")
-    tissue(canal_mat, base=(0.74, 0.32, 0.29), glow=glow * 0.5, wax_ramp=True, wet=0.2)  # canal skin: drier
-    _set(canal_mat.node_tree.nodes["Principled BSDF"], "Specular IOR Level", 0.3)
+    if inside:
+        canal_mat = bpy.data.materials.new(f"canal_skin_{tag}")
+        tissue(canal_mat, base=(0.74, 0.32, 0.29), glow=glow * 0.5, wax_ramp=True, wet=0.2)  # canal skin: drier
+        _set(canal_mat.node_tree.nodes["Principled BSDF"], "Specular IOR Level", 0.3)
+        tissue(bpy.data.materials[f"tissue_dark_{tag}"], base=(0.6, 0.18, 0.2), vein=(0.35, 0.03, 0.08), glow=glow)
+    else:                       # the map (S04m) is an x-ray diagram: glowing outlines on navy
+        canal_mat = xray("xray_canal", (0.5, 0.85, 1.0))
+        for ob in (chamber, throat):
+            ob.data.materials.clear()
+            ob.data.materials.append(xray("xray_cavity", (0.75, 0.9, 1.0)))
+        xray_backdrop(bpy.data.objects[f"ear_dome_{tag}"])
     canal.data.materials.clear()
     canal.data.materials.append(canal_mat)
-    tissue(bpy.data.materials[f"tissue_dark_{tag}"], base=(0.6, 0.18, 0.2), vein=(0.35, 0.03, 0.08), glow=glow)
     tissue(bpy.data.materials[f"tube_{tag}"], glow=0.0, animated_color=True)
     eardrum(bpy.data.materials[f"eardrum_{tag}"])
     bone(bpy.data.materials["ossicle"])
@@ -305,6 +396,7 @@ def apply(e):
         seals(chamber, e["origin"], bpy.data.materials[f"tissue_dark_{tag}"])
         e["tube"].data.use_fill_caps = False      # hollow: you look down into the tube, not at a cap
         exit_glow(e["origin"], e["drum"].users_collection[0])
+        trim_tube_start(e["tube"], e["origin"], chamber.location.copy())
     for ob in e["drum"].users_collection[0].objects:   # light the tissue, but never show up as glowing balls
         if ob.type == "LIGHT":
             ob.visible_camera = False
