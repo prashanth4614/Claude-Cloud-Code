@@ -29,11 +29,12 @@ elif [ "$(wc -c < "$REQ")" -gt 20000 ]; then
 else
   PROMPT="$(cat shorts/tools/codex/CONTEXT.md 2>/dev/null; printf '\n\n---\n\n# This request\n\n'; cat "$REQ")"
   IMG_ARGS=()      # "IMAGES: a.jpg b.jpg" line in the request -> attached as images (repo-relative paths)
+  # (--image takes several values, so "--" must end the options or it swallows the prompt too)
   for img in $(grep -m1 '^IMAGES:' "$REQ" | cut -d: -f2-); do
     [ -f "$img" ] && IMG_ARGS+=(--image "$img") || echo "missing image $img" >> "$ERRF"
   done
   capped "$LIMIT" codex exec --model "$MODEL" -c model_reasoning_effort="$EFFORT" -c approval_policy=never \
-    --sandbox read-only --skip-git-repo-check --output-last-message "$LAST" ${IMG_ARGS[@]+"${IMG_ARGS[@]}"} "$PROMPT" > "$OUTF" 2> "$ERRF"
+    --sandbox read-only --skip-git-repo-check --output-last-message "$LAST" ${IMG_ARGS[@]+"${IMG_ARGS[@]}"} -- "$PROMPT" > "$OUTF" 2> "$ERRF"
   rc=$?
   if [ "$rc" -eq 0 ]; then STATUS=OK; elif [ "$rc" -eq 124 ]; then STATUS=TIMEOUT; else STATUS=FAILED; fi
 fi
