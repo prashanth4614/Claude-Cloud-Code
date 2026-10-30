@@ -25,7 +25,7 @@ TICK=$!
 rc=0
 for p in "${pids[@]}"; do wait "$p" || rc=$?; done
 kill "$TICK" 2>/dev/null
-grep -h "Error\|error:\|\[final\] device\|WARNING" "$OUT"/../worker_*.log | sort -u | head -20
+for f in "$OUT"/../worker_*.log; do echo "--- $f (last 40 lines)"; grep -v "HIPEW" "$f" | tail -40; done
 # every frame in the ranges must exist and be non-empty (or be one we already downloaded)
 python3 - "$OUT" "$RANGES" <<'EOF'
 import sys, pathlib

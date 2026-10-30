@@ -4,6 +4,7 @@
 #   shorts/pilot_ear_pop/final_render.sh bench [--dry-run]   # 8 frames from each of 7 sets on 1x 4090
 #   shorts/pilot_ear_pop/final_render.sh full  [--dry-run]   # every frame, 2x 4090 (falls back to 1)
 #   shorts/pilot_ear_pop/final_render.sh assemble            # frames + voice/SFX mix -> MP4 (local)
+#   shorts/pilot_ear_pop/final_render.sh diag                # 2 frames + one FILM frame direct, full logs
 #
 # Builds the film here, packs it into one self-contained .blend (textures, character, sounds inside),
 # uploads that, and renders all-Cycles on the pod (render_final.py via final_pod.sh). Frames stream
@@ -39,8 +40,9 @@ fi
 
 case "$MODE" in
   bench) RANGES="162-169,372-379,477-484,551-558,628-635,918-925,990-997,1253-1260"; GPUS=1; MAXMIN=35 ;;
+  diag)  RANGES="631-631,1256-1256"; GPUS=1; MAXMIN=15; export FINAL_DIAG=631 ;;   # GPU path check, ~2 frames
   full)  RANGES="1-$END"; GPUS=2; MAXMIN="${MAXMIN:-200}" ;;
-  *) echo "bench | full | assemble"; exit 1 ;;
+  *) echo "bench | diag | full | assemble"; exit 1 ;;
 esac
 
 # the film, built and packed into one file (only rebuilt when the plan or the code changed)
