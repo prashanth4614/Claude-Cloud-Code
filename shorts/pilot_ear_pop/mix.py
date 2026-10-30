@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
-"""The pilot's sound mix: punchy voice + music + clean Foley synced to the picture (no render needed).
+"""The pilot's sound mix: a clear voice + soft Foley synced to the picture (no render needed).
 
   python3 shorts/pilot_ear_pop/mix.py OUT.wav [--stems DIR]
 
-- Voice: audio/voice_take.wav through VOICE_CHAIN (presence, tight compression, de-ess, limiter).
-- Music: audio/bgm/investigations.mp3 (Kevin MacLeod, CC BY 4.0), MUSIC_UNDER dB under the voice,
-  ducked a further 3 dB while he speaks, dipped just before the POP, faded out on the end card.
+- Voice: rebuilt from the RAW ElevenLabs take (the cached takes, same timing as voice_take.wav),
+  through VOICE_CHAIN: rumble filter, a little presence, a gentle 2:1 compressor. No de-esser and no
+  dynamic loudness rider: voice_take.wav carries both (audio.py polish), and the owner heard them as a
+  "buffering" sound under every line.
+- No music (owner's choice); audio/bgm/investigations.mp3 stays available (MUSIC=1).
 - Foley: the clean v3 cues in audio/sfx (ElevenLabs, generated as isolated dry hits). Each cue is
   placed by its ANCHOR (the moment of its hit, measured from the file) on the frame where the action
   happens on screen: the eardrum's shape keys, the tube opening, the camera reaching the ear, Max's
   face keys (swallow, yawn, chew; see real_max.py), not on the spoken words.
-- Muffle: in the cold open and the "muffled" shot, the music and Foley go dull (low-pass); the voice
-  stays clear. No ambience beds.
-Loudness: two-pass -14 LUFS, -1.5 dBTP on the complete mix, 48 kHz stereo. --stems also writes the
-voice, music and Foley stems for checking against the picture.
+- Muffle: in the cold open and the "muffled" shot, the Foley goes dull (low-pass); the voice stays clear.
+Loudness: one fixed gain to -14 LUFS (measured), a peak limiter only above -1.5 dBFS: nothing rides the
+level. --stems also writes the voice and Foley stems for checking against the picture.
 """
 import json
 import subprocess
@@ -29,13 +30,10 @@ from engine import SR, decode, ffmpeg_filter  # noqa: E402
 PLAN = json.loads((HERE / "plan.json").read_text())
 FPS = PLAN["fps"]
 SHOT = {s["id"]: s for s in PLAN["shots"]}
-# Presence and body without squashing: a 3:1 compressor that keeps the consonants' attack (15 ms) and a
-# safety limiter that only catches stray peaks. No auto-level: alimiter's default level=true pushed the
-# whole voice into the limiter (64k samples at full scale: the "buffering" grit under every line).
-VOICE_CHAIN = ("highpass=f=80,equalizer=f=300:t=q:w=1:g=-2,equalizer=f=3200:t=q:w=0.9:g=3,"
-               "highshelf=f=9000:g=1.5,deesser=i=0.3:m=0.4:f=0.5,"
-               "acompressor=threshold=-20dB:ratio=3:attack=15:release=120:makeup=2:knee=4,"
-               "alimiter=limit=0.89:attack=5:release=60:level=false")
+# Clarity without artefacts: static EQ and a slow, gentle compressor only (no de-esser, no loudnorm,
+# no auto-level limiter: each of those can pump or "gurgle" on synthetic speech).
+VOICE_CHAIN = ("highpass=f=75,equalizer=f=300:t=q:w=1:g=-1.5,equalizer=f=3000:t=q:w=0.9:g=2.5,"
+               "highshelf=f=9000:g=1,acompressor=threshold=-18dB:ratio=2:attack=20:release=200:makeup=1:knee=6")
 MUSIC_UNDER = 21          # dB below the voice's speech level (Codex: 18-24)
 MUFFLED = ("S00", "S07")
 
@@ -163,18 +161,27 @@ def muffle(bus, n):
     return bus * (1 - wet) + dull * wet * 1.4
 
 
+def raw_voice():
+    """The voice as ElevenLabs delivered it, assembled exactly as audio.py does (same gaps and pauses,
+    so every word keeps its time), but without the polish chain baked into voice_take.wav."""
+    sys.argv, argv = ["audio"], sys.argv
+    import audio
+    sys.argv = argv
+    parts = audio.take_parts(audio.SCRIPT["voice"].split(":", 1)[1])
+    gap = np.zeros(int(0.28 * SR))
+    pauses = [np.zeros(int(ln.get("pause_after", 0) * SR)) for ln in audio.SCRIPT["lines"]]
+    return np.concatenate([p for (a, _), e in zip(parts, pauses) for p in (a, gap, e)])
+
+
 def write(path, mono, two_pass=True):
     raw = Path(str(path) + ".f32")
     raw.write_bytes(np.repeat(mono.astype(np.float32)[:, None], 2, axis=1).tobytes())
     af = "aresample=48000"
-    if two_pass:   # measure, then normalise linearly to -14 LUFS / -1.5 dBTP
+    if two_pass:   # one fixed gain to -14 LUFS (measured); a limiter catches only peaks above -1.5 dBFS
         r = subprocess.run(["ffmpeg", "-hide_banner", "-f", "f32le", "-ar", str(SR), "-ac", "2", "-i", str(raw),
-                            "-af", "loudnorm=I=-14:TP=-1.5:LRA=7:print_format=json", "-f", "null", "-"],
-                           capture_output=True, text=True).stderr
-        st = json.loads(r[r.rindex("{"):])
-        af = (f"loudnorm=I=-14:TP=-1.5:LRA=7:measured_I={st['input_i']}:measured_TP={st['input_tp']}:"
-              f"measured_LRA={st['input_lra']}:measured_thresh={st['input_thresh']}:offset={st['target_offset']}:"
-              "linear=true,aresample=48000")
+                            "-af", "ebur128", "-f", "null", "-"], capture_output=True, text=True).stderr
+        lufs = float(r[r.rindex("I:"):].split()[1])
+        af = f"volume={-14 - lufs:.2f}dB,alimiter=limit=0.84:attack=1:release=50:level=false,aresample=48000"
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "f32le", "-ar", str(SR), "-ac", "2", "-i", str(raw),
                     "-af", af, "-c:a", "pcm_s16le", str(path)], check=True)
     raw.unlink()
@@ -184,14 +191,15 @@ def main():
     a = sys.argv[1:]
     out = Path(a[0] if a else HERE.parent.parent / "out" / "final" / "mix.wav")
     n = int(t_of(PLAN["frame_end"] + 1) * SR)
-    voice = ffmpeg_filter(decode(HERE / PLAN["voice"]), VOICE_CHAIN)
+    voice = ffmpeg_filter(raw_voice(), VOICE_CHAIN)
     vo = np.zeros(n)
     vo[: min(n, len(voice))] = voice[:n]
     w = int(0.4 * SR)
     speech_db = 20 * np.log10(np.percentile(np.sqrt(np.convolve(vo ** 2, np.ones(w) / w, mode="valid")), 85))
-    fx = foley(n) * db(speech_db - 20 * np.log10(0.25))      # cue gains are relative to the voice's speech level
-    mus = music(n, vo, speech_db)
-    # no ambience bed at all: the cabin hum under the cabin shots read as noise under the voice
+    fx = foley(n) * db(speech_db - 20 * np.log10(0.25) - 3)  # cue gains are relative to the voice's speech level
+    fx = ffmpeg_filter(fx, "lowpass=f=9000")                  # soft and warm: no sharp, hissy tops
+    import os
+    mus = music(n, vo, speech_db) if os.environ.get("MUSIC") == "1" else np.zeros(n)
     bus = muffle(fx + mus, n)
     write(out, vo + bus)
     if "--stems" in a:
@@ -199,8 +207,8 @@ def main():
         d.mkdir(parents=True, exist_ok=True)
         for name, x in (("voice", vo), ("music", mus), ("foley", fx)):
             write(d / f"{name}.wav", x, two_pass=False)
-    print(f"[mix] {out}: {n / SR:.1f} s; voice + music ({MUSIC_UNDER} dB under) + {len(PLACED)} Foley hits "
-          f"on picture beats; muffle in {', '.join(MUFFLED)}")
+    print(f"[mix] {out}: {n / SR:.1f} s; raw voice (clean chain) + {len(PLACED)} Foley hits on picture beats"
+          f"{' + music' if mus.any() else ''}; muffle in {', '.join(MUFFLED)}")
 
 
 if __name__ == "__main__":
