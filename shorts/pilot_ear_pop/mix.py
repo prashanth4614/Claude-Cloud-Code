@@ -74,6 +74,10 @@ class Cue:
         w = int(0.01 * SR)
         env = np.sqrt(np.convolve(a ** 2, np.ones(w) / w, mode="same"))
         self.anchor = (np.argmax(env > env.max() * 0.25) if anchor == "onset" else np.argmax(env)) / SR
+        f = int(0.004 * SR)     # several files start or stop mid-waveform: that clicked ("tick")
+        a = a.copy()
+        a[:f] *= np.linspace(0, 1, f)
+        a[-f:] *= np.linspace(1, 0, f)
         w = int(0.1 * SR)
         self.audio = a / (np.sqrt(np.convolve(a ** 2, np.ones(w) / w, mode="same")).max() + 1e-9)
         self.name = name
@@ -97,30 +101,28 @@ def foley(n):
     """Codex's cue sheet (request 007): an accent only where something physical happens on screen. Gains
     are each cue's loudest 100 ms against the speech level: about -10 dB is clearly heard under the
     voice (the owner, on v6: the jet at -13 was right, cues at -25 to -34 were "barely audible")."""
-    c = {k: Cue(k) for k in ("v3_whoosh_in", "v3_whoosh_pass", "v3_whip", "v3_pop", "v3_stretch", "v3_valve",
+    c = {k: Cue(k) for k in ("v3_whoosh_in", "v3_whoosh_pass", "v3_whip", "v3_pop", "v3_stretch",
                              "v3_air", "v3_thud", "v3_swallow", "v3_chew", "jet_climb", "outro_chime", "ear_pop",
                              "v6_jet_swell", "v6_plane_descend", "v6_exhale", "v6_release")}
     c["v3_yawn"] = Cue("v3_yawn", anchor="onset")
     c["v8_boom"] = Cue("v8_boom", anchor="onset")
-    c["v6_swish"] = Cue("v6_swish")
     fx = np.zeros(n)
     S = lambda sid: SHOT[sid]["start"]   # noqa: E731
     E = lambda sid: SHOT[sid]["end"]     # noqa: E731
     place(fx, c["v8_boom"], 1, -4)                              # the hook lands on frame 1: a low boom
     place(fx, c["jet_climb"], S("S01"), -6, 0.45)               # the jet sweeps past the camera
     place(fx, c["v3_whoosh_in"], E("S02"), -7, -0.12)           # the camera dives into his ear
-    # a whoosh on every change of world or view that has no move of its own (the study: 9 of 13 cuts),
-    # peaking on the cut; the two files alternate so they don't repeat
-    for i, sid in enumerate(("S04m", "S05b", "S06b", "S07", "S08a", "S09c", "S10", "S11a", "S11b", "S12a",
-                             "S12b", "S13")):
-        place(fx, c[("v6_swish", "v3_whoosh_pass")[i % 2]], S(sid), -14)
+    # a whoosh where the film travels to another world (peak on the cut). Not on cuts to the diagram, to
+    # Max talking, the relief or the end card, nor on "muffled" (the owner, on v8: "unnecessary swish");
+    # v6_swish is out: it has a click at its peak
+    for sid in ("S05b", "S08a", "S10", "S11a"):
+        place(fx, c["v3_whoosh_pass"], S(sid), -14)
     place(fx, c["v3_whoosh_pass"], S("S03"), -13, 0.35)         # on down the canal
     place(fx, c["v3_whoosh_pass"], beat("S04", "ground"), -12, -0.05)  # through the eardrum
     place(fx, c["v6_jet_swell"], S("S05a"), -12, 0.8)           # the jet climbs past
     place(fx, c["v3_air"], beat("S05b", "drops"), -13)          # outside air thins
     place(fx, c["v3_stretch"], beat("S06a", "pushes"), -12, 0.2)
     place(fx, c["v3_stretch"], beat("S06b", "bulges") - 2, -9)  # mid-bulge (measured: steady swell, frames 517-547)
-    place(fx, c["v3_valve"], beat("S08b", "cracks") + 3, -9)   # the valve parts (measured: motion peaks 789-791)
     place(fx, c["v3_air"], beat("S09a", "escapes"), -11)        # air escapes down the tube
     place(fx, c["v3_whip"], E("S09a") - 3, -12)                 # whip up into the POP shot
     fpop = beat("S09b", "pop")
@@ -137,7 +139,6 @@ def foley(n):
     for i in range(4):                                          # the bites: jaw closes on chew_b, word+11+8i
         place(fx, c["v3_chew"], fc + 11 + i * 8, -13)           # (real_max.perform; jawOpen 0.04 vs 0.22)
     fu, fr = beat("S12b", "pull"), beat("S12b", "open")
-    place(fx, c["v3_valve"], fu + 1, -11)                       # the tube opens again
     place(fx, c["v3_air"], fu + 4, -14)                         # cabin air rises into the middle ear
     place(fx, c["v3_pop"], fr + 2, -8)                         # the eardrum settles flat
     place(fx, c["outro_chime"], S("S13") + 8, -16)              # follow card

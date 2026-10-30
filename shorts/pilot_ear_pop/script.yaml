@@ -138,7 +138,6 @@ sfx_cues:
   v6_plane_descend: {seconds: 4.0, prompt: "Isolated airliner descending, soft engine roar slowly lowering in pitch, smooth, clean"}
   v6_exhale: {seconds: 1.2, prompt: "Isolated relieved soft human exhale sigh, close-miked, clean, short"}
   v6_release: {seconds: 1.2, prompt: "Isolated soft airy pressure release hiss, gentle and satisfying, clean"}
-  v6_swish: {seconds: 1.0, prompt: "Isolated soft airy swish transition, smooth short whoosh, gentle, clean, no reverb tail"}
   v8_boom: {seconds: 1.5, prompt: "Isolated deep cinematic sub-bass boom impact, single hit, warm low thump with short rumble decay, clean, no music, no reverb tail"}
 
 beds:
