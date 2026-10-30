@@ -83,10 +83,38 @@ class Cue:
         self.name = name
 
 
-def place(bus, cue, frame, gain_db, offset=0.0):
-    """Put the cue's hit on `frame` (+ offset seconds), its loudest 100 ms `gain_db` against the speech level."""
-    i = int((t_of(frame) + offset - cue.anchor) * SR)
+class Designed:
+    """A sound shaped from our own clean airy room tone (audio/beds/v6b_ear): it swells for `rise` s to
+    its peak, which is the anchor, while a low-pass opens from `lo` to `hi` Hz, then closes and fades
+    over `fall` s. A transition whoosh is a fast swell that opens wide; the eardrum's pressure swell
+    is a slow one that stays low. (ElevenLabs' whooshes were 0.15 s blips, or sub-bass only.)"""
+
+    def __init__(self, name, rise, fall, lo, hi, start=3.0):
+        n1, n2 = int(rise * SR), int(fall * SR)
+        air = decode(HERE / "audio" / "beds" / "v6b_ear.mp3")[int(start * SR):][: n1 + n2]
+        air = ffmpeg_filter(air, "highpass=f=120")
+        env = np.r_[np.linspace(0, 1, n1) ** 2.2, (1 - np.linspace(0, 1, n2)) ** 2]
+        mid = np.sqrt(lo * hi)
+        bands = [ffmpeg_filter(air, f"lowpass=f={f:.0f},lowpass=f={f:.0f}") for f in (lo, mid, hi)]
+        x = np.clip(env, 0, 1) * 2                     # the filter follows the swell: lo -> mid -> hi
+        w_lo, w_hi = np.clip(1 - x, 0, 1), np.clip(x - 1, 0, 1)
+        a = (bands[0] * w_lo + bands[1] * (1 - w_lo - w_hi) + bands[2] * w_hi) * env
+        w = int(0.1 * SR)
+        self.audio = a / (np.sqrt(np.convolve(a ** 2, np.ones(w) / w, mode="same")).max() + 1e-9)
+        self.anchor, self.name = rise, name
+
+
+def place(bus, cue, frame, gain_db, offset=0.0, since=None, until=None):
+    """Put the cue's hit on `frame` (+ offset seconds), its loudest 100 ms `gain_db` against the speech
+    level. `since`/`until` (frames, i.e. cuts) keep it inside its shot: it fades in over the 0.1 s before
+    `since` and out over the 0.1 s before `until`, so a jet doesn't ring on into the next world."""
+    i = int(round((t_of(frame) + offset - cue.anchor) * SR))
     a = cue.audio * db(gain_db)
+    t = (i + np.arange(len(a))) / SR
+    if since is not None:
+        a = a * np.clip((t - t_of(since) + 0.1) / 0.1, 0, 1)
+    if until is not None:
+        a = a * np.clip((t_of(until) - t) / 0.1, 0, 1)
     if i < 0:
         a, i = a[-i:], 0
     a = a[: max(0, len(bus) - i)]
@@ -101,38 +129,42 @@ def foley(n):
     """Codex's cue sheet (request 007): an accent only where something physical happens on screen. Gains
     are each cue's loudest 100 ms against the speech level: about -10 dB is clearly heard under the
     voice (the owner, on v6: the jet at -13 was right, cues at -25 to -34 were "barely audible")."""
-    c = {k: Cue(k) for k in ("v3_whoosh_in", "v3_whoosh_pass", "v3_whip", "v3_pop", "v3_stretch",
-                             "v3_air", "v3_thud", "v3_swallow", "v3_chew", "jet_climb", "outro_chime", "ear_pop",
-                             "v6_jet_swell", "v6_plane_descend", "v6_exhale", "v6_release")}
+    c = {k: Cue(k) for k in ("v3_pop", "v3_air", "v3_thud", "v3_swallow", "v3_chew", "jet_climb", "outro_chime",
+                             "ear_pop", "v6_jet_swell", "v6_plane_descend", "v6_exhale", "v6_release")}
     c["v3_yawn"] = Cue("v3_yawn", anchor="onset")
     c["v8_boom"] = Cue("v8_boom", anchor="onset")
     fx = np.zeros(n)
     S = lambda sid: SHOT[sid]["start"]   # noqa: E731
     E = lambda sid: SHOT[sid]["end"]     # noqa: E731
+    whoosh = Designed("whoosh", 0.45, 0.3, 500, 6000)          # a change of world: peaks ON the cut frame
+    dive = Designed("dive", 0.7, 0.35, 400, 5000, start=7.0)   # the push through into the ear
+    move = Designed("move", 0.35, 0.3, 400, 3000, start=11.0)  # a camera move inside the ear, softer
+    whip = Designed("whip", 0.22, 0.2, 700, 7000, start=14.0)  # the whip pan into the POP
     place(fx, c["v8_boom"], 1, -4)                              # the hook lands on frame 1: a low boom
-    place(fx, c["jet_climb"], S("S01"), -6, 0.45)               # the jet sweeps past the camera
-    place(fx, c["v3_whoosh_in"], E("S02"), -7, -0.12)           # the camera dives into his ear
-    # a whoosh where the film travels to another world (peak on the cut). Not on cuts to the diagram, to
-    # Max talking, the relief or the end card, nor on "muffled" (the owner, on v8: "unnecessary swish");
-    # v6_swish is out: it has a click at its peak
+    place(fx, c["jet_climb"], S("S01"), -6, 0.45, until=S("S02") + 9)  # the jet sweeps past the camera
+    place(fx, dive, S("S03"), -9)                               # through the ear, peak on the first ear frame
+    # a whoosh where the film travels to another world, peaking exactly on the cut. Not on cuts to the
+    # diagram, to Max talking, the relief or the end card, nor on "muffled" (the owner, on v8)
     for sid in ("S05b", "S08a", "S10", "S11a"):
-        place(fx, c["v3_whoosh_pass"], S(sid), -14)
-    place(fx, c["v3_whoosh_pass"], S("S03"), -13, 0.35)         # on down the canal
-    place(fx, c["v3_whoosh_pass"], beat("S04", "ground"), -12, -0.05)  # through the eardrum
-    place(fx, c["v6_jet_swell"], S("S05a"), -12, 0.8)           # the jet climbs past
+        place(fx, whoosh, S(sid), -11)
+    place(fx, move, S("S03"), -16, 0.35)                        # on down the canal
+    place(fx, move, beat("S04", "ground"), -15, -0.05)          # through the eardrum
+    place(fx, c["v6_jet_swell"], S("S05a"), -12, 0.8, until=S("S05b"))  # the jet climbs past; stops at the cut
     place(fx, c["v3_air"], beat("S05b", "drops"), -13)          # outside air thins
-    place(fx, c["v3_stretch"], beat("S06a", "pushes"), -12, 0.2)
-    place(fx, c["v3_stretch"], beat("S06b", "bulges") - 2, -9)  # mid-bulge (measured: steady swell, frames 517-547)
+    # the eardrum bulging: a slow low pressure swell timed to the shape keys (no rubbery creak: the owner
+    # heard it as a "tickle")
+    place(fx, Designed("push", 0.6, 0.35, 200, 700, start=5.0), beat("S06a", "pushes"), -15, 0.2)
+    place(fx, Designed("bulge", 1.0, 0.4, 200, 900, start=15.0), 547, -12)   # measured: swell frames 517-547
     place(fx, c["v3_air"], beat("S09a", "escapes"), -11)        # air escapes down the tube
-    place(fx, c["v3_whip"], E("S09a") - 3, -12)                 # whip up into the POP shot
+    place(fx, whip, S("S09b"), -12)                             # whip up into the POP shot, peak on the cut
     fpop = beat("S09b", "pop")
     place(fx, c["v3_pop"], fpop + 1, -5)                        # POP: the eardrum snaps flat (keys pop-1 -> pop+3)
     place(fx, c["ear_pop"], fpop + 1, -10)                      #   with the softer generated pop under it
     place(fx, c["v6_release"], fpop + 3, -12)                   #   and the pressure letting go
     place(fx, c["v6_exhale"], beat("S09c", "relief") + 3, -11)  # Max's relief (relief_smile at relief+8)
-    place(fx, c["v6_plane_descend"], S("S10"), -13, 0.9)        # the plane comes down over the city
+    place(fx, c["v6_plane_descend"], S("S10"), -13, 1.2, since=S("S10"), until=S("S11a"))  # the plane over the city
     place(fx, c["v3_thud"], beat("S11a", "shut") + 8, -11)      # the tube clamps shut, turns red
-    place(fx, c["v3_stretch"], beat("S11b", "inward") + 2, -10)  # eardrum pushed in (measured: peak motion word+2)
+    place(fx, Designed("inward", 0.6, 0.35, 200, 800, start=13.0), beat("S11b", "inward") + 2, -12)  # pushed in (peak word+2)
     fs, fy, fc = (beat("S12a", w) for w in ("swallowing", "yawning", "chewing"))
     place(fx, c["v3_swallow"], fs + 4, -10)                     # swallow face key at word+4
     place(fx, c["v3_yawn"], fy - 2, -12)                        # yawn opens from word-2 to word+10
