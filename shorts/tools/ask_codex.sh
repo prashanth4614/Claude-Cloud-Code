@@ -6,6 +6,7 @@
 # any file, change none), and pushes shorts/tools/codex/answers/<id>.md ending in a STATUS line:
 #   OK | FAILED (error lines included) | TIMEOUT (partial output included) | REJECTED (bad request)
 # Never waits on input: stdin is closed, approvals are off, and a hard cap kills a stuck run.
+# A request line "IMAGES: path/a.jpg path/b.jpg" attaches those images (e.g. storyboard sheets).
 # Env: CODEX_MODEL (default gpt-6.1-sol), CODEX_EFFORT (default high), CODEX_LIMIT seconds (default 600).
 {   # whole script parsed before it runs: a git pull can't change it mid-run
 set -uo pipefail
@@ -27,8 +28,12 @@ elif [ "$(wc -c < "$REQ")" -gt 20000 ]; then
   STATUS=REJECTED; echo "request is $(wc -c < "$REQ") bytes; keep requests under 20 KB" > "$ERRF"
 else
   PROMPT="$(cat shorts/tools/codex/CONTEXT.md 2>/dev/null; printf '\n\n---\n\n# This request\n\n'; cat "$REQ")"
+  IMG_ARGS=()      # "IMAGES: a.jpg b.jpg" line in the request -> attached as images (repo-relative paths)
+  for img in $(grep -m1 '^IMAGES:' "$REQ" | cut -d: -f2-); do
+    [ -f "$img" ] && IMG_ARGS+=(--image "$img") || echo "missing image $img" >> "$ERRF"
+  done
   capped "$LIMIT" codex exec --model "$MODEL" -c model_reasoning_effort="$EFFORT" -c approval_policy=never \
-    --sandbox read-only --skip-git-repo-check --output-last-message "$LAST" "$PROMPT" > "$OUTF" 2> "$ERRF"
+    --sandbox read-only --skip-git-repo-check --output-last-message "$LAST" ${IMG_ARGS[@]+"${IMG_ARGS[@]}"} "$PROMPT" > "$OUTF" 2> "$ERRF"
   rc=$?
   if [ "$rc" -eq 0 ]; then STATUS=OK; elif [ "$rc" -eq 124 ]; then STATUS=TIMEOUT; else STATUS=FAILED; fi
 fi

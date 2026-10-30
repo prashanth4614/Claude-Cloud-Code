@@ -13,6 +13,7 @@ capped() {   # safe under `set -eE` + ERR traps: nothing in here returns non-zer
   ( sleep "$limit" && touch "$mark" && kill -TERM "$pid" 2>/dev/null && sleep 10 && kill -KILL "$pid" 2>/dev/null ) &
   dog=$!
   wait "$pid" || rc=$?
+  pkill -P "$dog" sleep 2>/dev/null || true   # its sleep too, or it lingers as an orphan
   kill "$dog" 2>/dev/null || true
   wait "$dog" 2>/dev/null || true
   if [ -e "$mark" ]; then rm -f "$mark"; rc=124; fi
