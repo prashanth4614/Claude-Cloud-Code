@@ -11,6 +11,7 @@
 # back to out/final/<mode>/frames as they finish; a rerun of the same mode skips frames already here.
 # The pod is deleted at the end, at the cost guard, and by its own in-pod timer.
 # Settings for the full run: FINAL_SAMPLES / FINAL_DENOISER / ... (see render_final.py), from the bench.
+# GPUs: RTX 4090 / 5090 only (measured: an A40 is ~2.4x slower per frame, so ~60% dearer per frame).
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 MODE="${1:?bench | full | assemble}"; shift || true
@@ -59,7 +60,6 @@ touch "$OUT/done.txt"
 python3 cloud/render_runpod.py --cloud "${RUNPOD_CLOUD:-SECURE}" --gpu-count "$GPUS" --blender-series 5.2 --no-pip --max-minutes "$MAXMIN" \
   --upload out/final/film_packed.blend --pull-frames "$OUT/frames" --include "$OUT/done.txt" \
   --only shorts/pilot_ear_pop/final_pod.sh shorts/pilot_ear_pop/render_final.py \
-  --gpu "NVIDIA GeForce RTX 4090" "NVIDIA RTX PRO 4500 Blackwell" \
-        "NVIDIA RTX A6000" "NVIDIA A40" "NVIDIA RTX 6000 Ada Generation" "NVIDIA L40S" \
+  --gpu ${FINAL_GPUS:-"NVIDIA GeForce RTX 4090" "NVIDIA GeForce RTX 5090"} \
   --out "$OUT/DONE" "$@" -- \
   bash shorts/pilot_ear_pop/final_pod.sh /work/upload/film_packed.blend "$OUT/frames" "$RANGES"
