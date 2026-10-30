@@ -1,0 +1,6 @@
+ 1 (row 1, col 1): S01:0.5 f43
+ 2 (row 1, col 2): S03:0.3 f231
+ 3 (row 1, col 3): S04:0.8 f376
+ 4 (row 1, col 4): S06:bulges f691
+ 5 (row 1, col 5): S10:0.5 f1101
+ 6 (row 1, col 6): S11:0.5 f1212
