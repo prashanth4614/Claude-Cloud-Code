@@ -89,7 +89,7 @@ def pull_frames(url, hdr, remote_dir, local):
             tf.extractall(local, filter="data")
         got += len(names)
         with open(local.parent / "done.txt", "a") as f:
-            f.writelines(f"{int(n[2:6])}\n" for n in names)
+            f.writelines(f"{int(n[2:6])}\n" for n in names if n.startswith("f_") and n[2:6].isdigit())
 
 
 def bundle(cmd, output, includes, env, only=()):
