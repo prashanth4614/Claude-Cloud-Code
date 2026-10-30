@@ -17,6 +17,7 @@ from mathutils import Vector
 from .pbr import LIB, plain
 
 R = 0.95                     # fuselage radius
+CUMULUS = False              # volumetric foreground cumulus (slow: see realistic_sky)
 NOSE_X, TAIL_X = 7.6, -8.6   # nose tip / tail tip
 
 
@@ -465,6 +466,17 @@ def realistic_sky(scene, origin):
         d2.texture, d2.strength, d2.texture_coords = _cloud_tex("cloud_puffs", 3.0, 6), 1.4, "GLOBAL"
         d3 = sea.modifiers.new("swell", "DISPLACE")       # broad rises and troughs: no even carpet from above
         d3.texture, d3.strength, d3.texture_coords = _cloud_tex("cloud_swell", 70.0, 2), 9.0, "GLOBAL"
+    sun = bpy.data.objects.get("Sun")
+    if sun:                                  # low golden sun: warm key, long soft shadows on the cloud tops
+        sun.data.energy, sun.data.color = 3.2, (1.0, 0.68, 0.42)
+        sun.rotation_euler = (math.radians(78), 0, math.radians(60))
+    # Foreground cumulus dropped (2026-10-30): surface puffs read as marshmallows, volumetric ones cost
+    # 5-7 min/frame on the M4 and came out grey (review clouds-2). The displaced deck + HDRI sky sells
+    # the shot at ~10-15 s/frame. CUMULUS = True brings the volumetric lobes back for a hero shot.
+    if not CUMULUS:
+        for ob in [o for o in bpy.data.objects if o.name.startswith("cloud_") and o.name[6:].isdigit()]:
+            bpy.data.objects.remove(ob, do_unlink=True)
+        return
     import random
     rnd = random.Random(21)
     puffs = [o for o in bpy.data.objects if o.name.startswith("cloud_") and o.name[6:].isdigit()]
@@ -495,10 +507,6 @@ def realistic_sky(scene, origin):
         ob.visible_shadow = True
         for p in ob.data.polygons:
             p.use_smooth = True
-    sun = bpy.data.objects.get("Sun")
-    if sun:                                  # low golden sun: warm key, long soft shadows on the cloud tops
-        sun.data.energy, sun.data.color = 3.2, (1.0, 0.68, 0.42)
-        sun.rotation_euler = (math.radians(78), 0, math.radians(60))
 
 
 def sky_world(scene):
