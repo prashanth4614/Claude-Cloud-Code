@@ -65,33 +65,37 @@ def rms(a):
 
 
 class Cue:
-    """A Foley file, peak-normalised, with its anchor (the hit) measured once."""
+    """A Foley file, normalised by its LOUDNESS (its loudest 100 ms), with its anchor (the hit) measured
+    once. Peak-normalising made short hits (a chew, a click) 25-35 dB quieter than the voice: inaudible."""
 
     def __init__(self, name, anchor="peak"):
         a = decode(HERE / "audio" / "sfx" / f"{name}.mp3")
         w = int(0.01 * SR)
         env = np.sqrt(np.convolve(a ** 2, np.ones(w) / w, mode="same"))
         self.anchor = (np.argmax(env > env.max() * 0.25) if anchor == "onset" else np.argmax(env)) / SR
-        self.audio = a / (np.abs(a).max() + 1e-9)
+        w = int(0.1 * SR)
+        self.audio = a / (np.sqrt(np.convolve(a ** 2, np.ones(w) / w, mode="same")).max() + 1e-9)
+        self.name = name
 
 
 def place(bus, cue, frame, gain_db, offset=0.0):
-    """Put the cue's hit on `frame` (+ offset seconds), its peak `gain_db` under the dialogue's peaks."""
+    """Put the cue's hit on `frame` (+ offset seconds), its loudest 100 ms `gain_db` against the speech level."""
     i = int((t_of(frame) + offset - cue.anchor) * SR)
     a = cue.audio * db(gain_db)
     if i < 0:
         a, i = a[-i:], 0
     a = a[: max(0, len(bus) - i)]
     bus[i:i + len(a)] += a
-    PLACED.append((frame, offset))
+    PLACED.append((cue.name, t_of(frame) + offset, gain_db))
 
 
 PLACED = []
 
 
 def foley(n):
-    """Codex's cue sheet (request 007): an accent only where something physical happens on screen, and
-    quiet; gains are each cue's peak below the dialogue's peaks."""
+    """Codex's cue sheet (request 007): an accent only where something physical happens on screen. Gains
+    are each cue's loudest 100 ms against the speech level: about -10 dB is clearly heard under the
+    voice (the owner, on v6: the jet at -13 was right, cues at -25 to -34 were "barely audible")."""
     c = {k: Cue(k) for k in ("v3_whoosh_in", "v3_whoosh_pass", "v3_whip", "v3_pop", "v3_stretch", "v3_valve",
                              "v3_air", "v3_thud", "v3_swallow", "v3_chew", "jet_climb", "outro_chime", "ear_pop",
                              "v6_jet_swell", "v6_plane_descend", "v6_exhale", "v6_release")}
@@ -99,35 +103,35 @@ def foley(n):
     fx = np.zeros(n)
     S = lambda sid: SHOT[sid]["start"]   # noqa: E731
     E = lambda sid: SHOT[sid]["end"]     # noqa: E731
-    place(fx, c["jet_climb"], S("S01"), -18, 0.45)              # the jet sweeps past the camera
-    place(fx, c["v3_whoosh_in"], E("S02"), -16, -0.12)          # the camera dives into his ear
-    place(fx, c["v3_whoosh_pass"], S("S03"), -24, 0.35)         # on down the canal
-    place(fx, c["v3_whoosh_pass"], beat("S04", "ground"), -22, -0.05)  # through the eardrum
-    place(fx, c["v6_jet_swell"], S("S05a"), -18, 0.8)           # the jet climbs past
-    place(fx, c["v3_air"], beat("S05b", "drops"), -24)          # outside air thins
-    place(fx, c["v3_stretch"], beat("S06a", "pushes"), -20, 0.2)
-    place(fx, c["v3_stretch"], beat("S06b", "bulges") - 2, -16)  # mid-bulge (measured: steady swell, frames 517-547)
-    place(fx, c["v3_valve"], beat("S08b", "cracks") + 3, -16)   # the valve parts (measured: motion peaks 789-791)
-    place(fx, c["v3_air"], beat("S09a", "escapes"), -18)        # air escapes down the tube
-    place(fx, c["v3_whip"], E("S09a") - 3, -22)                 # whip up into the POP shot
+    place(fx, c["jet_climb"], S("S01"), -12, 0.45)              # the jet sweeps past the camera
+    place(fx, c["v3_whoosh_in"], E("S02"), -10, -0.12)          # the camera dives into his ear
+    place(fx, c["v3_whoosh_pass"], S("S03"), -13, 0.35)         # on down the canal
+    place(fx, c["v3_whoosh_pass"], beat("S04", "ground"), -12, -0.05)  # through the eardrum
+    place(fx, c["v6_jet_swell"], S("S05a"), -12, 0.8)           # the jet climbs past
+    place(fx, c["v3_air"], beat("S05b", "drops"), -13)          # outside air thins
+    place(fx, c["v3_stretch"], beat("S06a", "pushes"), -12, 0.2)
+    place(fx, c["v3_stretch"], beat("S06b", "bulges") - 2, -9)  # mid-bulge (measured: steady swell, frames 517-547)
+    place(fx, c["v3_valve"], beat("S08b", "cracks") + 3, -9)   # the valve parts (measured: motion peaks 789-791)
+    place(fx, c["v3_air"], beat("S09a", "escapes"), -11)        # air escapes down the tube
+    place(fx, c["v3_whip"], E("S09a") - 3, -12)                 # whip up into the POP shot
     fpop = beat("S09b", "pop")
-    place(fx, c["v3_pop"], fpop + 1, -4)                        # POP: the eardrum snaps flat (keys pop-1 -> pop+3)
-    place(fx, c["ear_pop"], fpop + 1, -14)                      #   with the softer generated pop under it
-    place(fx, c["v6_release"], fpop + 3, -22)                   #   and the pressure letting go
-    place(fx, c["v6_exhale"], beat("S09c", "relief") + 3, -22)  # Max's relief (relief_smile at relief+8)
-    place(fx, c["v6_plane_descend"], S("S10"), -22, 0.9)        # the plane comes down over the city
-    place(fx, c["v3_thud"], beat("S11a", "shut") + 8, -20)      # the tube clamps shut, turns red
-    place(fx, c["v3_stretch"], beat("S11b", "inward") + 2, -18)  # eardrum pushed in (measured: peak motion word+2)
+    place(fx, c["v3_pop"], fpop + 1, -2)                        # POP: the eardrum snaps flat (keys pop-1 -> pop+3)
+    place(fx, c["ear_pop"], fpop + 1, -10)                      #   with the softer generated pop under it
+    place(fx, c["v6_release"], fpop + 3, -12)                   #   and the pressure letting go
+    place(fx, c["v6_exhale"], beat("S09c", "relief") + 3, -11)  # Max's relief (relief_smile at relief+8)
+    place(fx, c["v6_plane_descend"], S("S10"), -13, 0.9)        # the plane comes down over the city
+    place(fx, c["v3_thud"], beat("S11a", "shut") + 8, -11)      # the tube clamps shut, turns red
+    place(fx, c["v3_stretch"], beat("S11b", "inward") + 2, -10)  # eardrum pushed in (measured: peak motion word+2)
     fs, fy, fc = (beat("S12a", w) for w in ("swallowing", "yawning", "chewing"))
-    place(fx, c["v3_swallow"], fs + 4, -20)                     # swallow face key at word+4
-    place(fx, c["v3_yawn"], fy - 2, -24)                        # yawn opens from word-2 to word+10
+    place(fx, c["v3_swallow"], fs + 4, -10)                     # swallow face key at word+4
+    place(fx, c["v3_yawn"], fy - 2, -12)                        # yawn opens from word-2 to word+10
     for i in range(4):                                          # the bites: jaw closes on chew_b, word+11+8i
-        place(fx, c["v3_chew"], fc + 11 + i * 8, -26)           # (real_max.perform; jawOpen 0.04 vs 0.22)
+        place(fx, c["v3_chew"], fc + 11 + i * 8, -13)           # (real_max.perform; jawOpen 0.04 vs 0.22)
     fu, fr = beat("S12b", "pull"), beat("S12b", "open")
-    place(fx, c["v3_valve"], fu + 1, -20)                       # the tube opens again
-    place(fx, c["v3_air"], fu + 4, -24)                         # cabin air rises into the middle ear
-    place(fx, c["v3_pop"], fr + 2, -18)                         # the eardrum settles flat
-    place(fx, c["outro_chime"], S("S13") + 8, -28)              # follow card
+    place(fx, c["v3_valve"], fu + 1, -11)                       # the tube opens again
+    place(fx, c["v3_air"], fu + 4, -14)                         # cabin air rises into the middle ear
+    place(fx, c["v3_pop"], fr + 2, -8)                         # the eardrum settles flat
+    place(fx, c["outro_chime"], S("S13") + 8, -16)              # follow card
     return fx
 
 
@@ -297,7 +301,8 @@ def write(path, mono, two_pass=True):
         r = subprocess.run(["ffmpeg", "-hide_banner", "-f", "f32le", "-ar", str(SR), "-ac", "2", "-i", str(raw),
                             "-af", "ebur128", "-f", "null", "-"], capture_output=True, text=True).stderr
         lufs = float(r[r.rindex("I:"):].split()[1])
-        af = f"volume={-14 - lufs:.2f}dB,alimiter=limit=0.8:attack=1:release=50:level=false,aresample=48000"
+        af = (f"volume={-14 - lufs:.2f}dB,aresample=192000,"          # limit at 4x: catches true peaks
+              "alimiter=limit=0.8:attack=1:release=50:level=false,aresample=48000")
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "f32le", "-ar", str(SR), "-ac", "2", "-i", str(raw),
                     "-af", af, "-c:a", "pcm_s16le", str(path)], check=True)
     raw.unlink()
@@ -312,8 +317,7 @@ def main():
     vo[: min(n, len(voice))] = voice[:n]
     w = int(0.4 * SR)
     speech_db = 20 * np.log10(np.percentile(np.sqrt(np.convolve(vo ** 2, np.ones(w) / w, mode="valid")), 85))
-    peak = np.percentile(np.abs(vo), 99.99)                    # the dialogue's peaks: Foley gains are below them
-    fx = ffmpeg_filter(foley(n) * peak, "lowpass=f=9000")      # soft and warm: no sharp, hissy tops
+    fx = ffmpeg_filter(foley(n) * db(speech_db), "lowpass=f=12000")   # cue gains are against the speech level
     dip = pop_dip(n)
     mus = muffle(music(n, speech_db) * dip, n) if os.environ.get("MUSIC", "1") == "1" else np.zeros(n)
     amb = muffle(beds(n, speech_db) * dip, n)
