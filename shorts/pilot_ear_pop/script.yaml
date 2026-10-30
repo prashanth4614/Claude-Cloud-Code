@@ -119,6 +119,20 @@ sfx_cues:
   card_soft:   {seconds: 0.6, prompt: "Very soft paper card slide, gentle, quiet"}
   outro_chime: {seconds: 1.5, prompt: "Single gentle warm chime, soft felt piano note with light shimmer, calm"}
 
+  # v3: clean single hits (Codex 006 prompt prefix), placed by their anchor in mix.py
+  v3_whoosh_in: {seconds: 0.6, prompt: "Isolated close-miked dry Foley, silent studio, distinct attack, short decay; no music, speech, ambience or reverb. compact inward swish, like a camera diving into a small opening"}
+  v3_whoosh_pass: {seconds: 0.7, prompt: "Isolated close-miked dry Foley, silent studio, distinct attack, short decay; no music, speech, ambience or reverb. smooth passing swish, soft and airy"}
+  v3_whip: {seconds: 0.5, prompt: "Isolated close-miked dry Foley, silent studio, distinct attack, short decay; no music, speech, ambience or reverb. quick whip pan swish"}
+  v3_pop: {seconds: 0.5, prompt: "Isolated close-miked dry Foley, silent studio, distinct attack, short decay; no music, speech, ambience or reverb. rounded satisfying pressure snap, an ear popping, soft click with a short low body"}
+  v3_stretch: {seconds: 0.8, prompt: "Isolated close-miked dry Foley, silent studio, distinct attack, short decay; no music, speech, ambience or reverb. taut latex membrane stretching outward, subtle rubbery creak"}
+  v3_valve: {seconds: 0.5, prompt: "Isolated close-miked dry Foley, silent studio, distinct attack, short decay; no music, speech, ambience or reverb. moist soft valve click, a small wet tube opening"}
+  v3_air: {seconds: 0.6, prompt: "Isolated close-miked dry Foley, silent studio, distinct attack, short decay; no music, speech, ambience or reverb. brief soft escaping air, gentle hiss release"}
+  v3_thud: {seconds: 0.5, prompt: "Isolated close-miked dry Foley, silent studio, distinct attack, short decay; no music, speech, ambience or reverb. muted padded thud, soft and low"}
+  v3_swallow: {seconds: 0.7, prompt: "Isolated close-miked dry Foley, silent studio, distinct attack, short decay; no music, speech, ambience or reverb. single restrained human swallow gulp, close"}
+  v3_yawn: {seconds: 1.3, prompt: "Isolated close-miked dry Foley, silent studio, distinct attack, short decay; no music, speech, ambience or reverb. quiet breathy male yawn, short, close"}
+  v3_chew: {seconds: 0.5, prompt: "Isolated close-miked dry Foley, silent studio, distinct attack, short decay; no music, speech, ambience or reverb. single soft gum chew, moist, close"}
+  v3_pluck: {seconds: 0.5, prompt: "Isolated close-miked dry Foley, silent studio, distinct attack, short decay; no music, speech, ambience or reverb. muted soft UI pluck, gentle click for a label appearing"}
+
 beds:
   cabin: {seconds: 20, loop: true, prompt: "Quiet airplane cabin ambience, soft low engine hum, gentle air vent hiss, no voices, no announcements, calm"}
   body:  {seconds: 20, loop: true, prompt: "Calm soft body interior ambience, slow muffled heartbeat far away, gentle low warm whoosh, soothing"}

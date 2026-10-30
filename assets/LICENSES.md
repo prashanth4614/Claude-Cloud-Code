@@ -13,5 +13,11 @@ Every third-party asset the videos use, where it came from and its licence. Down
 | MakeHuman system assets, skins01, eyebrows01, eyelashes01, faceunits01 | Max (body, skin, brows, lashes, face shapes) | MakeHuman community, via MPFB2 | CC0 |
 | male_casualsuit06, shoes05 (MakeHuman) | Max's outfit (recoloured) | MakeHuman community | CC0 |
 
+| "Investigations" (music) | background music under the pilot | Kevin MacLeod, incompetech.com | CC BY 4.0 |
+| v3_* sound effects, the earlier cues and beds | Foley and ambience | generated with ElevenLabs Sound Effects (our account) | ElevenLabs terms (commercial use on paid plans) |
+
+**Required credit in the video description (CC BY):**
+`Music: "Investigations" by Kevin MacLeod (incompetech.com), licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/`
+
 CC0 needs no credit, but a line like "3D assets: Poly Haven, ambientCG, MakeHuman (CC0)" in the
 video description is a good habit. Anything CC-BY added later must be credited in the description.
