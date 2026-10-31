@@ -7,9 +7,9 @@ owner approves (record the date). Changing a locked item reopens its gate.
 |---|---|---|---|
 | G0 Idea and angle | ☑ | 2026-10-31 | see G0 below; web differentiation check pending |
 | G1 Story and facts (Codex) | ☑ | 2026-10-31 | `story.md` rev 2, `facts.md`; Codex 017 objections all applied |
-| G2 Script locked (Codex) | ◐ | | `script.md` draft 2 (Codex 018 applied); waiting for the owner's lock |
+| G2 Script locked (Codex) | ☑ | 2026-10-31 | `script.md` draft 2: 112 words, ≈42 s; Codex 018 applied |
 | G3 Screenplay, shot list, transition chain, boards (Codex) | ☐ | | `shots.yaml`, boards sheet |
-| G4 Voice locked | ☐ | | take id, `voice_check.py` result |
+| G4 Voice locked | ◐ | | `voice.py`; audition (2 × 169 chars) then one full take (668 chars) |
 | G5 Pre-frame QA (Codex) | ☐ | | QA report, waivers |
 | G6 Key-frame test (Claude + Codex) | ☐ | | sheets, must-fix list |
 | G7 Animatic + review .blend: picture lock | ☐ | | `out/train_step_off/train_step_off_review.blend` |
@@ -35,6 +35,8 @@ owner approves (record the date). Changing a locked item reopens its gate.
 - **Telugu version:** not now.
 
 ## Decisions log
+
+- 2026-10-31 Script locked (draft 2). Option A: narration stays tight, and the per-scenario physics is shown with the shared kit (centre-of-mass dot + arrow, grip arrow at the shoe, curved tipping arrow, inertia ghost, freeze + orbit); ≤3 labels in 3D. OK to spend ElevenLabs credits on the audition + full take (owner)
 
 - 2026-10-31 Meshy shelved; beat outline approved, go to the next step (owner)
 

@@ -42,3 +42,23 @@ passengers never to board or leave a moving train."
 4. The dial reaches 10 before contact; the opener and the sideways beat are compressed.
 5. The casualty line moved to the description.
 6. "The only safe speed is zero" became "Wait until the train has fully stopped".
+
+## Physics kit per scenario (owner chose option A, 2026-10-31)
+
+The narration stays tight; the visuals carry the physics, Zack-style (slow motion, a freeze and a
+camera orbit, simple glowing forces attached in 3D, no 2D diagrams).
+- **Shared kit, introduced in the cause beat:**
+  - a glowing centre-of-mass dot at the chest, with an amber arrow (length = speed);
+  - a short grip arrow at the shoe pointing backward, with scuffs and a squeak;
+  - a curved tipping arrow around the ankle (the "falling pole");
+  - the inertia ghost.
+- **Facing back:** the chest arrow points behind him and he tips backward. The ghost leaves his view;
+  the orbit goes to his eyes looking the wrong way. Freeze.
+- **Sideways:** the arrow points across his body, his feet are side by side so no step can catch it,
+  and he tips sideways. Freeze.
+- **Forward:** the arrow points ahead and a step lands under it. Each footstep is a new pivot and the
+  arrow shrinks; then a wobble.
+- **Twist:** the shoe lands on water, the grip arrow vanishes and the foot slides toward the gap. Freeze.
+- **Ending:** the needle reaches 0, the arrow and ghost shrink to nothing, and Max steps off with no
+  arrows.
+- **Labels:** ≤3 in 3D ("TRAIN SPEED" by the ghost, "GRIP" at the shoe).
