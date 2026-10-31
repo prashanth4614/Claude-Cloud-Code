@@ -30,8 +30,11 @@ YouTube Shorts production pipeline. **The agreed production pipeline is `PIPELIN
 - The user allowed (2026-10-30) a Codex second opinion through the **Codex CLI on their Mac**
   (`shorts/tools/ask_codex.sh`, read-only sandbox), for code review and help with stubborn bugs.
   Requests go in `shorts/tools/codex/requests/<id>.md`; answers come back in `.../answers/<id>.md`.
+- **Codex reviews; it never writes code** (owner, 2026-10-31). Claude writes every change, then asks
+  Codex to review it (the diff, the renders, the plan) and to find bugs and weak spots. Requests must
+  not ask for patches, functions or ready-to-apply code; findings come back as file:line and what's wrong.
 - This is not image or video generation; that pause above still stands. Verify any Codex
-  suggestion before applying it; Claude stays the only one editing the repo.
+  finding before acting on it; Claude stays the only one editing the repo.
 
 ## Voice
 
