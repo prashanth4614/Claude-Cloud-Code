@@ -22,6 +22,8 @@ SEED = 7
 GUIDES = 3000                 # v4: more, finer guides for a smooth, groomed look (not chunky locks)
 CHILDREN = 60                 # rendered children per guide (max_look.py raises it for renders)
 TOP_LEN, SIDE_LEN, BACK_LEN = 0.072, 0.018, 0.02   # longer top, short tapered sides and back
+TOP_BLEND = (0.03, 0.09)      # height above the eyes where the long top blends into the short sides (v6e: was 0.045-0.085)
+EAR_CLEAR = 0.012             # no hair over the ear below this height above the eyes (the ear top is at ~0.004)
 FRINGE_Z = 0.054              # front strands stay above this height over the eyes (no locks on the forehead)
 # v4 style: a neat side part. The part sits on his right (-X); the top is combed back and over to his left
 # (+X) with a soft lift at the front (a low quiff), the short side below the part is combed down and back.
@@ -96,14 +98,17 @@ def scalp_weight(p, eye, head, fade=False):
         return 0.0
     phi = abs(math.degrees(math.atan2(rel.x, -rel.y)))   # 0 = front, 90 = side, 180 = back
     # v5b: lower and fuller (the v5 review: the hairline read as receding, an "M" with bare temples)
-    hairline = _ramp(phi, [(0, 0.057), (30, 0.049), (55, 0.032), (80, 0.022), (100, 0.012), (120, -0.02), (150, -0.06), (180, -0.08)])
+    # v6e (Codex 013, "the top ends above a pale shaved band"): temples come down into a short sideburn in
+    # front of the ear (the ear spans phi ~90-120 and tops out ~4 mm above eye level)
+    hairline = _ramp(phi, [(0, 0.057), (30, 0.049), (55, 0.030), (68, 0.012), (78, -0.010), (88, -0.024),
+                           (100, -0.02), (125, -0.03), (150, -0.06), (180, -0.08)])
     if fade:
         side = _smooth(50, 80, phi)                 # sides and back only: never darken the forehead
         w = _smooth(-0.022 * side, 0.012 + 0.02 * side, (p.z - eye.z) - hairline)
     else:
         w = _smooth(0.0, 0.012, (p.z - eye.z) - hairline)
-    # keep the ears and the skin right behind them clear
-    if 75 < phi < 125 and abs(rel.x) > 0.072 and p.z - eye.z < 0.035:
+    # keep the ears clear, with a small margin (v6e: was 35 mm above the eyes, a bald strip over each ear)
+    if 86 < phi < 128 and abs(rel.x) > 0.072 and p.z - eye.z < EAR_CLEAR:
         w = 0.0
     return w
 
@@ -241,7 +246,7 @@ def groom(rig, body):
         rel = root - head
         h = root.z - eye.z
         phi = abs(math.degrees(math.atan2(rel.x, -rel.y)))
-        top = _smooth(0.045, 0.085, h) * (1 - _smooth(120, 160, phi))
+        top = _smooth(TOP_BLEND[0], TOP_BLEND[1], h) * (1 - _smooth(120, 160, phi))   # v6e: a wider blend
         back = _smooth(110, 160, phi) * (1 - top)
         length = (SIDE_LEN * (1 - top - back) + TOP_LEN * top + BACK_LEN * back) * rnd.uniform(0.85, 1.15)
         # v5 (Codex 010): a feathered hairline. Strands near the edge of the hair region are shorter, so the
