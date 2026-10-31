@@ -37,12 +37,11 @@ owner approves (record the date). Changing a locked item reopens its gate.
 ## Decisions log
 
 - 2026-10-31 Mumbai local; "why you fall" framing; hook 3; no Telugu version for now (owner)
+- 2026-10-31 Runtime up to ~50 s, as long as every shot is tight (owner): all three falls stay
 - 2026-10-31 Falls are shown up to impact (slow motion, freeze or cut on contact, no injury), to stay
   within YouTube policy and the channel's tone (Claude proposal, pending the owner's OK)
 
 ## Open issues
 
-- Runtime: drone + speedometer + 3 falls + "even then" + stop likely runs 40-45 s, longer than the
-  30-35 s formula. Decide at G1.
 - Assets: a Mumbai EMU coach (exterior, door, interior), a platform with its edge and gap, a cab
   speedometer, a crowd. Sourcing and licences at G3.
