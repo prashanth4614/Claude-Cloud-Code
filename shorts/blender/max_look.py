@@ -548,6 +548,15 @@ def add_eye_wetness(rig, body):
 
 # Armpit correctives: Codex 012 patch (applied and verified by Claude). Shape keys sampled from the
 # real skinning, driven by the upper-arm angle: crisp folds and less upward drag when an arm lifts.
+def smooth01(t):
+    t = max(0.0, min(1.0, t))
+    return t * t * (3 - 2 * t)
+
+
+PIT_FOLD = 0.0045                 # fold height (m) under a fully raised arm
+PIT_FOLD_ANGLES = (22, 45, 68)    # fold directions from the armpit (deg from straight down toward the chest)
+PIT_FOLD_WIDTH = 8                # angular half-width of each fold (deg): narrow ridges, smooth between
+PIT_DROP = 0.28                   # share of the skin-driven lift the tee doesn't follow (was 0.35)
 PIT_ONSET, PIT_FULL = 40, 85   # upper-arm angle from straight down (deg): corrective starts / is full
 
 
@@ -657,16 +666,20 @@ def add_shirt_correctives(rig, ob, shirt, positions,
             key.value = 0
             made.append((side, key))
 
+            # v6e (Codex 013: "broad soft bulges, a deep trough, rubbery"): narrow folds that fan out from
+            # the armpit toward the chest and waist, and less of the drop that dug the trough.
+            apex = base[min(weights, key=lambda i: (positions[i] - pit).length_squared)]
             for i, w in weights.items():
                 q = base[i]
-                # Remove part of the skin-driven lift; cap at 22 mm.
-                drop = max(-0.022, min(0.008,
-                    -0.35 * (q.z - positions[i].z)))
-                u = q.z + drop - centre.z - (
-                    0.55 * sign * (q.x - centre.x))
-                relief = 0.006 * sum(
-                    math.exp(-((u - offset) / 0.012) ** 2)
-                    for offset in (-0.04, 0.0, 0.04))
+                # Remove part of the skin-driven lift; cap at 18 mm.
+                drop = max(-0.018, min(0.006,
+                    -PIT_DROP * (q.z - positions[i].z)))
+                inward = -sign * (q.x - apex.x)
+                r = math.hypot(inward, q.z - apex.z)
+                theta = math.degrees(math.atan2(inward, apex.z - q.z))    # 0 = straight down, 90 = to the chest
+                reach = smooth01((r - 0.008) / 0.02) * (1 - smooth01((r - 0.07) / 0.06))
+                relief = PIT_FOLD * reach * sum(
+                    math.exp(-((theta - a) / PIT_FOLD_WIDTH) ** 2) for a in PIT_FOLD_ANGLES)
                 outward = Vector((q.x - centre_x,
                                    q.y - shoulder.y, 0)).normalized()
                 desired = w * (outward * relief + Vector((0, 0, drop)))
@@ -722,6 +735,12 @@ def add_shirt_correctives(rig, ob, shirt, positions,
 
     ob.data.update()
     ob["max_shirt_correctives"] = 1
+
+
+SEAM_OFFSET = 0.012     # armhole seam: this far out along the arm from the shoulder joint (m)
+SEAM_WIDTH = 0.0012     # seam line half-width (m)
+SEAM_DEPTH = 0.0004     # groove depth (m)
+SEAM_SHADE = 0.72       # base colour multiplier on the seam line
 
 
 # Shirt fabric and folds: Codex 011b patch (applied and verified by Claude).
@@ -827,8 +846,26 @@ def upgrade_shirt(rig):
         amplitudes.extend((
             0.0010 * envelope(d, (0.085, 0.16, 0.055)),     # v6b: ~1.8x (folds read "smooth CG")
             0.0016 * envelope(dp, (0.075, 0.16, 0.065)),
-            0.0021 * envelope(db, (0.19, 0.20, 0.115)),
+            0.0012 * envelope(db, (0.19, 0.20, 0.115)),     # v6e: was 0.0021 (cloudy dents on the chest)
         ) if i in shirt else (0, 0, 0))
+
+    # v6e (Codex 013: "the sleeve looks pulled into the torso"): a sewn armhole seam. Signed distance (m)
+    # from each tee vertex to the armhole plane (through the shoulder joint, normal along the rest arm);
+    # it's linear, so it interpolates exactly and the shader can draw a sharp line on the coarse mesh.
+    seam = []
+    for i, p in enumerate(positions):
+        side = min(shoulders, key=lambda k: abs(p.x - shoulders[k].x))
+        bone = rig.data.bones[f"upperarm01.{side}"]
+        axis = (bone.tail_local - bone.head_local).normalized()
+        joint = shoulders[side] + axis * SEAM_OFFSET
+        along = (p - joint).dot(axis)
+        radial = ((p - joint) - axis * along).length
+        seam.append(along if i in shirt and radial < 0.11 else 1.0)
+    attr = mesh.attributes.get("max_shirt_seam")
+    if attr:
+        mesh.attributes.remove(attr)
+    attr = mesh.attributes.new("max_shirt_seam", "FLOAT", "POINT")
+    attr.data.foreach_set("value", seam)
 
     for name, values in (
         ("max_shirt_rest", [c for p in positions for c in p]),
@@ -918,7 +955,35 @@ def upgrade_shirt(rig):
         knit.inputs["Distance"].default_value = 0.00003 / unit
         links.new(knit_height, knit.inputs["Height"])
         links.new(folds.outputs["Normal"], knit.inputs["Normal"])
-        links.new(knit.outputs["Normal"], bsdf.inputs["Normal"])
+        # Armhole seam: a 1.2 mm groove with a slightly darker line where the sleeve is sewn on.
+        seam_attr = nodes.new("ShaderNodeAttribute")
+        seam_attr.attribute_type = "GEOMETRY"
+        seam_attr.attribute_name = "max_shirt_seam"
+        seam_band = nodes.new("ShaderNodeMapRange")
+        seam_band.inputs["From Min"].default_value = SEAM_WIDTH * 0.35
+        seam_band.inputs["From Max"].default_value = SEAM_WIDTH
+        seam_band.inputs["To Min"].default_value = 1.0
+        seam_band.inputs["To Max"].default_value = 0.0
+        links.new(math_node("ABSOLUTE", seam_attr.outputs["Fac"]), seam_band.inputs["Value"])
+        seam_bump = nodes.new("ShaderNodeBump")
+        seam_bump.label = "Armhole seam"
+        seam_bump.invert = True
+        seam_bump.inputs["Strength"].default_value = 1.0
+        seam_bump.inputs["Distance"].default_value = SEAM_DEPTH / unit
+        links.new(seam_band.outputs["Result"], seam_bump.inputs["Height"])
+        links.new(knit.outputs["Normal"], seam_bump.inputs["Normal"])
+        links.new(seam_bump.outputs["Normal"], bsdf.inputs["Normal"])
+        base_in = bsdf.inputs["Base Color"]
+        darken = nodes.new("ShaderNodeMix")
+        darken.data_type = "RGBA"
+        darken.blend_type = "MULTIPLY"
+        darken.inputs[7].default_value = (SEAM_SHADE, SEAM_SHADE, SEAM_SHADE, 1)
+        if base_in.is_linked:
+            links.new(base_in.links[0].from_socket, darken.inputs[6])
+        else:
+            darken.inputs[6].default_value = base_in.default_value
+        links.new(seam_band.outputs["Result"], darken.inputs["Factor"])
+        links.new(darken.outputs[2], base_in)
 
         # Base Color, UVs, images and the original normal-map chain stay intact.
         replacements[index] = len(mesh.materials)

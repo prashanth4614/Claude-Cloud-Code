@@ -208,3 +208,33 @@ Render of `max_v6.blend` at af58305: same Metal wrapper (Apple M4 GPU, 10 cores)
 ### Other
 - The small bright speck on the top of the ear (rim light) is still visible in the face close-up.
 - Nothing else new; the expression sheet otherwise matches v6c.
+
+## v6e (Claude, from Codex's 013 frame review; cloud CPU checks)
+
+Codex 013 top 3: hair attachment at the temples, armpit folds, expression separation.
+- **Hair** (`max_hair.py`): the ear clearance reached 35 mm above eye level (the ear tops out at 4 mm),
+  so each side was bare under the long top. Now `EAR_CLEAR` is 12 mm, the side hairline comes down into
+  a short sideburn, and the top blends into the sides over 30-90 mm (`TOP_BLEND`). Roots are still
+  attached in every head pose (p95 0.38 mm). `max_v6e_temple_cpu.jpg` shows before, after and front.
+- **Shirt** (`max_look.py`):
+  - the armpit folds now fan out from the armpit at 22°, 45° and 68°, and are narrower (8° half-width);
+  - less drop (0.28), so the trough is shallower;
+  - a sewn armhole seam: a 1.2 mm groove with a darker line, drawn from a signed-distance attribute, so it
+    stays sharp on the coarse mesh;
+  - calmer belly bump (0.0012).
+
+  `max_v6e_shirt_cpu.jpg` shows chest old | new, then armpit old | new.
+- **Expressions** (`max_expressions.py`, faces and head poses):
+  - puzzled is confused, not sad (knit brows, pressed frown);
+  - curious is interested (brows up, parted half-smile, leaning in);
+  - thinking is a furrowed "hmm";
+  - surprised drops the jaw to a round open mouth, eyes less staring;
+  - amazed is a smiling "wow";
+  - scared has pinched brows and a flat stretched mouth with lips over the teeth, plus a recoil;
+  - wince: both eyes squeezed, lips pressed, no teeth;
+  - ear pop is strongly one-sided, head tilted to the ear;
+  - disgusted is an "ew" with the chin pushed up;
+  - relief has eyes closing and the head tipped back;
+  - chew has a bigger jaw drop and shift.
+
+  `max_v6e_expressions_cpu.jpg` is from before the last curious, surprised and amazed tweak.

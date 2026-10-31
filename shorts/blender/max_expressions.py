@@ -23,57 +23,62 @@ EXTRA_UNITS = {"throatRise"}   # our own shape keys on Max.body, built by max_lo
 EXPRESSIONS = {
     "neutral": {},
     # S01-S02 hook: one brow up, the other down, mouth pulled to one side, eyes slightly narrowed.
-    "puzzled": {   # v4: stronger asymmetry, mouth pulled hard to one side, lips pressed
-        "browOuterUpLeft": 0.85, "browInnerUp": 0.55, "browDownRight": 0.6,
-        "eyeSquintRight": 0.7, "eyeWideLeft": 0.35,
-        "mouthLeft": 0.7, "mouthPressLeft": 0.6, "mouthPressRight": 0.35, "mouthRollLower": 0.25,
-        "mouthFrownRight": 0.25,
+    "puzzled": {   # v6e: confused, not sad: brows knit (no inner lift), one outer brow up, mouth pressed and pulled down
+        "browDownLeft": 0.55, "browDownRight": 0.7, "browOuterUpLeft": 0.7,
+        "eyeSquintLeft": 0.35, "eyeSquintRight": 0.65, "noseSneerRight": 0.25,
+        "mouthLeft": 0.55, "mouthPressLeft": 0.55, "mouthPressRight": 0.4, "mouthFrownLeft": 0.35,
+        "mouthFrownRight": 0.45, "mouthRollLower": 0.2, "mouthShrugLower": 0.35,
     },
     # Pain (v4, stronger and asymmetric so it reads at phone size): brows knotted, one eye squeezed more.
-    "wince": {
-        "browDownLeft": 0.9, "browDownRight": 0.7, "browInnerUp": 0.6,
-        "eyeSquintLeft": 0.85, "eyeSquintRight": 0.6, "eyeBlinkLeft": 0.7, "eyeBlinkRight": 0.35,
-        "cheekSquintLeft": 0.8, "cheekSquintRight": 0.55, "noseSneerLeft": 0.7, "noseSneerRight": 0.5,
-        "mouthStretchLeft": 0.7, "mouthStretchRight": 0.5, "mouthUpperUpLeft": 0.45, "mouthUpperUpRight": 0.3,
-        "mouthLowerDownLeft": 0.3, "mouthLowerDownRight": 0.2, "mouthFrownLeft": 0.25, "mouthFrownRight": 0.2,
-        "jawOpen": 0.1,
+    "wince": {   # v6e: both eyes squeezed, lips pressed tight (no teeth), symmetric; ear_pop is the one-eyed, open grimace
+        "browDownLeft": 0.85, "browDownRight": 0.85, "browInnerUp": 0.45,
+        "eyeSquintLeft": 0.8, "eyeSquintRight": 0.8, "eyeBlinkLeft": 0.75, "eyeBlinkRight": 0.7,
+        "cheekSquintLeft": 0.75, "cheekSquintRight": 0.7, "noseSneerLeft": 0.6, "noseSneerRight": 0.55,
+        "mouthStretchLeft": 0.6, "mouthStretchRight": 0.55, "mouthPressLeft": 0.6, "mouthPressRight": 0.6,
+        "mouthRollLower": 0.25, "mouthClose": 0.05,
     },
     # The moment it hurts most (the ear-pop thumbnail face): one eye shut, teeth gritted, pulled to one side.
-    "ear_pop": {
-        "browDownLeft": 0.95, "browDownRight": 0.75, "browInnerUp": 0.85,
-        "eyeBlinkLeft": 0.88, "eyeSquintLeft": 0.7, "cheekSquintLeft": 0.9,
-        "eyeBlinkRight": 0.18, "eyeSquintRight": 0.5, "cheekSquintRight": 0.55, "eyeWideRight": 0.12,
-        "noseSneerLeft": 0.85, "noseSneerRight": 0.6,
-        "jawOpen": 0.16, "mouthStretchLeft": 0.85, "mouthStretchRight": 0.6, "mouthLeft": 0.25,
-        "mouthUpperUpLeft": 0.7, "mouthUpperUpRight": 0.45, "mouthLowerDownLeft": 0.55,
-        "mouthLowerDownRight": 0.4, "mouthFrownLeft": 0.35, "mouthFrownRight": 0.2,
+    "ear_pop": {   # v6e: strongly one-sided: left eye shut, right eye open, mouth yanked toward the ear, head tilted to it
+        "browDownLeft": 0.95, "browDownRight": 0.55, "browInnerUp": 0.85, "browOuterUpRight": 0.3,
+        "eyeBlinkLeft": 0.9, "eyeSquintLeft": 0.7, "cheekSquintLeft": 0.9,
+        "eyeBlinkRight": 0.05, "eyeSquintRight": 0.35, "cheekSquintRight": 0.4, "eyeWideRight": 0.3,
+        "noseSneerLeft": 0.9, "noseSneerRight": 0.45,
+        "jawOpen": 0.24, "mouthStretchLeft": 0.9, "mouthStretchRight": 0.45, "mouthLeft": 0.45,
+        "mouthUpperUpLeft": 0.75, "mouthUpperUpRight": 0.3, "mouthLowerDownLeft": 0.6,
+        "mouthLowerDownRight": 0.3, "mouthFrownLeft": 0.4, "mouthFrownRight": 0.15,
     },
     # General reactions for any topic (v4).
-    "surprised": {
-        "browInnerUp": 0.9, "browOuterUpLeft": 0.85, "browOuterUpRight": 0.75,
-        "eyeWideLeft": 0.85, "eyeWideRight": 0.8, "jawOpen": 0.35, "mouthFunnel": 0.25,
-        "mouthLowerDownLeft": 0.3, "mouthLowerDownRight": 0.3,
+    "surprised": {   # v6e: arched brows, jaw dropped open (a round mouth, not a tooth strip), eyes wide but not staring
+        "browInnerUp": 0.95, "browOuterUpLeft": 0.95, "browOuterUpRight": 0.9,
+        "eyeWideLeft": 0.6, "eyeWideRight": 0.55, "jawOpen": 0.7,
+        "mouthLowerDownLeft": 0.35, "mouthLowerDownRight": 0.35, "mouthUpperUpLeft": 0.2, "mouthUpperUpRight": 0.2,
+        "mouthStretchLeft": 0.15, "mouthStretchRight": 0.15,
     },
-    "amazed": {   # "wow": soft O mouth, lifted brows, eyes wide but warm
-        "browInnerUp": 0.7, "browOuterUpLeft": 0.65, "browOuterUpRight": 0.55,
-        "eyeWideLeft": 0.55, "eyeWideRight": 0.5, "cheekSquintLeft": 0.15, "cheekSquintRight": 0.15,
-        "jawOpen": 0.42, "mouthFunnel": 0.5, "mouthPucker": 0.2, "mouthSmileLeft": 0.15, "mouthSmileRight": 0.1,
+    "amazed": {   # v6e: a delighted "wow": round O lips with smiling cheeks, brows up, leaning in
+        "browInnerUp": 0.65, "browOuterUpLeft": 0.7, "browOuterUpRight": 0.6,
+        "eyeWideLeft": 0.35, "eyeWideRight": 0.3, "cheekSquintLeft": 0.4, "cheekSquintRight": 0.35,
+        "jawOpen": 0.5, "mouthFunnel": 0.45, "mouthLowerDownLeft": 0.2, "mouthLowerDownRight": 0.2,
+        "mouthSmileLeft": 0.45, "mouthSmileRight": 0.4,
     },
-    "curious": {  # one brow high, the other low, a half-smile pulled to one side (v4: bigger)
-        "browOuterUpLeft": 0.85, "browInnerUp": 0.45, "browDownRight": 0.45,
-        "eyeWideLeft": 0.45, "eyeSquintRight": 0.55, "mouthLeft": 0.45, "mouthSmileLeft": 0.45,
-        "mouthPressRight": 0.4, "mouthDimpleLeft": 0.3, "cheekSquintLeft": 0.25,
+    "curious": {   # v6e: interested: both brows up, bright eyes, lips just parted, head leaning in and tilted
+        "browInnerUp": 0.7, "browOuterUpLeft": 0.9, "browOuterUpRight": 0.55,
+        "eyeWideLeft": 0.45, "eyeWideRight": 0.35, "eyeLookDownLeft": 0.1, "eyeLookDownRight": 0.1,
+        "mouthSmileLeft": 0.45, "mouthSmileRight": 0.25, "mouthDimpleLeft": 0.3, "jawOpen": 0.07,
+        "mouthClose": 0.02, "mouthLowerDownLeft": 0.12, "mouthLowerDownRight": 0.1, "cheekSquintLeft": 0.2,
     },
-    "thinking": {  # eyes up and to the side, lips pushed to one side, one brow down (v4: bigger)
-        "browDownLeft": 0.55, "browInnerUp": 0.5, "browOuterUpRight": 0.4,
-        "eyeLookUpLeft": 0.8, "eyeLookUpRight": 0.8, "eyeLookOutLeft": 0.45, "eyeLookInRight": 0.45,
-        "mouthPucker": 0.45, "mouthRight": 0.55, "mouthPressLeft": 0.35, "mouthRollLower": 0.2,
-        "eyeSquintLeft": 0.25,
+    "thinking": {   # v6e: a furrowed 'hmm': eyes up and away, lips pushed hard to one side and chin up
+        "browDownLeft": 0.65, "browDownRight": 0.35, "browOuterUpRight": 0.55,
+        "eyeLookUpLeft": 0.85, "eyeLookUpRight": 0.85, "eyeLookOutLeft": 0.5, "eyeLookInRight": 0.5,
+        "eyeSquintLeft": 0.4, "eyeSquintRight": 0.2,
+        "mouthPucker": 0.35, "mouthRight": 0.75, "mouthPressLeft": 0.45, "mouthRollLower": 0.3,
+        "mouthShrugLower": 0.3, "cheekSquintRight": 0.25,
     },
-    "scared": {   # inner brows up and together, eyes wide, mouth stretched back
-        "browInnerUp": 0.95, "browDownLeft": 0.25, "browDownRight": 0.25,
-        "eyeWideLeft": 0.9, "eyeWideRight": 0.9, "mouthStretchLeft": 0.65, "mouthStretchRight": 0.65,
-        "jawOpen": 0.22, "mouthLowerDownLeft": 0.35, "mouthLowerDownRight": 0.35,
+    "scared": {   # v6e: fear: brows up AND pinched together, tense eyes, mouth stretched flat and wide (lips over the teeth), recoil
+        "browInnerUp": 1.0, "browDownLeft": 0.45, "browDownRight": 0.45,
+        "eyeWideLeft": 0.7, "eyeWideRight": 0.7, "eyeSquintLeft": 0.15, "eyeSquintRight": 0.15,
+        "mouthStretchLeft": 0.85, "mouthStretchRight": 0.85, "mouthPressLeft": 0.2, "mouthPressRight": 0.2,
+        "jawOpen": 0.1, "mouthClose": 0.04, "mouthLowerDownLeft": 0.2, "mouthLowerDownRight": 0.2,
+        "mouthFrownLeft": 0.3, "mouthFrownRight": 0.3,
     },
     "laughing": {
         "mouthSmileLeft": 0.95, "mouthSmileRight": 0.9, "jawOpen": 0.4, "mouthUpperUpLeft": 0.3,
@@ -81,11 +86,11 @@ EXPRESSIONS = {
         "eyeSquintLeft": 0.6, "eyeSquintRight": 0.55, "eyeBlinkLeft": 0.35, "eyeBlinkRight": 0.3,
         "browInnerUp": 0.2,
     },
-    "disgusted": {  # v4: a big one-sided sneer, upper lip curled, brows down, head pulled back
-        "noseSneerLeft": 0.95, "noseSneerRight": 0.7, "mouthUpperUpLeft": 0.85, "mouthUpperUpRight": 0.55,
-        "browDownLeft": 0.8, "browDownRight": 0.55, "eyeSquintLeft": 0.7, "eyeSquintRight": 0.45,
-        "mouthFrownLeft": 0.55, "mouthFrownRight": 0.4, "mouthLeft": 0.3, "cheekSquintLeft": 0.6,
-        "mouthShrugUpper": 0.3,
+    "disgusted": {   # v6e: an 'ew': nose wrinkled hard, upper lip lifted, chin pushed up, head drawn back and away
+        "noseSneerLeft": 1.0, "noseSneerRight": 0.85, "mouthUpperUpLeft": 1.0, "mouthUpperUpRight": 0.7,
+        "browDownLeft": 0.85, "browDownRight": 0.6, "eyeSquintLeft": 0.75, "eyeSquintRight": 0.55,
+        "mouthFrownLeft": 0.7, "mouthFrownRight": 0.55, "mouthLeft": 0.25, "cheekSquintLeft": 0.75,
+        "cheekSquintRight": 0.4, "mouthShrugLower": 0.5, "mouthShrugUpper": 0.4,
     },
     # S12a "swallowing": lips pressed and rolled in, jaw slightly forward, soft blink.
     "swallow": {   # v5: the larynx visibly rises (throatRise, max_look.add_throat_rise), lips sealed
@@ -107,13 +112,13 @@ EXPRESSIONS = {
     # alternates chew / chew_b.
     # v6c (Codex 012): bigger, sealed jaw work; cheek fullness suggested on one side with the opposite
     # squint/press (the 52 units have no one-sided cheek puff). chew_r / chew_b_r mirror them (below).
-    "chew": {
-        "jawOpen": 0.34, "mouthClose": 0.30,
-        "jawLeft": 0.42, "jawForward": 0.10,
-        "mouthLeft": 0.16, "cheekPuff": 0.82,
-        "cheekSquintRight": 0.55,
-        "mouthPressRight": 0.38, "mouthPressLeft": 0.12,
-        "mouthShrugLower": 0.16,
+    "chew": {   # v6e: a bigger jaw drop and shift (Codex 013), lips still sealed
+        "jawOpen": 0.44, "mouthClose": 0.40,
+        "jawLeft": 0.5, "jawForward": 0.10,
+        "mouthLeft": 0.2, "cheekPuff": 0.9,
+        "cheekSquintRight": 0.6,
+        "mouthPressRight": 0.4, "mouthPressLeft": 0.12,
+        "mouthShrugLower": 0.2,
     },
     "chew_b": {
         "jawOpen": 0.06, "mouthClose": 0.08,
@@ -122,11 +127,11 @@ EXPRESSIONS = {
         "mouthPressLeft": 0.30, "mouthPressRight": 0.38,
     },
     # S12b "pull the tube open": relief, a soft closed-mouth smile and relaxed eyes.
-    "relief_smile": {  # v4: a fuller smile, eyes softly closing, brows lifted
-        "browOuterUpLeft": 0.35, "browOuterUpRight": 0.35,
-        "mouthSmileLeft": 0.65, "mouthSmileRight": 0.6, "mouthDimpleLeft": 0.3, "mouthDimpleRight": 0.3,
-        "cheekSquintLeft": 0.45, "cheekSquintRight": 0.45, "eyeSquintLeft": 0.3, "eyeSquintRight": 0.3,
-        "eyeBlinkLeft": 0.15, "eyeBlinkRight": 0.15, "browInnerUp": 0.35,
+    "relief_smile": {   # v6e: an exhale of relief: eyes closing, inner brows soft up, gentle closed smile, head tipped back
+        "browInnerUp": 0.55, "browOuterUpLeft": 0.2, "browOuterUpRight": 0.2,
+        "eyeBlinkLeft": 0.65, "eyeBlinkRight": 0.65, "eyeSquintLeft": 0.2, "eyeSquintRight": 0.2,
+        "mouthSmileLeft": 0.5, "mouthSmileRight": 0.45, "mouthClose": 0.02, "mouthRollLower": 0.1,
+        "cheekSquintLeft": 0.35, "cheekSquintRight": 0.35, "cheekPuff": 0.12,
     },
     # S13 "Follow for more": big open grin to camera (the hand does the thumbs-up).
     "thumbs_up": {
@@ -140,21 +145,21 @@ EXPRESSIONS = {
 # Head and neck rotation in degrees (x = nod down, y = tilt to his left, z = turn to his left).
 HEAD_POSE = {
     "neutral": (0, 0, 0),
-    "puzzled": (-3, 8, 6),
-    "wince": (6, -6, 0),
-    "ear_pop": (5, -9, -4),
-    "surprised": (-5, 0, 0),
-    "amazed": (-7, 4, 0),
-    "curious": (-4, 8, 6),
-    "thinking": (-11, -9, -10),
-    "scared": (5, 0, 0),
+    "puzzled": (-2, 9, 9),
+    "wince": (8, -3, 0),
+    "ear_pop": (5, -9, -12),
+    "surprised": (-8, 0, 0),
+    "amazed": (3, 5, 4),
+    "curious": (4, 6, 8),
+    "thinking": (-12, -10, -8),
+    "scared": (9, -7, 0),
     "laughing": (-10, 4, 0),
-    "disgusted": (6, -10, -8),
+    "disgusted": (-5, -14, -8),
     "swallow": (10, 0, 0),       # v6b: a chin tuck, so a still reads as swallowing
     "yawn": (-14, 3, 0),
-    "chew": (3, -3, 0),
+    "chew": (4, -4, 0),
     "chew_b": (1, -2, 0),
-    "relief_smile": (-6, -5, 0),
+    "relief_smile": (-12, -4, 3),
     "thumbs_up": (-1, 5, 0),
 }
 
