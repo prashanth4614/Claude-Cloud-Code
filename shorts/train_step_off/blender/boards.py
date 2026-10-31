@@ -312,15 +312,15 @@ def b9b():
 def b9c():
     x = 5.0
     place(x, -2.7, PLAT_Z, "fwd", lean=12, legs="stride", expr="scared")
-    person(x + 0.55, -3.05, PLAT_Z)
+    person(x + 0.5, -2.36, PLAT_Z)            # beside him on the far side: never between camera and Max
     frame_max(x + 0.2, -2.8, side=-1, lens=35, offset_x=0.2)
 
 
 @board("9d", "…and the GAP is right there. (low: platform lip, dark gap with depth, coach sill, his heel)")
 def b9d():
     x = 5.0
-    place(x, -2.32, PLAT_Z, "fwd", lean=10, legs="stride", expr="scared")
-    look((x - 0.9, -2.45, PLAT_Z + 0.32), (x + 0.6, -2.0, PLAT_Z - 0.05), 24)
+    place(x, -2.30, PLAT_Z, "fwd", lean=10, legs="stride", expr="scared")
+    look((x + 1.25, -2.62, PLAT_Z + 0.42), (x + 0.05, -2.05, PLAT_Z - 0.02), 28)   # the heel, the lip, the dark gap, the coach sill
 
 
 @board("10", "So wait until the train has completely STOPPED… (the same dial framing: the needle at 0)")
