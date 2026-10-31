@@ -42,10 +42,12 @@ YouTube Shorts production pipeline. **The agreed production pipeline is `PIPELIN
 
 ## Making a new video
 
-- Use the `shorts-craft` skill (`.claude/skills/shorts-craft/`) for every new Short: story formula,
-  opening, transitions, camera, Max's acting, voice gates (`scripts/voice_check.py`), captions, our house
-  look (`shorts/look/house_grade.py`, "ink & amber") and signatures, ending, thumbnail, pre-render
-  checklist. Don't re-edit published videos to apply it.
+- Use the `shorts-craft` skill (`.claude/skills/shorts-craft/`) for every new Short, on any topic:
+  screenplay and presentation devices, the one-3D-world rule (no 2D diagram inserts), aligned
+  transitions, camera, Max, voice gates (`scripts/voice_check.py`), captions, ending, thumbnail and the
+  pre-render checklist.
+- House look: **ink & amber** (the owner's choice): art-direct scenes in it and finish with
+  `shorts/look/house_grade.py frames ink_amber`. Don't re-edit published videos to apply any of this.
 
 ## Sound
 

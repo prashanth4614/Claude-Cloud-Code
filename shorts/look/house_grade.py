@@ -6,7 +6,7 @@ bright sky-blue high-key). Used by the shorts-craft skill for every new video.
   python3 shorts/look/house_grade.py lut LOOK OUT.cube                      # a .cube LUT (Blender, Resolve, ffmpeg)
   python3 shorts/look/house_grade.py frames LOOK IN_DIR OUT_DIR             # grade rendered frames (+ grain, vignette)
 
-Looks (pick one per channel and keep it):
+Looks: ink_amber is THE house look (the owner's choice, 2026-10-31); clay_sky is kept only for reference.
 - ink_amber: "dark-mode science". Deep ink-teal shadows, warm amber highlights and skin, lifted matte
   blacks, slightly richer mids. The warm subject glows out of a cool dark world.
 - clay_sky: "warm paper". Soft cream highlights, clay-warm mids, dusty sky-blue shadows, low contrast,
