@@ -473,3 +473,24 @@ Chew only, at b9bbe04: `chew_cycle(rig, 10)`, frames 7-46, 640x640, 32 spp, Meta
 - **chew:** jaw-led with relaxed lips (no press or shrug bunching, so no "lip-pursing"), and a real
   in-between `chew_b` (jaw half up), so the cycle moves continuously.
 - `max_v6j_expressions_cpu.jpg` shows neutral, laughing, amazed, surprised, chew and chew_b.
+
+## v6j Mac review
+
+At f341804: expression sheet (128 spp, 4.4 s/tile) and chew clip (40 frames, 32 spp, 5.2 s/frame),
+Metal on the Apple M4, 320 s total.
+`max_v6j_expressions.jpg`, `max_v6j_chew.mp4` (137 KB), `max_v6j_chew_frames.jpg`.
+
+- **Neutral: mostly calm.** Relaxed mouth, level gaze. A faint hint of inner-brow lift still gives
+  him a slightly tired/concerned look at thumbnail size, much less than before. Acceptable.
+- **Laughing: yes, cheeks lift into the eyes.** The lower lids push up into a smiling squint with
+  raised cheeks and an open, toothy smile; not sleepy. It reads as a big happy grin more than a
+  belly laugh, which is fine.
+- **Amazed vs surprised: clearly different now.** amazed = delighted (brows up, bright eyes, open
+  smile with teeth); surprised = startled (very wide eyes, round O mouth, tense). No confusion
+  at phone size.
+- **Chew: jaw-led, yes, but there's a lip gap at the peaks.** The jaw clearly drops and swings
+  (frames ~13, 25, 37) and the cheek fills; it reads as chewing, not lip-pursing. **But at the
+  peaks the lips part slightly**: at full size f013 shows a small dark opening between the lips
+  (also visible at 37 and faintly at 25 on the sheet). Between peaks the lips are sealed. The
+  bigger jaw drop seems to outrun the lip-seal shape. It needs a stronger seal (or a lip press
+  corrective driven by jaw open) at the peak values.
