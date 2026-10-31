@@ -1,4 +1,4 @@
-IMAGES: assets/characters/max/review/max_v6_expressions.jpg assets/characters/max/review/max_v6_shirt_closeup.jpg
+IMAGES: assets/characters/max/review/max_v6_expressions.jpg assets/characters/max/review/max_v6_shirt.jpg
 
 # Max v6c: two patches (Claude applies and verifies; you're read-only)
 
