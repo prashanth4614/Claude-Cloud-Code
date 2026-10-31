@@ -362,8 +362,8 @@ def sheet(rig, outdir):
         thumbs_up(rig, name == "thumbs_up")
         bpy.context.view_layer.update()
         hp = head_point(rig)
-        lens, dist = (85, 1.25) if name != "thumbs_up" else (50, 1.6)
-        tgt = hp + Vector((0, 0, -0.02 if name != "thumbs_up" else -0.22))
+        lens, dist = (85, 1.25) if name != "thumbs_up" else (60, 1.3)    # thumbs-up: chest up, not full body
+        tgt = hp + Vector((0, 0, -0.02 if name != "thumbs_up" else -0.26))
         aim(cam, (tgt.x + 0.25, tgt.y - dist, tgt.z + 0.05), tgt, lens)
         render(os.path.join(outdir, f"expr_{name}.png"))
     set_expression(rig, "neutral")

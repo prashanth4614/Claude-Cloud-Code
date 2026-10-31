@@ -18,7 +18,7 @@ from mathutils import Vector
 
 # MPFB "ENHANCED_SSS" skin group inputs (the group exposes them; defaults in brackets)
 SKIN = {
-    "Pore strength": 0.38,        # [0.2] visible pores in close-ups
+    "Pore strength": 0.55,        # [0.2] visible pores in close-ups (0.38 still read waxy on the Mac sheet)
     "Pore scale": 2600.0,         # [2500]
     "SSS strength": 0.32,         # [0.2] softer, light-through skin (less waxy)
     "SSS radius scale": 0.12,     # [0.1]
@@ -27,7 +27,7 @@ SKIN = {
     "Clearcoat": 0.06,            # [0.1] a faint natural sheen (more made rim lights glare on the temples)
     "Clearcoat Roughness": 0.35,
 }
-SKIN_ROUGH = (0.36, 0.52)         # roughness varies across the face (oilier and drier patches)
+SKIN_ROUGH = (0.40, 0.60)         # roughness varies across the face (oilier and drier patches)
 
 # hair groom (max_hair.py's particle systems): fine, smooth, barely clumped strands
 HAIR = {"rendered_child_count": 150, "radius_scale": 0.00034, "tip_radius": 0.6, "clump_factor": 0.15,
@@ -135,6 +135,7 @@ def studio(scene):
         ("Fill", (2.0, -1.8, 1.5), 35, (0.70, 0.82, 1.0), 3.0),     # low cool fill
         ("Rim", (0.9, 2.6, 2.9), 140, (0.37, 0.83, 0.90), 0.8),     # cyan rim (#5FD3E6)
         ("Kicker", (-1.4, 1.8, 1.7), 55, (0.37, 0.83, 0.90), 0.6),
+        ("EyeLight", (0.25, -2.4, 1.68), 18, (1.0, 0.95, 0.9), 0.35),  # small, near the lens: a clear catchlight
     ):
         ld = bpy.data.lights.new(name, "AREA")
         ld.energy, ld.color, ld.size = energy, color, size
