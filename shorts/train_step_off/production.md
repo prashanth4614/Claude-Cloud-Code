@@ -8,8 +8,8 @@ owner approves (record the date). Changing a locked item reopens its gate.
 | G0 Idea and angle | ☑ | 2026-10-31 | see G0 below; web differentiation check pending |
 | G1 Story and facts (Codex) | ☑ | 2026-10-31 | `story.md` rev 2, `facts.md`; Codex 017 objections all applied |
 | G2 Script locked (Codex) | ☑ | 2026-10-31 | `script.md` draft 2: 112 words, ≈42 s; Codex 018 applied |
-| G3 Screenplay, shot list, transition chain, boards (Codex) | ☐ | | `shots.yaml`, boards sheet |
-| G4 Voice locked | ◐ | | `voice.py`; audition (2 × 169 chars) then one full take (668 chars) |
+| G3 Screenplay, shot list, transition chain, boards (Codex) | ◐ | | `shots.yaml` (11 shots), `boards/boards_g3_v1.jpg`; procedural set `blender/build_set.py`; Codex 019 |
+| G4 Voice locked | ☑ | 2026-10-31 | stability 0.5 full take (668 chars); pauses re-cut to ≤0.25 s (free); `voice/timings_locked.json`. Kept as is: flat-ish pitch (6 st) and "kilometres" possibly clipped (owner: keep for now) |
 | G5 Pre-frame QA (Codex) | ☐ | | QA report, waivers |
 | G6 Key-frame test (Claude + Codex) | ☐ | | sheets, must-fix list |
 | G7 Animatic + review .blend: picture lock | ☐ | | `out/train_step_off/train_step_off_review.blend` |
@@ -35,6 +35,8 @@ owner approves (record the date). Changing a locked item reopens its gate.
 - **Telugu version:** not now.
 
 ## Decisions log
+
+- 2026-10-31 Voice take kept as is. Order: frames and animatic first; audio and SFX after picture lock (owner)
 
 - 2026-10-31 Voice audition: stability 0.5 chosen (owner); full take next
 

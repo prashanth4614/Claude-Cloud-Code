@@ -1,0 +1,194 @@
+# Why you fall stepping off a slow train: shot list (G3 draft 1)
+# Times are anchored to the locked voice (voice/timings_locked.json): `line` is the script line
+# (1-8), `from`/`to` are the words a shot starts and ends on. The build converts them to frames, so
+# re-cut pauses never break the sync.
+# World: ONE 3D world, a Mumbai suburban station at golden hour, graded ink & amber (house look).
+# Colour code:
+# - amber = motion and inertia (the ghost, the momentum arrow);
+# - teal-cyan = grip and friction (the shoe arrow);
+# - warning red only on the gap edge in shot 9.
+# Labels: ≤3, attached in 3D ("TRAIN SPEED" by the ghost in shot 4; "GRIP" at the shoe in shot 4).
+# Safe zone: nothing important in the bottom 22% (captions + Shorts UI).
+
+fps: 24
+format: 1080x1920
+
+shots:
+  - id: 1
+    beat: hook
+    line: 1
+    from: "Getting"
+    to: "easy"
+    world: aerial over the tracks and high-rises → the station
+    camera: >
+      Drone dive, under 1.2 s: starts high behind the arriving local, drops along the coach roof and
+      swoops down to the open doorway; ends in a tight 3/4 on Max's shoe at the door edge, the platform
+      streaming past below (motion blur on the platform only).
+    max: neutral, hand on the door pole, weight on the back foot
+    must_understand: a man is about to step off a moving train
+    transition_out: "the shoe hovers; hard cut on 'Physics' to its reverse angle (match on the shoe position)"
+
+  - id: 2
+    beat: hook
+    line: 1
+    from: "Physics"
+    to: "disagrees"
+    world: the doorway, platform level
+    camera: Low platform-level reverse angle; Max framed in the doorway sliding past left to right
+    max: curious, eyeing the platform
+    must_understand: the train is still moving past the platform
+    transition_out: "a whip pan right (with the train's direction) into the cab"
+
+  - id: 3
+    beat: stakes
+    line: 2
+    from: "At"
+    to: "pace"
+    world: the motorman's cab → back to the door
+    camera: >
+      Whip into an extreme close-up of the analogue speedometer (white dial, black needle, blue
+      console): the needle slides 20 → 15 → lands on 10 on "ten". Then a whip back (the same direction)
+      to Max at the door as he shifts his weight, on "crawl". A slow push-in on his face for "more than
+      twice a comfortable walking pace".
+    max: curious → a small confident smirk ("it's just a crawl")
+    must_understand: 10 km/h looks slow but isn't
+    transition_out: "match on action: Max's foot leaves the step → shot 4 picks it up mid-step"
+
+  - id: 4
+    beat: cause
+    line: 3
+    from: "That's"
+    to: "moving"
+    world: platform edge, slow motion (speed ramp only inside the cut)
+    camera: >
+      Side-on, at hip height, tracking with the train at first. The shoe plants: scuffs, a teal GRIP
+      arrow pointing back at the shoe. The camera STOPS with the platform: the amber ghost of Max glides
+      on out of frame at train speed (label "TRAIN SPEED"). The centre-of-mass dot and amber arrow
+      appear at his chest. The curved tipping arrow starts around the ankle on "keeps moving".
+    max: surprise starting on his face
+    must_understand: the foot slows, the body keeps going; the physics kit is introduced
+    transition_out: "rewind snap (reverse motion blur): everything runs back up into the doorway"
+
+  - id: 5
+    beat: facing back
+    line: 4
+    from: "So"
+    to: "see"
+    world: platform edge, slow motion
+    camera: >
+      Max steps off facing BACKWARD (his back toward the direction of travel). The chest arrow points
+      behind him; the curved arrow tips him backward. On "can't see": a freeze + a 90° orbit around to
+      his face, his eyes looking the wrong way, the ghost gliding away behind him. Freeze before any
+      impact.
+    max: scared
+    must_understand: facing back, you tip the way you can't see
+    transition_out: "rewind snap"
+
+  - id: 6
+    beat: sideways
+    line: 5
+    from: "Facing"
+    to: "balance"
+    world: platform edge, slow motion
+    camera: >
+      Front-on, Max stepping out sideways, his feet side by side. The chest arrow points across his
+      body along the platform; the curved arrow tips him sideways. Freeze on "balance" mid-stumble.
+    max: wince
+    must_understand: sideways, no step can catch it
+    transition_out: "rewind snap"
+
+  - id: 7
+    beat: payoff
+    line: 6
+    from: "Facing"
+    to: "slowdown"
+    world: platform, slow motion → near-real speed
+    camera: >
+      Tracking alongside: Max steps off facing forward and takes 3-4 quick steps. Each footfall pulses
+      a new pivot and the chest arrow shrinks a step at a time.
+    max: concentrated
+    must_understand: steps spread the slowdown
+    transition_out: "continuous (same shot into 8)"
+
+  - id: 8
+    beat: payoff limit
+    line: 6
+    from: "but"
+    to: "balance"
+    world: the same moment
+    camera: >
+      The camera eases in. He wobbles: the arrow is still not zero, his arms flail; a beat (≤0.4 s)
+      before "balance".
+    max: scared (an "uh-oh" flash)
+    must_understand: it's still not safe
+    transition_out: "match cut on his next footfall → shot 9"
+
+  - id: 9
+    beat: twist
+    line: 7
+    from: "One"
+    to: "there"
+    world: the platform edge and the gap between coach and platform
+    camera: >
+      Three ultra-quick inserts on the beats: "One wet patch" (the shoe lands in a puddle and the teal
+      grip arrow VANISHES), "one bag" (his backpack strap snags the door pole), "one crowded step" (a
+      commuter's shoulder clips him). Then a low angle on the gap: his heel slides toward it; the edge
+      glows warning red. Freeze on "there".
+    max: scared
+    must_understand: anything can tip the balance, and the gap is right there
+    transition_out: "long rewind: the whole film runs back to the doorway (fast, reverse blur)"
+
+  - id: 10
+    beat: takeaway
+    line: 8
+    from: "So"
+    to: "stopped"
+    world: cab dial → the doorway
+    camera: >
+      An insert: the needle settles on 0 (on "completely"). Then the doorway, framed exactly like shot
+      1's end (a 3/4 on Max's shoe). The train is stopped; the amber arrow and ghost shrink to nothing;
+      Max steps down calmly onto the platform.
+    max: relief_smile, a nod to camera
+    must_understand: wait for zero
+    transition_out: "on 'even if…' cut to shot 1's first frame (the loop): the framing matches"
+
+  - id: 11
+    beat: loop tail
+    line: 8
+    from: "even"
+    to: "if"
+    world: the doorway (stopped train)
+    camera: >
+      Hold Max's calm step and look; his reaction lands within 0.5 s of the last word. The last frame
+      matches shot 1's opening so the loop is seamless.
+    max: thumbs_up-lite (a small nod), no big gesture
+    must_understand: the warning survives the loop into "getting off a slow train looks easy"
+
+transition_chain: >
+  1 drone dive → [match: shoe] 2 reverse angle → [whip with travel] 3 dial → [whip] door push-in →
+  [match on action: foot leaves the step] 4 slow-mo ghost → [rewind] 5 facing back → [rewind] 6 sideways →
+  [rewind] 7 forward steps → [continuous] 8 wobble → [match: footfall] 9 inserts + gap → [long rewind]
+  10 dial 0 + calm step → 11 hold → [loop match] 1
+
+assets:
+  - name: Mumbai EMU coach (exterior, open doorway, door pole, barred windows; interior just inside the door)
+    source: built in Blender (procedural), Mumbai references in research.md
+    licence: own
+  - name: station platform (concrete slab, yellow edge line, gap, track bed, canopy and pillars, footbridge in the distance)
+    source: built in Blender; Poly Haven CC0 concrete/metal textures
+    licence: own + CC0
+  - name: cab console + analogue speedometer (only what the close-up sees)
+    source: built in Blender
+    licence: own
+  - name: Mumbai skyline and aerial ground (drone shot)
+    source: built in Blender (instanced blocks + haze); Poly Haven CC0 HDRI for the sky
+    licence: own + CC0
+  - name: crowd extras (2-6)
+    source: MPFB2 variants of Max's base (other faces, clothes), as Codex 016 recommends
+    licence: CC0 (MPFB assets)
+  - name: Max
+    source: assets/characters/max/max_v6.blend
+    licence: own
+  - name: physics kit (centre-of-mass dot, amber arrow, teal grip arrow, curved tipping arrow, ghost material)
+    source: built in Blender
+    licence: own
