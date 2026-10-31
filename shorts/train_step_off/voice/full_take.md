@@ -71,3 +71,60 @@ All other words match the script. The captions in `timings_stab0.5.json` come fr
 they're right whatever Whisper heard.
 
 These notes come from measurements and a Whisper transcript, not from listening.
+
+## Locked take (MAX_PAUSE 0.25): ON HOLD, the cut clips "Physics"
+
+`MAX_PAUSE=0.25 python3 shorts/train_step_off/voice.py full 0.5` came entirely from the cache. The run
+was made with the network blocked, so no ElevenLabs credits were used, and the cache still holds one
+file. The result is **40.04 s**, with these per-line durations:
+3.49, 6.03, 6.08, 4.27, 5.15, 6.13, 5.04, 3.85 s.
+
+**Not committed as `locked_take.mp3`:** the tighter cut removes the start of "Physics". Whisper hears
+"Getting off a slow train looks easy. **Six** disagrees."
+
+- **Cause:** the word alignment puts "Physics" at 3.38 s in the raw take. In the audio, the "Ph" sound
+  starts at about 3.10 s and the vowel at about 3.19 s; "easy." ends at about 2.69 s.
+- `compress_pauses` therefore treats 2.69-3.38 s as a gap. At 0.25 it removes the middle 0.44 s
+  (2.82-3.26 s), which takes out "Ph" and the start of the vowel.
+- At 0.4 (the 41.74 s take above), the cut was 2.89-3.18 s. That clips only the edge of the "Ph", and
+  Whisper still hears "Physics" (0.97).
+- The caption timing for "Physics" in both timings files (2.56-2.61 s here) also comes from that
+  misplaced start, so the word's caption would appear late.
+
+**Local experiment (no repo code changed):** a cut that only removes frames under 0.01 RMS inside each
+gap keeps "Physics" whole; Whisper also hears "kilometers". But the take then shortens only to 46.05 s,
+because most gaps hold breath noise above that level. A fix needs a decision: either a silence-aware cut
+with a tuned threshold in `engine.compress_pauses`, or a fixed start for "Physics", or keeping
+MAX_PAUSE 0.4.
+
+voice_check on the 40.04 s cut (`--runtime 41`), for the record:
+
+```
+transcript: Getting off a slow train looks easy. Six disagrees. At 10 km an hour, it looks like a crawl, but that's more than twice a comfortable walking pace. That's because when your shoe grips, your foot slows sharply while your upper body keeps moving. So facing backward, you can tip backward the way you can't see. Facing sideways, you're still moving along the platform which can throw you off balance. Facing forward, a few quick steps can spread out the slow down, but you can still lose your balance. One wet patch, one bag, one crowded step and the gap is right there. So wait until the train has completely stopped even if
+
+[WARN] pace 191 wpm while speaking (target (165, 185))
+[WARN] voice covers 87% of 41.0 s (>= 90%)
+[WARN] gaps 0.36, 0.26, 0.16, 0.22, 0.22, 0.26, 0.32, 0.28, 0.26, 0.20, 0.28, 0.20, 0.20, 0.38, 0.20, 0.32, 0.30 s (<= 0.25 s, one payoff beat allowed)
+[WARN] pitch span 6.1 st over word medians (>= 8.0)
+
+phrase                                         span   stress jump
+[WARN] Getting off a slow train looks easy.           4.1 st  Getting +3.7 st
+[WARN] At 10 km an hour,                              5.3 st  10 +3.6 st
+[WARN] it looks like a crawl,                         2.8 st  looks +0.6 st
+[WARN] but that's more than twice a comfortable wal   2.0 st  more +1.7 st
+[WARN] That's because when your shoe grips,           5.7 st  grips, +1.1 st
+[WARN] your foot slows sharply while your upper bod   3.0 st  upper +1.8 st
+[WARN] So facing backward,                            3.0 st  backward, +1.0 st
+[WARN] you can tip backward the way you can't see.    1.5 st  tip -0.1 st
+[WARN] Facing sideways,                               0.0 st  sideways, +0.0 st
+[WARN] you're still moving along the platform which   5.3 st  still +5.7 st
+[WARN] Facing forward,                                0.4 st  forward, +0.2 st
+[PASS] a few quick steps can spread out the slow do   6.2 st  quick +6.4 st
+[WARN] but you can still lose your balance.           3.9 st  still +3.4 st
+[WARN] One wet patch,                                 1.8 st  One +0.4 st
+[WARN] one bag,                                       0.4 st  bag, -0.2 st
+[WARN] one crowded step and the gap is right there.   2.6 st  gap +1.6 st
+[WARN] So wait until the train has completely stopp   3.5 st  wait +2.5 st
+
+[PASS] ASR hears the hook "getting off a slow train looks easy" unprompted
+```
