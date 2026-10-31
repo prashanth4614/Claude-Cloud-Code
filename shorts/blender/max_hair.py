@@ -367,8 +367,25 @@ def follow_face(body, ob, used, min_move=0.0001):
     return [m[0] for m in moved]
 
 
+def copy_skin_weights(rig, body, ob, used):
+    """Give `ob` (built from body vertices `used`, in that order) the body's own bone weights, so it bends
+    exactly like the skin under it. v6c: a rigid head=1.0 weight let the hair lift off the forehead when the
+    neck bent (swallow pose): the forehead skin also follows neck01-03 and the oculi bones."""
+    bones = {b.name for b in rig.data.bones}
+    names = {g.index: g.name for g in body.vertex_groups if g.name in bones}
+    groups = {}
+    for i, v in enumerate(used):
+        for g in body.data.vertices[v].groups:
+            if g.group in names and g.weight > 0:
+                n = names[g.group]
+                if n not in groups:
+                    groups[n] = ob.vertex_groups.new(name=n)
+                groups[n].add([i], g.weight, "REPLACE")
+    return sorted(groups)
+
+
 def build_scalp_cap(rig, body, co, polys, weights):
-    """Dark scalp-toned cap 0.2 mm over the scalp, skinned to the head bone (no bright skin between strands).
+    """Dark scalp-toned cap 0.2 mm over the scalp, skinned like the body under it (no bright skin between strands).
     v5 (Codex 010): it sat 1.5 mm out and read as a dark shell rim behind the ear; now it's closer, inset
     further from the hairline, and closer to a scalp colour."""
     keep = {i for i, w in weights.items() if w > 0.85}    # inset from the hairline: its edge never shows
@@ -386,8 +403,7 @@ def build_scalp_cap(rig, body, co, polys, weights):
     for c in body.users_collection:
         c.objects.link(ob)
     ob.parent = rig
-    vg = ob.vertex_groups.new(name="head")
-    vg.add(list(range(len(me.vertices))), 1.0, "REPLACE")
+    copy_skin_weights(rig, body, ob, used)      # the body's own weights (a rigid head bone lifted off)
     arm = ob.modifiers.new("Armature", "ARMATURE")
     arm.object = rig
     follow_face(body, ob, used)                # the cap moves with the brows (else it showed at the hairline)

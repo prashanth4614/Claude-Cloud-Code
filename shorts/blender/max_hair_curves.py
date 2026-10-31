@@ -96,9 +96,18 @@ def _groom_tree(groups, surface):
     return nt
 
 
+UV_CENTRE_DROP = 0.04   # the fisheye centre: this far below the scalp vertices' centroid (inside the skull)
+
+
+def _uv_area(uv, face):
+    """Signed UV area of a face (shoelace); <= 0 means it's flipped or collapsed in UV space."""
+    pts = [uv.data[i].uv for i in face.loop_indices]
+    return sum(a.x * b.y - b.x * a.y for a, b in zip(pts, pts[1:] + pts[:1])) / 2
+
+
 def hair_surface(rig, body):
     """An invisible scalp mesh for the hair to attach to: the body's whole hair_scalp region (with the face
-    shape applied), skinned to the head bone. The body itself can't be used: its mask and subdivision
+    shape applied), skinned with the body's own bone weights. The body itself can't be used: its mask and subdivision
     modifiers change its topology, which breaks Deform Curves on Surface."""
     import math
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -116,18 +125,26 @@ def hair_surface(rig, body):
     me = bpy.data.meshes.new("Max.hair_surface")
     me.from_pydata([Vector(co[v]) for v in used], [], [[remap[v] for v in f] for f in faces])
     me.update()
-    ctr = sum((v.co for v in me.vertices), Vector()) / len(me.vertices)
+    # UVs: an azimuthal (fisheye) projection seen from the middle of the skull, with no seam. v6c: the old
+    # spherical one wrapped at the back of the head and swirled at the crown; faces across the wrap
+    # overlapped others in UV space, so Deform Curves on Surface attached some forehead roots to the back of
+    # the head, and the hair lifted off the forehead when the head bent (swallow pose).
+    ctr = sum((v.co for v in me.vertices), Vector()) / len(me.vertices) - Vector((0, 0, UV_CENTRE_DROP))
     uv = me.uv_layers.new(name="UVMap")
-    for loop in me.loops:                                     # a simple spherical projection (a cap: no overlaps)
-        d = me.vertices[loop.vertex_index].co - ctr
-        uv.data[loop.index].uv = (math.atan2(d.x, -d.y) / (2 * math.pi) + 0.5, 0.5 + d.z * 4)
+    for loop in me.loops:
+        d = (me.vertices[loop.vertex_index].co - ctr).normalized()
+        polar, azimuth = math.acos(max(-1.0, min(1.0, d.z))), math.atan2(d.y, d.x)
+        r = polar / (2 * math.pi)
+        uv.data[loop.index].uv = (0.5 + r * math.cos(azimuth), 0.5 + r * math.sin(azimuth))
+    flipped = sum(1 for f in me.polygons if _uv_area(uv, f) <= 0)
+    print(f"[hair surface] UV faces: {len(me.polygons)}, flipped or degenerate: {flipped}")
     ob = bpy.data.objects.new("Max.hair_surface", me)
     moved = max_hair.follow_face(body, ob, used)   # the roots move with the brows and forehead
     print(f"[hair surface] {len(moved)} face shapes follow the body: {moved}")
     for c in body.users_collection:
         c.objects.link(ob)
     ob.parent = rig
-    ob.vertex_groups.new(name="head").add(list(range(len(me.vertices))), 1.0, "REPLACE")
+    print(f"[hair surface] skinned like the body: {max_hair.copy_skin_weights(rig, body, ob, used)}")
     ob.modifiers.new("Armature", "ARMATURE").object = rig
     ob.hide_render = True
     ob.display_type = "WIRE"

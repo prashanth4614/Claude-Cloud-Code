@@ -106,3 +106,20 @@ The shirt shot is pulled back (2.45 m, aim 16 cm higher) so the raised hand is f
 
 ### Otherwise
 - No new tearing at eyelids, mouth or shoulders; no stray strands or fireflies.
+
+## v6c (cloud fix for the v6b "hair lifts in the swallow pose" bug)
+
+Root cause: two faults in `max_hair_curves.hair_surface()`. The second is the one that showed.
+1. **UV overlap (the visible bug).** The attachment surface had a spherical UV that wrapped at the back
+   of the head and swirled at the crown. The faces across the wrap overlapped the rest of the map, so
+   Deform Curves on Surface attached some roots to the wrong (back-of-head) triangles. Rest pose looked
+   fine, but any head bend moved those roots wrongly. Measured on 2000 sampled roots, 10° chin tuck:
+   median 7.7 mm and p95 18 mm off the scalp. Fix: a seamless azimuthal (fisheye) projection from inside
+   the skull (432 faces, 0 flipped). The roots now stay at a median of 0.06 mm and p95 of 0.4 mm in every
+   pose tested: tuck 10°, lift −12°, 28°, 8°+20°, 15°.
+2. **Rigid skinning.** The surface (and scalp cap) were 100% on the `head` bone, while the forehead skin
+   also follows neck01-03 and the oculi bones (up to 8 mm apart in a pose). They now copy the body's
+   own bone weights (`max_hair.copy_skin_weights`).
+
+Cloud CPU check (24 spp): `max_v6c_hairfix_cpu.jpg`, showing neutral, swallow and a 28° tilt. No bald
+band. A full-quality Mac sheet should confirm.
