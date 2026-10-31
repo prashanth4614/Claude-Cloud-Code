@@ -25,6 +25,17 @@ YouTube Shorts production pipeline. **The agreed production pipeline is `PIPELIN
   character sheet as `shorts/ai/<video>/<name>_sheet.png`. Then assemble with
   `shorts/ear_pop_ai.py`, or that video's equivalent assembler.
 
+## AI image-to-3D (Meshy): trial allowed
+
+- The owner allowed (2026-10-31) a trial of **Meshy image/text-to-3D** for 3D assets, when it saves
+  time and the models are good. It's a 3D tool, not image or video generation, so the pause above
+  doesn't apply to it. Any other AI 3D tool still needs the owner's OK.
+- Use a paid plan for anything that ships (free-plan outputs are CC BY 4.0 and public). Credits are
+  spent only within the budget the owner sets. Record each model's source, plan and licence in
+  `assets/LICENSES.md`.
+- Hero contact geometry (the platform edge and gap, the coach doorway where Max stands, the speedometer
+  dial) is still built in Blender; AI models must pass a review render before they're used.
+
 ## Codex helper (code review only)
 
 - The user allowed (2026-10-30) a Codex second opinion through the **Codex CLI on their Mac**
