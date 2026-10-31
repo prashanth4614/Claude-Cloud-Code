@@ -41,3 +41,39 @@ Source: `max_v4.blend` + `max_look.py --sheet` (Blender 5.2.3 LTS), Cycles 48 sa
 ## Turnaround
 - A-pose reads cleanly; clothes and shoes fine. Tile order is front / side / three quarter
   (alphabetical glob).
+
+## v4b (neat hair)
+
+Re-render of the rebuilt `max_v4.blend` (8736cc3): same Metal wrapper, **64 samples**, plus
+`max_v4_hair_closeup.jpg` (900x900, 3/4 front at 35°, 85 mm, 0.95 m from the head, neutral).
+- GPU: Apple M4 (GPU - 10 cores), METAL. Turnarounds 6.9-8.9 s, expressions 6.5-8.3 s (avg ~6.8 s),
+  close-up 9.8 s. Whole run 146 s.
+
+### Hair: much better, not done yet
+- No more scales, spikes or lopsided pile. At phone size it reads as a short, neat, tidy cut.
+  Volume is balanced left/right, and the sides are short and close to the skull.
+- Close-up issues:
+  - The fringe edge is a hard, jagged line straight across the forehead (a "helmet" edge),
+    not a soft hairline. It needs a thinner, sparser edge or shorter tips feathering into skin.
+  - Strands read as painted strokes / flat cards rather than individual strands, especially on top.
+    They have no sheen variation.
+  - Behind the ear the hair ends in a dark shell edge with a small notch and a bluish, shiny patch.
+    It looks like a cap rim, not a taper.
+  - The side part isn't visible from 3/4 front. It reads as combed forward / a crop.
+- Skin showing through: no bald gaps at the temples now. The back/sides (side turnaround) look like
+  a clean undercut. That's fine if intended.
+
+### Expressions (phone size)
+- Clearly better: curious (raised brow + half-smile), puzzled (asymmetric brow/mouth),
+  thinking (head tilt, eyes up), relief smile (soft eyes + smile), disgusted (lowered brow,
+  raised lip). All distinct now.
+- Still alike: neutral / chew / swallow. Chew and swallow need a visible jaw or throat cue.
+- thumbs up: chest-up now and the thumb reads. The hand is close to the left frame edge;
+  frame slightly tighter / more centred.
+- Teeth: still sparse/gappy lower teeth in surprised, scared and yawn.
+- Tearing: none seen at eyelids or mouth corners.
+
+### Eyes and skin
+- Catchlights: clear and bright in both eyes now; the eyes read wet and alive.
+- Skin: pores and stubble visible in the close-up; much less waxy. The forehead is still a little
+  smooth and shiny. No cyan rim glare.
