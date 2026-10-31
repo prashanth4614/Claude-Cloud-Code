@@ -238,3 +238,54 @@ Codex 013 top 3: hair attachment at the temples, armpit folds, expression separa
   - chew has a bigger jaw drop and shift.
 
   `max_v6e_expressions_cpu.jpg` is from before the last curious, surprised and amazed tweak.
+
+## v6e Mac review
+
+Render of `max_v6.blend` at f50a157: same Metal wrapper (Apple M4 GPU, 10 cores), 128 spp (chew 32 spp).
+- `max_v6e_expressions.jpg` (16 tiles).
+- `max_v6e_hair_poses.jpg`: the 4 v6c poses plus a 5th, neutral side/temple view
+  (head_point + 0.05 z + (-0.45,-0.40,0.06), 85 mm).
+- `max_v6e_shirt.jpg`: the same chest and armpit tiles as v6d.
+- `max_v6e_chew.mp4`: 40 frames, 24 fps, 640x640, 130 KB.
+- `max_v6e_chew_frames.jpg`: every 3rd frame, 7-46.
+- Times: expression tiles 3.7-4.3 s; hair poses 7.2-9.3 s, side view 14.0 s; shirt 11.0 / 13.2 s;
+  chew 5.0 s/frame. Total 384 s. Peak footprint 7.2 GB, max RSS 3.4 GB.
+
+### Temples / sideburns
+- **Better:** the temples and sides are now covered down to a sideburn in front of the ear, so the
+  bare high-fade look is gone. From the front tiles he reads as having a normal, full, short haircut.
+  All 4 head poses still pass: no band, fringe attached, no strands through skin.
+- **Still off:**
+  - In the side/temple view the parting is a wide pale patch. Scalp shows through in a fan-shaped
+    whorl at the front-left of the part. A narrower part line, or denser hair either side of it,
+    would fix it.
+  - The same pale part shows as a light streak on his right side in most front tiles; acceptable
+    at phone size.
+  - The top looks a little flat / helmet-like now that the sides are fuller.
+
+### Seam and folds
+- **Seam line:** visible as a thin dark sewn line around the armhole, down from the shoulder. Reads
+  as a real seam.
+- **Folds:** soft pull folds now fan out from the armpit toward the chest. Natural, not lumpy, but
+  still low-contrast at chest distance.
+- **New artefact:** in the armpit close-up, a small **square, blocky darker patch** sits just below
+  the seam in the hollow (looks like a texture/normal tile edge or a shape-key crease), plus a
+  faint vertical line inside it. Only visible close up, but it's geometric, not cloth-like.
+- The small dark notch under the raised sleeve hem is still there.
+- Chest: calmer, smooth; no clipping of the tee into the body.
+
+### Expressions at thumbnail size
+- Clear and distinct: amazed, surprised (big O), disgusted (head turn + sneer, much stronger),
+  ear pop, laughing, wince (both eyes squeezed), relief smile (eyes closed + smile), yawn, thinking.
+- chew: now clearly chewing (jaw shifted, cheek full), different from neutral.
+- swallow: pressed lips and lowered lids. Distinct from neutral, though still subtle.
+- curious / puzzled: distinct from each other (raised brow + half-smile vs asymmetric brow and
+  mouth twist).
+- scared: now reads more **worried/sad** than scared (eyes not widened, brows up in the middle).
+  Wider eyes and a pulled-back mouth would read as scared.
+- thumbs up: unchanged, fine.
+
+### Chew in motion and lip gap
+- Reads as chewing now: clear peaks at frames ~13, 25 and 37 (jaw down and to one side, cheek
+  bulge), alternating sides, eased back to neutral between chews. Much stronger than v6d.
+- **Lip gap:** none; the lips stay sealed in all 14 frames on the sheet.
