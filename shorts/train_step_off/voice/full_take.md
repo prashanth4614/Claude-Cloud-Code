@@ -72,7 +72,19 @@ they're right whatever Whisper heard.
 
 These notes come from measurements and a Whisper transcript, not from listening.
 
-## Locked take (MAX_PAUSE 0.25): ON HOLD, the cut clips "Physics"
+## Locked take: MAX_PAUSE 0.4 (41.74 s)
+
+**The 0.4 take is locked** (coordinator's decision, 2026-10-31: it's the version the owner heard, and
+"Physics" is intact). It was regenerated from the cache with no credits.
+
+- `locked_take.mp3` is a 128k copy of that run's `take.wav`, 41.74 s.
+- `timings_locked.json` is that run's `timings.json`, identical to `timings_stab0.5.json`.
+- Per-line durations and the voice_check output are in the sections above.
+
+Pause polish waits for the sound stage, after picture lock. The analysis below is kept for that stage;
+note the late caption start for "Physics".
+
+### Rejected: MAX_PAUSE 0.25, the cut clips "Physics"
 
 `MAX_PAUSE=0.25 python3 shorts/train_step_off/voice.py full 0.5` came entirely from the cache. The run
 was made with the network blocked, so no ElevenLabs credits were used, and the cache still holds one
