@@ -2,7 +2,10 @@
 
 - `max_reference.png`: the look we match (teal tee, dark jeans, white sneakers, messy dark-brown hair,
   light stubble, big brown eyes, stylized-realistic).
-- `max_v5.blend` (current): the rigged 3D Max with real strand hair (~150k hair curves), everything packed, Blender 5.2+.
+- `max_v6.blend` (current): v5 + Codex 011a's wet tear line and pink caruncles (`max_look.add_eye_wetness`), both teeth
+  rows showing, sealed-lip chewing and a rising larynx for swallowing (`throatRise`, `build_max.chew_cycle` /
+  `swallow_motion`).
+- `max_v5.blend`: the rigged 3D Max with real strand hair (~150k hair curves), everything packed, Blender 5.2+.
   v5 = v4 + `shorts/blender/max_hair_curves.py` (the combed guides become hair curves groomed with Blender's bundled hair
   nodes, attached to an invisible scalp surface that follows the head and the brows) + anatomical skin zones (oily T-zone,
   lips, natural redness), Codex 010's light rig and groom fixes.

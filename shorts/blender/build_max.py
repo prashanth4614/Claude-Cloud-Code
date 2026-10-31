@@ -21,7 +21,7 @@ from mathutils import Euler, Vector
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, HERE)
-from max_expressions import EXPRESSIONS, FACE_UNITS, HEAD_POSE, SHEET_ORDER  # noqa: E402
+from max_expressions import EXPRESSIONS, EXTRA_UNITS, FACE_UNITS, HEAD_POSE, SHEET_ORDER  # noqa: E402
 
 OUTFIT_TEX = os.path.join(ROOT, "assets/characters/max/textures/max_outfit_diffuse.png")
 HAIR_COLOR = (0.035, 0.022, 0.014)      # dark brown (linear)
@@ -197,7 +197,7 @@ def restyle(rig):
 def _unit(name):
     """ARKit face-unit name of a shape key (MPFB names them bare, or "!ex-" on older versions)."""
     bare = name.split("ex-", 1)[1] if name.startswith(("!ex-", "ex-")) else name
-    return bare if bare in FACE_UNITS else None
+    return bare if bare in FACE_UNITS or bare in EXTRA_UNITS else None
 
 
 def face_meshes(rig):
@@ -216,6 +216,21 @@ def set_expression(rig, name, frame=None, weight=1.0):
             if frame is not None:
                 kb.keyframe_insert("value", frame=frame)
     pose_head(rig, HEAD_POSE.get(name, (0, 0, 0)), frame, weight)
+
+
+def chew_cycle(rig, start, chews=3, period=8):
+    """Key a chewing cycle: the jaw works under sealed lips (chew -> chew_b), `chews` times, every `period` frames."""
+    for i in range(chews):
+        set_expression(rig, "chew", start + i * period)
+        set_expression(rig, "chew_b", start + i * period + period // 2)
+
+
+def swallow_motion(rig, start):
+    """Key one swallow: lips seal and the larynx rises (frames start+4..+8), then everything settles back."""
+    set_expression(rig, "neutral", start)
+    set_expression(rig, "swallow", start + 5)
+    set_expression(rig, "swallow", start + 8)
+    set_expression(rig, "neutral", start + 15)
 
 
 def pose_head(rig, deg, frame=None, weight=1.0):

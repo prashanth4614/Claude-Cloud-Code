@@ -17,6 +17,7 @@ FACE_UNITS = {
     "mouthSmileRight", "mouthStretchLeft", "mouthStretchRight", "mouthUpperUpLeft", "mouthUpperUpRight",
     "noseSneerLeft", "noseSneerRight", "tongueOut",
 }  # the 52 ARKit face units (MPFB faceunits01 pack)
+EXTRA_UNITS = {"throatRise"}   # our own shape keys on Max.body, built by max_look.py (the larynx for swallowing)
 
 # Face units not listed are 0. Keep weights below ~0.9 so the mesh never tears or looks rubbery.
 EXPRESSIONS = {
@@ -87,10 +88,10 @@ EXPRESSIONS = {
         "mouthShrugUpper": 0.3,
     },
     # S12a "swallowing": lips pressed and rolled in, jaw slightly forward, soft blink.
-    "swallow": {
+    "swallow": {   # v5: the larynx visibly rises (throatRise, max_look.add_throat_rise), lips sealed
         "mouthRollLower": 0.45, "mouthRollUpper": 0.3, "mouthPressLeft": 0.5, "mouthPressRight": 0.5,
         "mouthClose": 0.2, "jawForward": 0.15, "eyeBlinkLeft": 0.3, "eyeBlinkRight": 0.3,
-        "browInnerUp": 0.2,
+        "browInnerUp": 0.2, "throatRise": 1.0,
     },
     # S12b "yawning": jaw fully open, eyes squeezed nearly shut, brows lifted, nose crinkled.
     "yawn": {
@@ -101,13 +102,16 @@ EXPRESSIONS = {
         "cheekSquintRight": 0.3,
     },
     # S12b "chewing gum": one chew pose; animate_face alternates it with chew_b on a 9-frame cycle.
+    # Chewing (v5, Codex 011 finding): the jaw opens but the lips stay sealed: mouthClose follows jawOpen at
+    # ~0.7, so the jaw moves under closed lips; the cheeks fill as the bolus moves. build_max.chew_cycle()
+    # alternates chew / chew_b.
     "chew": {
-        "jawOpen": 0.22, "jawLeft": 0.12, "mouthLeft": 0.2, "mouthPucker": 0.15, "cheekPuff": 0.12,
-        "mouthRollLower": 0.1,
+        "jawOpen": 0.2, "mouthClose": 0.14, "jawLeft": 0.12, "mouthLeft": 0.2, "mouthPucker": 0.1,
+        "cheekPuff": 0.3, "mouthRollLower": 0.1,
     },
     "chew_b": {
-        "jawOpen": 0.04, "jawRight": 0.08, "mouthRight": 0.1, "mouthPressLeft": 0.3,
-        "mouthPressRight": 0.3, "cheekPuff": 0.1,
+        "jawOpen": 0.04, "mouthClose": 0.03, "jawRight": 0.08, "mouthRight": 0.1, "mouthPressLeft": 0.3,
+        "mouthPressRight": 0.3, "cheekPuff": 0.15,
     },
     # S12b "pull the tube open": relief, a soft closed-mouth smile and relaxed eyes.
     "relief_smile": {  # v4: a fuller smile, eyes softly closing, brows lifted

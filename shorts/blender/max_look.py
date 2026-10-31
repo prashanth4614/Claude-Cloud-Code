@@ -202,6 +202,33 @@ def upgrade_teeth_geometry(teeth):
     return len(upper)
 
 
+def add_throat_rise(rig, body):
+    """A "throatRise" shape key on the body: the larynx (front of the neck, found from the neck-bone weights
+    and the front-most skin, per Codex 011: not the bone midpoint, which lands on the nape) rises ~4 mm
+    and pushes ~1 mm forward, with a soft 2 cm falloff (the neck mesh is coarse). Used by the swallow expression."""
+    import numpy as np
+    keys = body.data.shape_keys.key_blocks
+    if "throatRise" in keys:
+        return 0
+    names = {g.index: g.name for g in body.vertex_groups}
+    neck = {i for i, n in names.items() if n in ("neck01", "neck02", "neck03")}
+    basis = keys[0]
+    co = np.array([tuple(basis.data[i].co) for i in range(len(basis.data))])
+    w = np.array([sum(g.weight for g in v.groups if g.group in neck) for v in body.data.vertices])
+    front = (w > 0.3) & (np.abs(co[:, 0]) < 0.03)
+    if not front.any():
+        return 0
+    band = front & (co[:, 2] > np.percentile(co[front, 2], 35)) & (co[:, 2] < np.percentile(co[front, 2], 75))
+    centre = co[band][np.argmin(co[band][:, 1])]          # the front-most point (front is -y): the larynx
+    d = np.linalg.norm((co - centre) * [1.0, 1.0, 0.8], axis=1)
+    fall = np.exp(-(d / 0.022) ** 2) * (w > 0.1)
+    sk = body.shape_key_add(name="throatRise", from_mix=False)
+    delta = np.outer(fall, [0.0, -0.0012, 0.004])
+    sk.data.foreach_set("co", (co + delta).astype(np.float32).ravel())
+    sk.value = 0.0
+    return int((fall > 0.5).sum())
+
+
 def upgrade_hair(body):
     for ps in body.particle_systems:
         if "hair" not in ps.name.lower() or "stubble" in ps.name.lower():
@@ -218,9 +245,284 @@ def upgrade_hair(body):
                     h.inputs[k].default_value = v
 
 
+# Eye wetness: Codex 011a patch (applied and verified by Claude): a tear meniscus along each lower lid
+# and a pink caruncle at each inner corner, following the body's armature and face shapes.
+LID_DIST = 2.5                   # mm: lid vertices this close to the eyeball surface (Codex 011a)
+
+
+def add_eye_wetness(rig, body):
+    """Build on the unposed asset. Geometry uses neutral phenotype coordinates."""
+    import heapq
+    import math
+    import os
+    import sys
+
+    import bpy
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from max_expressions import FACE_UNITS
+    from max_hair import follow_face
+
+    eyes = next(o for o in rig.children_recursive
+                if o.type == "MESH" and "high-poly" in o.name)
+    arms = [m for m in body.modifiers if m.type == "ARMATURE"]
+    if len(arms) != 1 or arms[0].object != rig:
+        raise ValueError("Expected one body Armature modifier targeting rig")
+
+    scale = body.matrix_world.to_scale()
+    if (min(scale) <= 0 or max(scale) / min(scale) > 1.0001
+            or body.matrix_world.determinant() <= 0):
+        raise ValueError("Wetness requires uniform, positive body scale")
+    mm = 0.001 / (bpy.context.scene.unit_settings.scale_length * scale.x)
+
+    def neutral(ob):
+        keys = ob.data.shape_keys
+        if not keys:
+            return [v.co.copy() for v in ob.data.vertices]
+        if not keys.use_relative:
+            raise ValueError("Expected relative shape keys")
+        blocks = keys.key_blocks
+        co = [p.co.copy() for p in blocks[0].data]
+        for kb in list(blocks)[1:]:
+            if kb.name in FACE_UNITS or kb.mute or not kb.value:
+                continue
+            if kb.vertex_group:
+                raise ValueError("Masked phenotype keys need explicit evaluation")
+            for i, p in enumerate(kb.data):
+                co[i] += (p.co - kb.relative_key.data[i].co) * kb.value
+        return co
+
+    co = neutral(body)
+    transform = body.matrix_world.inverted() @ eyes.matrix_world
+    eco = [transform @ p for p in neutral(eyes)]
+    epolys = [tuple(p.vertices) for p in eyes.data.polygons]
+    surface = BVHTree.FromPolygons(eco, epolys)
+
+    tmp = bpy.data.meshes.new("_wetness_normals")
+    tmp.from_pydata(co, [], [tuple(p.vertices) for p in body.data.polygons])
+    tmp.update()
+    normals = [v.normal.copy() for v in tmp.vertices]
+    bpy.data.meshes.remove(tmp)
+
+    adjacency = [[] for _ in co]
+    for edge in body.data.edges:
+        a, b = edge.vertices
+        adjacency[a].append(b)
+        adjacency[b].append(a)
+
+    def material(name, color, roughness, transmission):
+        mat = bpy.data.materials.get(name) or bpy.data.materials.new(name)
+        mat.use_nodes = True
+        nodes = mat.node_tree.nodes
+        nodes.clear()
+        out = nodes.new("ShaderNodeOutputMaterial")
+        bsdf = nodes.new("ShaderNodeBsdfPrincipled")
+        bsdf.inputs["Base Color"].default_value = color
+        bsdf.inputs["Roughness"].default_value = roughness
+        bsdf.inputs["IOR"].default_value = 1.336
+        bsdf.inputs["Transmission Weight"].default_value = transmission
+        mat.node_tree.links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
+        return mat
+
+    water = material("Max_tear_water", (1, 1, 1, 1), 0.03, 1.0)
+    tissue = material("Max_caruncle", (0.48, 0.16, 0.14, 1), 0.2, 0.0)
+
+    def make(name, positions, faces, used, mat, root=None, blend=1.0):
+        old = bpy.data.objects.get(name)
+        if old:
+            old_mesh = old.data
+            bpy.data.objects.remove(old, do_unlink=True)
+            if old_mesh.users == 0:
+                bpy.data.meshes.remove(old_mesh)
+
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(positions, [], faces)
+        mesh.update()
+        ob = bpy.data.objects.new(name, mesh)
+        body.users_collection[0].objects.link(ob)
+        ob.parent = body.parent
+        ob.parent_type = body.parent_type
+        ob.parent_bone = body.parent_bone
+        ob.matrix_parent_inverse = body.matrix_parent_inverse.copy()
+        ob.matrix_basis = body.matrix_basis.copy()
+        mesh.materials.append(mat)
+        for p in mesh.polygons:
+            p.use_smooth = True
+
+        # Exact source weights; corner patch uses an affine blend with its root.
+        groups = {g.index: ob.vertex_groups.new(name=g.name)
+                  for g in body.vertex_groups}
+        for j, source in enumerate(used):
+            weights = {}
+            contributions = [(source, blend)]
+            if root is not None:
+                contributions.append((root, 1.0 - blend))
+            for index, factor in contributions:
+                for g in body.data.vertices[index].groups:
+                    weights[g.group] = weights.get(g.group, 0.0) + factor * g.weight
+            for index, weight in weights.items():
+                if weight > 0:
+                    groups[index].add([j], weight, "REPLACE")
+
+        # Zero threshold retains every FACE_UNIT driver, including tiny motion.
+        follow_face(body, ob, used, min_move=0.0)
+        if root is not None:
+            source_keys = body.data.shape_keys.key_blocks
+            basis = source_keys[0]
+            for kb in list(mesh.shape_keys.key_blocks)[1:]:
+                source = source_keys[kb.name]
+                dr = source.data[root].co - basis.data[root].co
+                for j, index in enumerate(used):
+                    delta = source.data[index].co - basis.data[index].co
+                    kb.data[j].co = (mesh.vertices[j].co
+                                     + blend * delta + (1.0 - blend) * dr)
+
+        arm = ob.modifiers.new("Armature", "ARMATURE")
+        arm.object = rig
+        for prop in ("use_deform_preserve_volume", "use_vertex_groups",
+                     "use_bone_envelopes", "vertex_group", "invert_vertex_group"):
+            setattr(arm, prop, getattr(arms[0], prop))
+
+        sub = ob.modifiers.new("Smooth wet surface", "SUBSURF")
+        sub.levels = sub.render_levels = 2
+
+        # Collision guard after deformation/subdivision; leaves outside points alone.
+        guard = ob.modifiers.new("Keep outside eyeball", "SHRINKWRAP")
+        guard.target = eyes
+        guard.wrap_method = "NEAREST_SURFACEPOINT"
+        guard.wrap_mode = "OUTSIDE_SURFACE"
+        guard.offset = 0.03 * mm
+        ob["max_eye_wetness"] = True
+        return ob
+
+    mid = (min(p.x for p in eco) + max(p.x for p in eco)) / 2
+    plans = []
+    for side in (-1, 1):
+        globe = [p for p in eco if (p.x - mid) * side > 0]
+        if not globe:
+            raise ValueError("Cannot separate the two eyeballs")
+        lo = Vector(tuple(min(p[k] for p in globe) for k in range(3)))
+        hi = Vector(tuple(max(p[k] for p in globe) for k in range(3)))
+        centre, radius = (lo + hi) / 2, (hi - lo) / 2
+
+        candidates = {}
+        for i, p in enumerate(co):
+            if not (abs(p.x - centre.x) < radius.x + 1.5 * mm
+                    and centre.z - radius.z < p.z < centre.z + 0.25 * radius.z
+                    and p.y < centre.y - 0.15 * radius.y
+                    and normals[i].y < 0.4):
+                continue
+            hit, normal, _, distance = surface.find_nearest(p)
+            if hit is not None and distance < LID_DIST * mm and normal.y < -0.15:
+                candidates[i] = (hit, normal, distance)
+
+        # the lid band's largest connected stretch (an isolated corner vertex broke the path on one side
+        # or the other: Claude, after testing); its two x-extremes, near the eye's mid-height, are the ends
+        comps, seen = [], set()
+        for s0 in candidates:
+            if s0 in seen:
+                continue
+            comp, stack = [], [s0]
+            seen.add(s0)
+            while stack:
+                i = stack.pop()
+                comp.append(i)
+                for j in adjacency[i]:
+                    if j in candidates and j not in seen:
+                        seen.add(j)
+                        stack.append(j)
+            comps.append(comp)
+        band = max(comps, key=lambda c: max(co[i].x for i in c) - min(co[i].x for i in c))
+        corners = [i for i in band if abs(co[i].z - centre.z) < 0.45 * radius.z] or band
+        start = min(corners, key=lambda i: co[i].x)
+        end = max(corners, key=lambda i: co[i].x)
+        if co[end].x - co[start].x < 1.2 * radius.x:
+            raise ValueError(f"Insufficient lid span: side {side}")
+
+        # Connected path, strongly favouring vertices nearest the globe.
+        distances, previous, queue = {start: 0.0}, {}, [(0.0, start)]
+        while queue:
+            distance, i = heapq.heappop(queue)
+            if distance != distances[i]:
+                continue
+            if i == end:
+                break
+            for j in adjacency[i]:
+                if j not in candidates:
+                    continue
+                gap = (candidates[i][2] + candidates[j][2]) / (0.6 * mm)
+                cost = (co[j] - co[i]).length * (1.0 + gap * gap)
+                trial = distance + cost
+                if trial < distances.get(j, float("inf")):
+                    distances[j], previous[j] = trial, i
+                    heapq.heappush(queue, (trial, j))
+
+        if end not in distances:
+            far = max(distances, key=lambda i: (co[i] - co[start]).length)
+            raise ValueError(f"Disconnected lid band: side {side}: {len(candidates)} candidates, "
+                             f"{len(distances)} reachable from the inner/outer corner; start x {co[start].x:.4f} "
+                             f"end x {co[end].x:.4f}, reached x {co[far].x:.4f}; eye centre x {centre.x:.4f} r {radius.x:.4f}")
+        path = [end]
+        while path[-1] != start:
+            path.append(previous[path[-1]])
+        path.reverse()
+        if len(path) < 5 or min(co[i].z for i in path) > centre.z - mm:
+            raise ValueError(f"Ambiguous lower lid: side {side}")
+        plans.append((side, path, candidates))
+
+    result = []
+    for side, path, candidates in plans:
+        positions, used, faces = [], [], []
+        count, ring = len(path), 8
+        for j, source in enumerate(path):
+            hit, normal, _ = candidates[source]
+            normal = normal.normalized()
+            tangent = (co[path[min(j + 1, count - 1)]]
+                       - co[path[max(j - 1, 0)]]).normalized()
+            across = tangent.cross(normal).normalized()
+            taper = 0.1 + 0.9 * math.sin(math.pi * j / (count - 1))
+            centre = hit + normal * (0.09 * mm)
+            for k in range(ring):
+                angle = 2 * math.pi * k / ring
+                positions.append(centre
+                                 + across * (0.10 * mm * taper * math.cos(angle))
+                                 + normal * (0.035 * mm * taper * math.sin(angle)))
+                used.append(source)
+        for j in range(count - 1):
+            for k in range(ring):
+                a, b = j * ring + k, j * ring + (k + 1) % ring
+                faces.append((a, b, b + ring, a + ring))
+        faces.extend([tuple(reversed(range(ring))),
+                      tuple((count - 1) * ring + k for k in range(ring))])
+        result.append(make(f"Max.tear.{side}", positions, faces, used, water))
+
+        root = min((path[0], path[-1]), key=lambda i: abs(co[i].x - mid))
+        patch = [tuple(p.vertices) for p in body.data.polygons
+                 if root in p.vertices]
+        used = sorted({i for face in patch for i in face})
+        if not patch:
+            raise ValueError("Inner corner has no incident faces")
+        extent = max((co[i] - co[root]).length for i in used)
+        blend = min(1.0, 0.85 * mm / max(extent, 1e-12))
+        positions = []
+        for i in used:
+            p = co[root] + blend * (co[i] - co[root])
+            r = min(1.0, (p - co[root]).length / (0.85 * mm))
+            p += normals[i] * ((0.05 + 0.12 * (1.0 - r * r)) * mm)
+            positions.append(p)
+        remap = {source: j for j, source in enumerate(used)}
+        faces = [tuple(remap[i] for i in face) for face in patch]
+        result.append(make(f"Max.caruncle.{side}", positions, faces, used,
+                           tissue, root=root, blend=blend))
+    return result
+
+
 def upgrade(rig):
     body = next(o for o in rig.children_recursive if o.name.endswith(".body"))
     print("[max_look] skin zones", paint_zones(rig, body))
+    print("[max_look] throat-rise vertices:", add_throat_rise(rig, body))
     for m in body.modifiers:
         if m.type == "SUBSURF":
             m.render_levels = SUBDIV_RENDER
@@ -240,7 +542,12 @@ def upgrade(rig):
     if teeth:
         print("[max_look] upper teeth moved:", upgrade_teeth_geometry(teeth))
     upgrade_hair(body)
-    rig["max_look"] = "v5"
+    rig["max_look"] = "v6"
+    try:
+        wet = add_eye_wetness(rig, body)
+        print("[max_look] eye wetness:", [o.name for o in wet])
+    except ValueError as e:             # Codex's guard rails: never ship a mis-placed lid ribbon silently
+        print("[max_look] eye wetness SKIPPED:", e)
 
 
 def studio(scene):
@@ -256,7 +563,7 @@ def studio(scene):
     for name, loc, energy, color, size in (
         ("Key", (-0.86, -1.23, 2.28), 100, (1.0, 0.86, 0.72), 1.0),  # Codex 010: 1 m wide, 1.5 m away, 35° side, 25° up
         ("Fill", (2.0, -1.8, 1.5), 35, (0.70, 0.82, 1.0), 3.0),     # low cool fill
-        ("Rim", (0.9, 2.6, 2.2), 60, (0.37, 0.83, 0.90), 0.8),     # cyan rim (#5FD3E6)
+        ("Rim", (0.9, 2.6, 2.9), 50, (0.37, 0.83, 0.90), 0.8),     # cyan rim (#5FD3E6)
         ("Kicker", (-1.4, 1.8, 1.7), 25, (0.37, 0.83, 0.90), 0.6),
         ("EyeLight", (0.25, -2.4, 1.68), 18, (1.0, 0.95, 0.9), 0.35),  # small, near the lens: a clear catchlight
     ):
