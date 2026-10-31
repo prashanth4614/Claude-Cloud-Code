@@ -172,3 +172,39 @@ Render of `max_v6.blend` at 1d8af4d+ (pulled c945323): same Metal wrapper, Apple
   - Still (`max_v6d_chew_cpu.jpg`, neutral | chew | chew_r): the jaw drops and shifts, the lips stay
     closed and the cheek fills.
   - The published pilot (`real_max.py`) is unchanged.
+
+## v6d Mac review
+
+Render of `max_v6.blend` at af58305: same Metal wrapper (Apple M4 GPU, 10 cores).
+- `max_v6d_expressions.jpg`: expression sheet at 128 spp.
+- `max_v6d_shirt.jpg`: (a) chest, 55 mm, target head_point - 0.30 z, camera +(0.28,-1.75,0.08);
+  (b) armpit close-up of the raised left arm, 50 mm, ~0.7 m. Pose: `thumbs_up(raised=True)`, left
+  upper arm (0.8,-0.15,0.35), forearm (-0.35,-0.2,1). Both at 128 spp, 900x1000.
+- `max_v6d_chew.mp4`: `chew_cycle(rig, 10)`, frames 7-46 at 24 fps (40 frames, 1.67 s), 640x640,
+  32 spp, 15° 3/4 face close-up, 85 mm. H.264 at 126 KB.
+- Pit shape-key drivers (they worked without auto-exec, as simple expressions): rest L=0.01 R=0.01;
+  in the shirt pose L=1.00 (raised arm) and R=0.92 (thumbs-up arm, also lifted).
+- Times: expression tiles 3.2-10.5 s; shirt 28.2 s / 29.3 s; chew frames 4.9-7.7 s each (~5.7 s avg).
+  Total 433 s. Peak footprint 7.5 GB, max RSS 3.6 GB.
+
+### Shirt / armpit folds
+- **Natural, not lumpy.** The raised side shows a soft diagonal pull fold from the armpit toward
+  the chest and a gentle hollow under the sleeve. It reads as cotton stretched by the lifted arm,
+  with no bumps or blobs.
+- Still fairly subtle at chest distance (a): you see the fabric stretch, not crisp creases.
+- **Clipping:** none of the tee into the body at the chest, side or armpit.
+- One small thing: in (b) there's a tiny dark notch under the raised sleeve's hem where the sleeve
+  meets the arm. It looks like a sliver of the sleeve's inside/back face; minor, only at close range.
+
+### Chew
+- **Expression tile:** reads as chewing now. Jaw lowered and shifted to one side, lips sealed, a
+  little fuller in the cheek, clearly different from neutral.
+- **In motion (mp4):** the chin goes down and side to side with alternating sides, eased in and out.
+  It reads as chewing, but gently; at phone size the movement is modest. A bit more jaw drop or
+  cheek bulge on the peaks would make it unmistakable.
+- **Lip gap:** none. The lips stay sealed in every frame I checked (f010 / f016 / f022 and the
+  10-frame strip).
+
+### Other
+- The small bright speck on the top of the ear (rim light) is still visible in the face close-up.
+- Nothing else new; the expression sheet otherwise matches v6c.
