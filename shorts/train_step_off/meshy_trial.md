@@ -1,5 +1,7 @@
 # Meshy free-tier trial (2026-10-31): needs owner sign-in
 
+Shelved by the owner on 2026-10-31; not run, 0 credits spent.
+
 **Update (2026-10-31, 21:10–22:10 IST):**
 - The Meshy workspace was opened in the automation Chrome on the Mac and brought to the front for the
   owner to sign in.
