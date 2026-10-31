@@ -1,44 +1,44 @@
-# Why you fall stepping off a slow train: script (G2 draft 1)
+# Why you fall stepping off a slow train: script (G2 draft 2, after Codex 018)
 
 Rules: shorts-craft §1 and §6.
 - Second person, present tense, chained connectors.
 - One 3D metaphor: the inertia ghost.
-- CAPS on the 5 stressed words.
-- Commas and dashes for run-ons.
+- CAPS on 4 stressed words.
 - The last line loops into the hook.
 
 | # | Beat | Line | Words | Fact # |
 |---|---|---|---|---|
 | 1 | Hook | [curious] Getting off a slow train looks EASY. Physics disagrees. | 9 | — |
-| 2 | Stakes | At ten kilometres an hour it feels like a crawl, but that's more than twice a comfortable walking pace. | 19 | 3, 4 |
-| 3 | Cause | That's because the moment your foot lands, the platform grips it and it slows sharply, but your upper body doesn't, it keeps moving at TRAIN speed. | 27 | 1, 2 |
-| 4 | Facing back | So facing backward, you tip the one way you can't see. | 11 | 5 |
-| 5 | Sideways | Step out sideways, and your body keeps sliding along the platform, throwing you off balance. | 15 | 6 |
-| 6 | Payoff | [serious] Facing FORWARD, a few quick steps can spread the slowdown out, but they can't PROMISE your balance. | 17 | 7 |
+| 2 | Stakes | At ten kilometres an hour it looks like a crawl, but that's more than twice a comfortable walking pace. | 19 | 3, 4 |
+| 3 | Cause | That's because when your shoe grips, your foot slows sharply, while your upper body keeps moving. | 16 | 1, 2 |
+| 4 | Facing back | So facing backward, you can tip backward, the way you can't see. | 12 | 5 |
+| 5 | Sideways | Facing sideways, you're still moving along the platform, which can throw you off balance. | 14 | 6 |
+| 6 | Payoff | [serious] Facing forward, a few quick steps can spread out the slowdown, but you can still lose your BALANCE. | 18 | 7 |
 | 7 | Twist | One wet patch, one bag, one crowded step, and the GAP is right there. | 14 | 8 |
-| 8 | Takeaway + loop | [warm] So wait until the train has completely STOPPED, because… | 10 | 10 |
+| 8 | Takeaway + loop | [warm] So wait until the train has completely STOPPED, even if… | 10 | 10 |
 
-**Words: 122.** At 170 wpm that's 43.1 s of speech. With the 0.10-0.25 s phrase gaps and one 0.4 s
-beat before the payoff, about 45 s in total. Voice coverage is about 95% (gate ≥ 90%).
+**Words: 112** (spoken, without tags). At 170 wpm: 39.5 s of speech; with phrase gaps and one
+0.4 s beat before the payoff, about 42 s. Voice coverage is about 95%.
 
-**Payoff timing:** line 6 starts after 81 words, at about 28.6 s. That's 64% of 45 s, and its "but"
-lands at about 31 s (69%), inside the formula's 65-75% window.
+**Payoff:** "but you can still lose your BALANCE" lands at about 30 s, 71% of the
+runtime (target 65-75%).
 
-**Loop:** "…because…" cuts straight back to the first frame and the hook "Getting off a slow train looks
-easy" (the takeaway's framing matches the opening door shot).
+**Loop:** "…even if…" cuts back to the first frame: "Getting off a slow train looks easy." That reads as
+"wait until it has stopped, even if getting off a slow train looks easy", so the warning survives the
+loop (Codex 018).
 
-**Read-aloud check:**
-- Stressed words: EASY, TRAIN, FORWARD, PROMISE, GAP, STOPPED. That's 6, one over the 3-5 guide:
-  drop TRAIN if the take sounds over-stressed.
-- Tongue-twister risks:
-  - "kilometres an hour" (keep it; it's natural Indian English);
-  - "sideways… sliding" (fine).
-- No "pop/poke"-style mishearing risks.
-- Every sentence traces to `facts.md` (Fact # column).
-- The ghost: line 3's "keeps moving at train speed" is when the amber ghost appears.
+**Codex 018 changes:**
+- Line 5 is no longer an imperative ("Facing sideways…"), and "sliding" is gone.
+- Lines 3-4 are hedged:
+  - the shoe grips;
+  - the upper body "keeps moving" (not "doesn't [slow]" or "at train speed");
+  - "can tip".
+- Line 6: "lose your balance" replaces "can't promise your balance" ("can't" risked being heard as
+  "can").
+- Stresses cut from 6 to 4 (EASY, BALANCE, GAP, STOPPED).
+- "looks like a crawl" fits the picture.
 
-**Policy check:**
-- No imperative instruction to step off. Line 5's "Step out sideways" describes the scenario on screen.
-  Codex: say if it should be "Stepping out sideways".
-- The payoff carries its limit.
-- The only imperative is "wait until the train has completely stopped".
+**The ghost cue:** line 3, "your upper body keeps moving", when the amber ghost glides on along the
+platform.
+
+**Phone-listen check at G4:** "can tip" and "can still" must not blur. Check them on the take.
