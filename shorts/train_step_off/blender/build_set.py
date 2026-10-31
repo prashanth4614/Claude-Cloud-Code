@@ -245,6 +245,10 @@ def build_platform(c):
                mat("concrete", rough=0.85), c)
     coping = box("platform_coping", (PLATFORM_LEN, 0.45, 0.06), (0, PLATFORM_Y0 - 0.225, PLATFORM_Z + 0.005),
                  mat("coping", rough=0.7), c)
+    # expansion joints every 2 m: real, and a fixed landmark that shows the foot staying put (Codex 019)
+    for i in range(-int(PLATFORM_LEN / 4), int(PLATFORM_LEN / 4) + 1):
+        box(f"platform_joint_{i}", (0.025, PLATFORM_DEPTH - 0.5, 0.004), (i * 2.0, y_mid + 0.25, PLATFORM_Z + 0.002),
+            mat("joint", (0.20, 0.19, 0.17, 1), rough=0.9), c)
     line = box("platform_yellow_line", (PLATFORM_LEN, 0.12, 0.01), (0, PLATFORM_Y0 - 0.62, PLATFORM_Z + 0.006),
                mat("yellow", rough=0.5), c)
     wall = box("platform_wall", (PLATFORM_LEN, 0.15, PLATFORM_Z + 0.3), (0, PLATFORM_Y0 + 0.075, (PLATFORM_Z - 0.3) / 2),
@@ -291,12 +295,13 @@ def build_cab(c):
     for v in range(0, 121, 5):
         a = math.radians(225 - v * 270 / 120)
         major = v % 20 == 0
+        label = major or v in (10, 30)     # the low-speed end must be readable (Codex 019)
         L = 0.03 if major else 0.015
         r = 0.105 - L / 2
         t = box(f"speedo_tick_{v}", (0.004 if not major else 0.006, 0.004, L),
                 o + Vector((r * math.cos(a), -0.272, r * math.sin(a))), mat("dark"), c)
         t.rotation_euler.y = -(a - math.pi / 2)
-        if major:
+        if label:
             bpy.ops.object.text_add(location=o + Vector((0.072 * math.cos(a), -0.272, 0.072 * math.sin(a))),
                                     rotation=(math.pi / 2, 0, 0))
             tx = bpy.context.active_object
@@ -308,6 +313,14 @@ def build_cab(c):
             for cc in tx.users_collection:
                 cc.objects.unlink(tx)
             c.objects.link(tx)
+    bpy.ops.object.text_add(location=o + Vector((0, -0.272, -0.05)), rotation=(math.pi / 2, 0, 0))
+    unit = bpy.context.active_object
+    unit.name, unit.data.body, unit.data.size = "speedo_unit", "km/h", 0.016
+    unit.data.align_x, unit.data.align_y = "CENTER", "CENTER"
+    unit.data.materials.append(mat("dark"))
+    for cc in unit.users_collection:
+        cc.objects.unlink(unit)
+    c.objects.link(unit)
     pivot = bpy.data.objects.new("speedo_needle_pivot", None)
     c.objects.link(pivot)
     pivot.location = o + Vector((0, -0.275, 0))
