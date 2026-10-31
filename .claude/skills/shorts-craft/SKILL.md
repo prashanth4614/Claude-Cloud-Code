@@ -11,7 +11,8 @@ Zack D Films:
 - `shorts/reference/zack_vs_ours.md`: a frame-by-frame comparison with our pilot;
 - Codex reviews 008 and 009 in `shorts/tools/codex/answers/`.
 
-Don't re-edit a published video to apply these: they are for the **next** one. Sound: the
+Don't re-edit a published video to apply these: they are for the **next** one. The order of work and the
+approvals: the `production-process` skill. Sound: the
 `sfx-design` skill. Images and AI clips: CLAUDE.md (the user generates them; we write prompts).
 
 The channel covers **anything the mind wonders about**, not only the human body. The pilot was an

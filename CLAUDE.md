@@ -77,6 +77,11 @@ owner's OK.
 
 ## Making a new video
 
+- Follow the `production-process` skill (`.claude/skills/production-process/`): gates G0-G10 from the
+  idea to upload, each with checks, a Codex review where marked, and the owner's approval recorded in
+  `shorts/<video>/production.md`. Voice is locked before animation; picture is locked before sound; the
+  final render only runs after the animatic and review `.blend` are approved.
+
 - Use the `shorts-craft` skill (`.claude/skills/shorts-craft/`) for every new Short, on any topic:
   screenplay and presentation devices, the one-3D-world rule (no 2D diagram inserts), aligned
   transitions, camera, Max, voice gates (`scripts/voice_check.py`), captions, ending, thumbnail and the
