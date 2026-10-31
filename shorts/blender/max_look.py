@@ -76,7 +76,7 @@ def paint_zones(rig, body):
     ears = fall(np.abs(co[:, 2] - (ez - 0.005)), 0.02, 0.035) * (dx > 0.066) * (co[:, 1] > ey + 0.02)
     red = np.clip(np.maximum.reduce([cheeks * 0.8, ears, fall(nose_d, 0.006, 0.016) * front]), 0, 1)
     from mathutils import Vector
-    scalp = np.array([max_hair.scalp_weight(Vector(c), eye, head) for c in co])   # where the hair grows
+    scalp = np.array([max_hair.scalp_weight(Vector(c), eye, head, fade=True) for c in co])   # hair + side fade
     me = body.data
     for name, vals in (("zone_oil", oil), ("zone_lip", lip), ("zone_red", red), ("zone_scalp", scalp)):
         at = me.attributes.get(name) or me.attributes.new(name, "FLOAT", "POINT")
