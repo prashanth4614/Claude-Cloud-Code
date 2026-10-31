@@ -48,3 +48,31 @@ Blender 5.2.3 LTS, Cycles, **128 samples**, denoised.
 - No hair through skin, no floating or stray strands, no fireflies seen at 128 spp.
 - No mesh tearing at eyelids or mouth corners.
 - Only artefacts: the orange scalp band at the hairline and the white ear-rim line (above).
+
+## v5b
+
+Re-render of `max_v5.blend` at 2b83e69: same Metal wrapper, 128 spp. The sheets and both close-ups
+are overwritten with v5b.
+- Times: turnarounds 2.8-3.8 s, expressions 3.8-4.8 s (avg ~4.2 s), close-ups 11.6 s (neutral) and
+  11.7 s (ear pop). Whole run 109 s. Peak footprint 7.4 GB, max RSS 2.8 GB.
+
+### Did the fixes work?
+- **Hairline: mostly yes.** Clearly lower and fuller in the close-ups; he no longer looks like he's
+  balding. From the front (expression tiles) a mild "M" and slightly bare temple corners still
+  show, much less than v5. One more small step of temple fill would finish it.
+  - New: the front edge is now a fairly straight, dark line across the forehead. The feathering
+    is softer than v4b but still reads as an edge in the close-up. A few sparser, finer baby hairs
+    in front of the line would break it up.
+- **Orange band: fixed.** No orange/translucent scalp tint under the fringe. Only a slight warm
+  brown in the hair tips at the front, which reads as hair colour.
+- **Side fade: partly.** A faint stubble shade above the ear now, but the boundary from bare skin to
+  full hair is still quite sudden, especially behind the ear (ear pop close-up). It reads as a high
+  skin fade rather than shaved. Acceptable; a longer gradient would look more natural.
+- **Volume: yes.** More lift and a rounder top. It looks styled, not plastered. The crown
+  shows soft clumped waves, which look natural.
+
+### Anything new / unchanged
+- No hair through skin, no stray or floating strands, no fireflies.
+- Still there: the thin white line on the top rim of the ear in both close-ups (rim light on the
+  ear edge), and sparse/gappy lower teeth (ear pop, surprised, scared, yawn).
+- Expressions unchanged from v5 (neutral / chew / swallow still look alike).
