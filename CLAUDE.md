@@ -30,9 +30,10 @@ YouTube Shorts production pipeline. **The agreed production pipeline is `PIPELIN
 - The user allowed (2026-10-30) a Codex second opinion through the **Codex CLI on their Mac**
   (`shorts/tools/ask_codex.sh`, read-only sandbox), for code review and help with stubborn bugs.
   Requests go in `shorts/tools/codex/requests/<id>.md`; answers come back in `.../answers/<id>.md`.
-- **Codex reviews; it never writes code** (owner, 2026-10-31). Claude writes every change, then asks
-  Codex to review it (the diff, the renders, the plan) and to find bugs and weak spots. Requests must
-  not ask for patches, functions or ready-to-apply code; findings come back as file:line and what's wrong.
+- **Codex reviews the rendered frames; it doesn't write or review code** (owner, 2026-10-31). Claude
+  writes and checks every change. Then Codex gets the renders (stills, sheets, clip frames) and says what
+  looks wrong or unreal, and why: anatomy, hair, skin, cloth, lighting, expression, motion. Don't ask it
+  for patches, functions or code review.
 - This is not image or video generation; that pause above still stands. Verify any Codex
   finding before acting on it; Claude stays the only one editing the repo.
 
@@ -53,7 +54,7 @@ owner's OK.
 | Helper | Session id | Use for |
 |---|---|---|
 | Render worker | `session_01Bok4noiXNe3cEe1E2MxQpM` | Blender on the Mac: animatics, review renders, thumbnails, Mac-side previews |
-| Codex helper | `session_01Bok4nppX4eaPC9ozBb3Gms` | every `shorts/tools/ask_codex.sh <id>` run (code and creative review) |
+| Codex helper | `session_01Bok4nppX4eaPC9ozBb3Gms` | every `shorts/tools/ask_codex.sh <id>` run (review of rendered frames) |
 | Web / YouTube | `session_01Bok4noPAoM8Fa4xBMKHT9P` | Chrome on the Mac: YouTube references (`yt_reference.py`), web research, measurements of reference videos |
 | Cloud worker: voice & audio | `session_01Bok4nmfJr7VJ7ka18W8PBn` | long ElevenLabs jobs in the cloud: voice takes and auditions, `voice_check.py`, SFX and music generation, mix builds (`mix.py`, `telugu.py`) |
 | Cloud worker: RunPod renders | `session_01Bok4npHajGYFXx5epHgMSF` | RunPod GPU renders (`final_render.sh`: dry run, bench, full, assemble), watching the pods and deleting them |
