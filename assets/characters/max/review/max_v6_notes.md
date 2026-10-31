@@ -65,3 +65,44 @@ Source: `max_v6.blend` (4c6ab92) + `max_look.py --sheet`. Blender 5.2.3 LTS, Cyc
 ## Broken / artefacts
 - None new: no hair through skin, no stray strands, no fireflies, no tearing at eyelids, mouth
   corners or shoulders.
+
+## v6b
+
+Re-render of `max_v6.blend` at 12a49fd: same wrapper, 128 spp, the same 6 outputs (max_v6_* overwritten).
+The shirt shot is pulled back (2.45 m, aim 16 cm higher) so the raised hand is fully in frame.
+- Times: turnarounds 3.9-5.1 s; expressions 4.8-14.9 s; close-ups 26.5 s (ear pop), 27.2 s (hair),
+  17.2 s (eyes), 11.8 s (shirt). Whole run 255 s. Peak footprint 7.4 GB, max RSS 3.4 GB.
+- The renders got slower partway through, probably because macOS `mediaanalysisd` (Photos library
+  analysis) was using ~180% CPU in the background. That's not the asset; v6 times are the real baseline.
+
+### NEW BUG (top priority): the hair lifts off the forehead in the swallow pose
+- In `expr_swallow` (chin tucked down) a **pale bald band appears between the brows and the
+  hairline**: the front of the hair sits up and back from the scalp, so the forehead skin shows
+  through where hair should be. Visible even at phone size in the expression sheet.
+- The other head poses look fine (thinking tilt, ear pop). It seems to happen when the head/neck
+  bends forward: the hair curves may not follow the head deform (rest-pose surface vs posed mesh),
+  or the swallow neck/throat shape key moves the scalp under the hair.
+- Check before any shot where Max nods or looks down.
+
+### Did each fix work?
+- **Tear line: partly.** A faint wet sheen is now visible on the lower lid edge, especially on his
+  left eye. Subtle but present; fine for film distances.
+- **Lashes: yes.** Thinner and softer, no more mascara look. The lower lashes are still slightly
+  clumpy, but acceptable.
+- **Irises: yes.** A natural warm mid-brown, no longer red/orange.
+- **Caruncles:** a little pinker in the inner corners; subtle but now reads as flesh.
+- **Teeth: yes.** Brighter and warmer (no blue-grey); they read as teeth at phone size in ear pop,
+  surprised, scared and yawn.
+- **Ear rim: improved.** Only a very small bright edge at the top of the ear in the close-ups; it
+  won't read in film.
+- **Shirt folds: partly.** Somewhat stronger shading folds on the chest, belly and the side under
+  the raised arm, and less sheen (good). Still fairly smooth with no crisp creases, and under the
+  raised arm the shirt still stretches up with the skin instead of bunching.
+- **Temples: yes.** Corners fuller; the "M" from the front is much milder (a small widow's peak
+  remains, which is natural).
+- **Chew / swallow stills: partly.**
+  - chew: now shows a small sideways jaw/lip shift. Readable next to neutral, but still subtle.
+  - swallow: clearly different now (chin down, pressed lips, lowered lids), but see the hair bug above.
+
+### Otherwise
+- No new tearing at eyelids, mouth or shoulders; no stray strands or fireflies.
