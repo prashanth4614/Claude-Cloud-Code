@@ -107,7 +107,6 @@ def build():
     max_look.upgrade(rig)          # v4/v5: skin zones, eyes, teeth, render subdivision
     import max_hair_curves
     max_hair_curves.to_curves(rig, body)   # v5: real hair curves (~150k strands) from the combed guides
-    max_look.preserve_volume(rig)  # v6e: the hair surface must skin like the body
     return rig, body
 
 
@@ -289,7 +288,8 @@ SHOULDER_RISE_MAX = 32
 
 def lift_shoulder(rig, side, direction):
     """v6e: raise the collarbone with the arm, as a real shoulder does. Rotating only the upper arm
-    collapsed the top of the shoulder into a flat, "trimmed" line when the arm went up."""
+    collapsed the top of the shoulder into a flat, "trimmed" line when the arm went up. (v6g: this alone
+    fixes it; volume-preserving skinning was tried and removed: it ballooned the shoulders overhead.)"""
     clav = rig.pose.bones.get(f"clavicle.{side}")
     if not clav:
         return

@@ -347,3 +347,20 @@ Times: 7.2-12.4 s per tile, 55 s total. Peak footprint 7.6 GB, max RSS 3.5 GB.
 - **New, small:** a thin jagged/stepped crease line runs across the upper chest from the collar
   toward the seam (visible in b and e). It looks like a shape-key or fold-map boundary, not a real
   fabric fold. Close-up only.
+
+## v6g (the Mac v6f review: "with both arms overhead the tee balloons into two big lobes")
+
+- **Cause:** v6f's volume-preserving (dual quaternion) skinning. With MPFB's weights it inflates the
+  **body's** shoulders at extreme arm angles, and the tee followed. See
+  `max_v6g_overhead_body_cause_cpu.jpg` (body only, tee hidden): with it | without it | without the
+  collarbone lift | without both. Only removing it fixes the balloon.
+- **Fix:** volume preservation is removed (back to linear skinning everywhere). The collarbone lift alone
+  keeps the raised shoulder round; Codex 014 had also called the volume-preserved shoulder "padded".
+- **Also new:** `max_overhead_L/R`, a second tee corrective driven from 95° to 165° of arm lift. It is
+  sampled with the arm overhead and pulls fabric that floats more than 6 mm off the skin back to it
+  (up to 15 mm, about 950 vertices per side, smoothed). The arm drivers are now one helper,
+  `arm_angle_driver`.
+- **Checks:** pit key 0 at rest, 0.47 at 60° and 1 at 90°; overhead key 0 up to 95°, 0.48 at 120° and 1
+  at 175°. Hair roots are unchanged.
+- **Image:** `max_v6g_overhead_shoulder_cpu.jpg` shows arms overhead, the raised shoulder from the
+  front, and from the side.

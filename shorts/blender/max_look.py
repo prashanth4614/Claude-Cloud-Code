@@ -560,6 +560,165 @@ PIT_DROP = 0.28                   # share of the skin-driven lift the tee doesn'
 PIT_ONSET, PIT_FULL = 40, 85   # upper-arm angle from straight down (deg): corrective starts / is full
 
 
+def arm_angle_driver(key, rig, side, onset_deg, full_deg):
+    """Drive a shape key from 0 to 1 as the upper arm's angle from straight down goes from onset_deg to
+    full_deg (evaluated world quaternions: independent of rotation mode, heading and arm twist)."""
+    import math
+    torso = max(
+        (b for b in rig.data.bones if b.name.startswith("spine")),
+        key=lambda b: (b.head_local.z + b.tail_local.z) / 2)
+    up_sign = 1 if torso.tail_local.z > torso.head_local.z else -1
+    key.driver_remove("value")
+    driver = key.driver_add("value").driver
+    driver.type = "SCRIPTED"
+    for prefix, bone in (("a", f"upperarm01.{side}"), ("t", torso.name)):
+        for component in "wxyz":
+            v = driver.variables.new()
+            v.name = prefix + component
+            v.type = "TRANSFORMS"
+            target = v.targets[0]
+            target.id = rig
+            target.bone_target = bone
+            target.transform_space = "WORLD_SPACE"
+            target.rotation_mode = "QUATERNION"
+            target.transform_type = "ROT_" + component.upper()
+    # Dot product of each bone's world +Y axis.
+    dot = (
+        "4*(ax*ay-aw*az)*(tx*ty-tw*tz)"
+        "+(1-2*(ax*ax+az*az))*(1-2*(tx*tx+tz*tz))"
+        "+4*(ay*az+aw*ax)*(ty*tz+tw*tx)"
+    )
+    onset = math.cos(math.radians(onset_deg))
+    span = onset - math.cos(math.radians(full_deg))
+    driver.expression = f"min(1,max(0,({up_sign}*({dot})+{onset:.6f})/{span:.6f}))"
+
+
+OVERHEAD_ONSET, OVERHEAD_FULL = 95, 165   # arm angle from straight down (deg): the overhead key starts / is full
+OVERHEAD_HUG = 0.006                      # fabric further than this from the skin (m) is pulled back to it
+OVERHEAD_MIN = 0.0015                     # ...and fabric closer than this (or inside) is pushed out to it
+
+
+def add_overhead_correctives(rig, ob, shirt, positions, shoulders, metres, transform):
+    """v6f (Mac review: "with both arms up the tee balloons into two big lobes"): the tee's own weights
+    can't follow an arm raised overhead. A second corrective per side, sampled with that arm overhead,
+    pulls fabric that floats more than OVERHEAD_HUG off the body back onto it (and pushes out anything
+    inside), smoothed so it stays cloth-like. Driven from OVERHEAD_ONSET to OVERHEAD_FULL degrees."""
+    import math
+    from mathutils import Matrix, Vector
+    from mathutils.bvhtree import BVHTree
+    from build_max import aim_bone
+
+    body = next(o for o in rig.children_recursive if o.name.endswith(".body"))
+    keys = ob.data.shape_keys
+    names = ["max_overhead_L", "max_overhead_R"]
+    for name in names + ["__oh_probe"]:
+        old = keys.key_blocks.get(name)
+        if old:
+            ob.shape_key_remove(old)
+    basis = keys.reference_key
+    probe = ob.shape_key_add(name="__oh_probe", from_mix=False)
+    saved_pose = [(p, p.matrix_basis.copy()) for p in rig.pose.bones]
+    saved_mods = [(m, m.show_viewport) for o in (ob, body) for m in o.modifiers]
+    to_local = transform.to_3x3().inverted() * (1.0 / metres)
+    to_rig = rig.matrix_world.inverted()
+    centre_x = sum(p.x for p in shoulders.values()) / 2
+    neighbours = {i: [] for i in shirt}
+    for e in ob.data.edges:
+        a, b = e.vertices
+        if a in neighbours and b in neighbours:
+            neighbours[a].append(b)
+            neighbours[b].append(a)
+    eps = 0.001
+    made = []
+
+    def shirt_positions():
+        bpy.context.view_layer.update()
+        ev = ob.evaluated_get(bpy.context.evaluated_depsgraph_get())
+        mesh = ev.to_mesh()
+        try:
+            return [transform @ v.co * metres for v in mesh.vertices]
+        finally:
+            ev.to_mesh_clear()
+
+    try:
+        for m, _ in saved_mods:
+            if m.type != "ARMATURE":
+                m.show_viewport = False
+        for side, name in zip(("L", "R"), names):
+            for p, _ in saved_pose:
+                p.matrix_basis.identity()
+            sign = 1 if shoulders[side].x > centre_x else -1
+            for bone in ("upperarm01", "upperarm02", "lowerarm01", "lowerarm02"):
+                aim_bone(rig, f"{bone}.{side}", rig.matrix_world.to_3x3() @ Vector((sign * 0.15, -0.05, 1)))
+            probe.value = 0
+            base = shirt_positions()
+            dg = bpy.context.evaluated_depsgraph_get()
+            be = body.evaluated_get(dg)
+            bm = be.to_mesh()
+            try:
+                mw = to_rig @ body.matrix_world
+                tree = BVHTree.FromPolygons([mw @ v.co * metres for v in bm.vertices],
+                                            [tuple(f.vertices) for f in bm.polygons])
+            finally:
+                be.to_mesh_clear()
+            columns = []
+            for axis in range(3):
+                step = Vector((0, 0, 0))
+                step[axis] = eps
+                local_step = to_local @ step
+                for i in shirt:
+                    probe.data[i].co = basis.data[i].co + local_step
+                probe.value = 1
+                moved = shirt_positions()
+                columns.append([(q - p) / eps for p, q in zip(base, moved)])
+            probe.value = 0
+
+            shoulder = shoulders[side]
+            desired = {}
+            for i in shirt:
+                p = positions[i]
+                out = sign * (p.x - centre_x)
+                if out < 0.02 or p.z < shoulder.z - 0.32:
+                    continue
+                w = smooth01((out - 0.02) / 0.05) * smooth01((p.z - (shoulder.z - 0.32)) / 0.08)
+                loc, nor, _, dist = tree.find_nearest(base[i])
+                if loc is None:
+                    continue
+                gap = (base[i] - loc).dot(nor)
+                if gap > OVERHEAD_HUG:
+                    desired[i] = -nor * (gap - OVERHEAD_HUG) * w
+                elif gap < OVERHEAD_MIN:
+                    desired[i] = nor * (OVERHEAD_MIN - gap) * w
+                else:
+                    desired[i] = Vector()
+            for _ in range(4):                          # even it out (no lumpy pull)
+                desired = {i: (d * 0.5 + sum((desired.get(j, Vector()) for j in neighbours[i]), Vector())
+                               * (0.5 / max(1, len(neighbours[i])))) for i, d in desired.items()}
+            key = ob.shape_key_add(name=name, from_mix=False)
+            key.relative_key = basis
+            key.value = 0
+            made.append((side, key))
+            for i, d in desired.items():
+                if d.length < 1e-5:
+                    continue
+                jac = Matrix([column[i] for column in columns]).transposed()
+                if abs(jac.determinant()) < 1e-8:
+                    continue
+                key.data[i].co = basis.data[i].co + to_local @ (jac.inverted() @ d)
+            print(f"[max_look] overhead corrective {side}: {sum(1 for d in desired.values() if d.length > 1e-4)} "
+                  f"vertices, max pull {max((d.length for d in desired.values()), default=0) * 1000:.1f} mm")
+    finally:
+        probe.value = 0
+        ob.shape_key_remove(probe)
+        for p, matrix in saved_pose:
+            p.matrix_basis = matrix
+        for m, enabled in saved_mods:
+            m.show_viewport = enabled
+        bpy.context.view_layer.update()
+    for side, key in made:
+        arm_angle_driver(key, rig, side, OVERHEAD_ONSET, OVERHEAD_FULL)
+
+
 def add_shirt_correctives(rig, ob, shirt, positions,
                          shoulders, metres, transform):
     import math
@@ -699,39 +858,8 @@ def add_shirt_correctives(rig, ob, shirt, positions,
         rig.data.pose_position = saved_position
         bpy.context.view_layer.update()
 
-    torso = max(
-        (b for b in rig.data.bones if b.name.startswith("spine")),
-        key=lambda b: (b.head_local.z + b.tail_local.z) / 2)
-    up_sign = 1 if torso.tail_local.z > torso.head_local.z else -1
-
     for side, key in made:
-        driver = key.driver_add("value").driver
-        driver.type = "SCRIPTED"
-        # Evaluated world quaternions: independent of pose rotation mode,
-        # armature heading, and upper-arm axial twist.
-        for prefix, bone in (("a", f"upperarm01.{side}"),
-                             ("t", torso.name)):
-            for component in "wxyz":
-                v = driver.variables.new()
-                v.name = prefix + component
-                v.type = "TRANSFORMS"
-                target = v.targets[0]
-                target.id = rig
-                target.bone_target = bone
-                target.transform_space = "WORLD_SPACE"
-                target.rotation_mode = "QUATERNION"
-                target.transform_type = "ROT_" + component.upper()
-        # Dot product of each bone's world +Y axis.
-        dot = (
-            "4*(ax*ay-aw*az)*(tx*ty-tw*tz)"
-            "+(1-2*(ax*ax+az*az))*(1-2*(tx*tx+tz*tz))"
-            "+4*(ay*az+aw*ax)*(ty*tz+tw*tx)"
-        )
-        onset = math.cos(math.radians(PIT_ONSET))   # 0 in the rest A-pose (about 35 deg)
-        span = onset - math.cos(math.radians(PIT_FULL))
-        driver.expression = (
-            f"min(1,max(0,({up_sign}*({dot})+{onset:.6f})/"
-            f"{span:.6f}))")
+        arm_angle_driver(key, rig, side, PIT_ONSET, PIT_FULL)
 
     ob.data.update()
     ob["max_shirt_correctives"] = 1
@@ -817,6 +945,7 @@ def upgrade_shirt(rig):
     mesh = ob.data
     add_shirt_correctives(
         rig, ob, shirt, positions, shoulders, metres, transform)
+    add_overhead_correctives(rig, ob, shirt, positions, shoulders, metres, transform)
     if shaded:
         return
 
@@ -1003,22 +1132,8 @@ def upgrade_shirt(rig):
     ob["max_shirt_upgrade"] = 1
 
 
-def preserve_volume(rig):
-    """v6e: volume-preserving (dual quaternion) skinning on everything skinned to Max, so a raised arm
-    keeps a round shoulder instead of collapsing it. All of them must match the body (the hair surface
-    copies the body's weights), so this runs again after the hair curves are built."""
-    n = 0
-    for ob in bpy.data.objects:
-        for m in getattr(ob, "modifiers", []):
-            if m.type == "ARMATURE" and m.object == rig and not m.use_deform_preserve_volume:
-                m.use_deform_preserve_volume = True
-                n += 1
-    return n
-
-
 def upgrade(rig):
     body = next(o for o in rig.children_recursive if o.name.endswith(".body"))
-    print("[max_look] preserve-volume skinning on", preserve_volume(rig), "objects")
     print("[max_look] skin zones", paint_zones(rig, body))
     print("[max_look] throat-rise vertices:", add_throat_rise(rig, body))
     for m in body.modifiers:
@@ -1102,7 +1217,6 @@ if __name__ == "__main__":
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         import max_hair_curves
         max_hair_curves.to_curves(rig, next(o for o in rig.children_recursive if o.name.endswith(".body")))
-        print("[max_look] preserve-volume skinning on", preserve_volume(rig), "more objects")
     if "--sheet" in argv:          # turnaround + expression sheet in the house light rig
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         import build_max
