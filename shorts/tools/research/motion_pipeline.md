@@ -73,3 +73,12 @@ Claude's web research is below. The web helper adds YouTube tutorials and tool t
    needed). This gives truly human facial timing.
 3. Optional: a phone video of someone doing a **safe** "brisk walk, sudden stop, catch your balance"
    on flat ground, for the stumble body motion (MediaPipe Pose).
+
+## Verified in the cloud session (2026-10-31)
+
+- `pip install mediapipe` (1.2.0) works, and the `face_landmarker.task` model downloads from
+  storage.googleapis.com (3.7 MB). Face video → ARKit-52 runs here.
+- **BVH and FBX Retargeter v5.2.0** (Thomas Larsson, GPL; cloned from
+  bitbucket.org/Diffeomorphic/retarget_bvh, because GitHub clones outside our repo are blocked): Blender
+  ≥ 4.2. Its `known_rigs` include **makehuman** (Max's MPFB default rig), **cmu-mb**, **mixamo**,
+  **actorcore**, **bandai** and **smpl** (video mocap output), so no custom bone maps are needed.
