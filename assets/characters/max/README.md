@@ -2,7 +2,11 @@
 
 - `max_reference.png`: the look we match (teal tee, dark jeans, white sneakers, messy dark-brown hair,
   light stubble, big brown eyes, stylized-realistic).
-- `max_v4.blend` (current): the rigged 3D Max, everything packed, saved with Blender 5.2. Open it in Blender 5.2 or later; no add-ons needed.
+- `max_v5.blend` (current): the rigged 3D Max with real strand hair (~150k hair curves), everything packed, Blender 5.2+.
+  v5 = v4 + `shorts/blender/max_hair_curves.py` (the combed guides become hair curves groomed with Blender's bundled hair
+  nodes, attached to an invisible scalp surface that follows the head and the brows) + anatomical skin zones (oily T-zone,
+  lips, natural redness), Codex 010's light rig and groom fixes.
+- `max_v4.blend`: the particle-hair version.
   v4 = v3 + `shorts/blender/max_look.py`: pores, a varied-gloss skin and softer subsurface; wet eyes; finer, denser hair
   (a neat side part since the owner's note: no spikes); 17 expressions. `max_v3.blend` stays for the published pilot.
 - `review/`: turnaround and expression sheets for each version (v1: first pass; v2: groomed hair, stubble).

@@ -238,6 +238,10 @@ def groom(rig, body):
         top = _smooth(0.045, 0.085, h) * (1 - _smooth(120, 160, phi))
         back = _smooth(110, 160, phi) * (1 - top)
         length = (SIDE_LEN * (1 - top - back) + TOP_LEN * top + BACK_LEN * back) * rnd.uniform(0.85, 1.15)
+        # v5 (Codex 010): a feathered hairline. Strands near the edge of the hair region are shorter, so the
+        # hairline fades into the skin instead of ending in a hard "helmet" line
+        length *= 0.3 + 0.7 * _smooth(0.12, 0.65, scalp_weight(root, eye, head))
+        layer = rnd.random()                       # 0 = lies on the scalp, 1 = outer layer (depth, not a shell)
         length *= 1 - 0.55 * _smooth(-0.01, 0.06, rel.y) * top     # v4: taper over the crown (no "shelf" at the back)
         side_flow = Vector((0.0, 0.5, -1.0)).normalized()          # sides: combed down and back, flat
         if top > 0.3 and rel.x < PART_X:                            # below the part: combed to his right, down
@@ -267,10 +271,14 @@ def groom(rig, body):
                 d.normalize()
             near, nn, _, _ = bvh.find_nearest(p)
             if near is not None:
-                off = 0.0022 + 0.0012 * k * (0.5 + top)
-                # v4: also cap the distance, so combed strands follow the skull instead of flying off it;
-                # the front hairline gets extra room for the quiff
-                off_max = 0.0045 + 0.0022 * k * (0.3 + top) + 0.006 * front * k / (nk - 1)
+                # v5 (Codex 010): clearance by position ALONG the strand (t), not by key index: the old
+                # 0.0022 + 0.0012*k forced the top tips >= 13 mm off the skull, a puffed helmet shell.
+                # Each strand gets a layer: inner strands lie close, outer ones a few mm out (volume with depth).
+                t = k / (nk - 1)
+                bulge = 0.35 + 0.65 * math.sin(math.pi * min(1.0, t * 1.2))   # some lift kept to the tip
+                # a real side-part cut sits ~1-2 cm thick on top: outer layers up to ~15 mm, inner ones low
+                off = 0.0004 + (0.003 + 0.012 * layer) * bulge * (0.2 + 0.8 * top)
+                off_max = off + 0.004 + 0.01 * front * t                                  # quiff room
                 dist = (p - near).dot(nn)
                 if dist < off:
                     p = near + nn * off
@@ -317,9 +325,44 @@ def report(body):
               f"roots in {[round(v, 3) for v in lo]}..{[round(v, 3) for v in hi]}")
 
 
+def follow_face(body, ob, used, min_move=0.0001):
+    """Give `ob` (a mesh built from the body vertices `used`, in order) the body's face shapes that move those
+    vertices (brows, forehead), driven by the body's sliders, so it moves with the skin on expressions."""
+    import sys as _sys
+    import os as _os
+    _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+    from max_expressions import FACE_UNITS
+    keys = body.data.shape_keys.key_blocks
+    basis = keys[0]
+    moved = []
+    for kb in keys:
+        if kb.name not in FACE_UNITS:
+            continue
+        delta = [Vector(kb.data[v].co) - Vector(basis.data[v].co) for v in used]
+        if max(d.length for d in delta) >= min_move:
+            moved.append((kb.name, delta))
+    if not moved:
+        return []
+    if not ob.data.shape_keys:
+        ob.shape_key_add(name="Basis", from_mix=False)
+    for name, delta in moved:
+        sk = ob.shape_key_add(name=name, from_mix=False)
+        for i, d in enumerate(delta):
+            sk.data[i].co = Vector(ob.data.vertices[i].co) + d
+        drv = sk.driver_add("value").driver
+        drv.type = "AVERAGE"
+        var = drv.variables.new()
+        var.targets[0].id_type = "KEY"
+        var.targets[0].id = body.data.shape_keys
+        var.targets[0].data_path = f'key_blocks["{name}"].value'
+    return [m[0] for m in moved]
+
+
 def build_scalp_cap(rig, body, co, polys, weights):
-    """Dark-brown cap 1.5 mm over the scalp, skinned to the head bone (no skin between strands)."""
-    keep = {i for i, w in weights.items() if w > 0.7}     # inset from the hairline: its edge never shows
+    """Dark scalp-toned cap 0.2 mm over the scalp, skinned to the head bone (no bright skin between strands).
+    v5 (Codex 010): it sat 1.5 mm out and read as a dark shell rim behind the ear; now it's closer, inset
+    further from the hairline, and closer to a scalp colour."""
+    keep = {i for i, w in weights.items() if w > 0.85}    # inset from the hairline: its edge never shows
     faces = [f for f in polys if all(v in keep for v in f)]
     used = sorted({v for f in faces for v in f})
     remap = {v: i for i, v in enumerate(used)}
@@ -327,7 +370,7 @@ def build_scalp_cap(rig, body, co, polys, weights):
     me.from_pydata([Vector(co[v]) for v in used], [], [[remap[v] for v in f] for f in faces])
     me.update()
     for v in me.vertices:
-        v.co += v.normal * 0.0015
+        v.co += v.normal * 0.0002
     for p in me.polygons:
         p.use_smooth = True
     ob = bpy.data.objects.new("Max.scalp", me)
@@ -338,10 +381,11 @@ def build_scalp_cap(rig, body, co, polys, weights):
     vg.add(list(range(len(me.vertices))), 1.0, "REPLACE")
     arm = ob.modifiers.new("Armature", "ARMATURE")
     arm.object = rig
+    follow_face(body, ob, used)                # the cap moves with the brows (else it showed at the hairline)
     mat = bpy.data.materials.new("Max_scalp")
     mat.use_nodes = True
     b = mat.node_tree.nodes["Principled BSDF"]
-    b.inputs["Base Color"].default_value = (0.035, 0.021, 0.013, 1)       # matches the hair at the root
+    b.inputs["Base Color"].default_value = (0.075, 0.048, 0.034, 1)       # a shadowed scalp under dark hair
     b.inputs["Roughness"].default_value = 0.7
     mat.diffuse_color = (0.022, 0.013, 0.008, 1)
     me.materials.append(mat)

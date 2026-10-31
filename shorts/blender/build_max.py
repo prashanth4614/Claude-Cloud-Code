@@ -104,7 +104,9 @@ def build():
     import max_hair
     max_hair.groom(rig, body)
     import max_look
-    max_look.upgrade(rig)          # v4: skin, eyes, teeth and hair polish
+    max_look.upgrade(rig)          # v4/v5: skin zones, eyes, teeth, render subdivision
+    import max_hair_curves
+    max_hair_curves.to_curves(rig, body)   # v5: real hair curves (~150k strands) from the combed guides
     return rig, body
 
 

@@ -23,7 +23,7 @@ EXPRESSIONS = {
     "neutral": {},
     # S01-S02 hook: one brow up, the other down, mouth pulled to one side, eyes slightly narrowed.
     "puzzled": {   # v4: stronger asymmetry, mouth pulled hard to one side, lips pressed
-        "browOuterUpLeft": 0.95, "browInnerUp": 0.6, "browDownRight": 0.85,
+        "browOuterUpLeft": 0.85, "browInnerUp": 0.55, "browDownRight": 0.6,
         "eyeSquintRight": 0.7, "eyeWideLeft": 0.35,
         "mouthLeft": 0.7, "mouthPressLeft": 0.6, "mouthPressRight": 0.35, "mouthRollLower": 0.25,
         "mouthFrownRight": 0.25,
@@ -59,7 +59,7 @@ EXPRESSIONS = {
         "jawOpen": 0.42, "mouthFunnel": 0.5, "mouthPucker": 0.2, "mouthSmileLeft": 0.15, "mouthSmileRight": 0.1,
     },
     "curious": {  # one brow high, the other low, a half-smile pulled to one side (v4: bigger)
-        "browOuterUpLeft": 0.95, "browInnerUp": 0.45, "browDownRight": 0.6,
+        "browOuterUpLeft": 0.85, "browInnerUp": 0.45, "browDownRight": 0.45,
         "eyeWideLeft": 0.45, "eyeSquintRight": 0.55, "mouthLeft": 0.45, "mouthSmileLeft": 0.45,
         "mouthPressRight": 0.4, "mouthDimpleLeft": 0.3, "cheekSquintLeft": 0.25,
     },
@@ -112,9 +112,9 @@ EXPRESSIONS = {
     # S12b "pull the tube open": relief, a soft closed-mouth smile and relaxed eyes.
     "relief_smile": {  # v4: a fuller smile, eyes softly closing, brows lifted
         "browOuterUpLeft": 0.35, "browOuterUpRight": 0.35,
-        "mouthSmileLeft": 0.85, "mouthSmileRight": 0.8, "mouthDimpleLeft": 0.3, "mouthDimpleRight": 0.3,
+        "mouthSmileLeft": 0.65, "mouthSmileRight": 0.6, "mouthDimpleLeft": 0.3, "mouthDimpleRight": 0.3,
         "cheekSquintLeft": 0.45, "cheekSquintRight": 0.45, "eyeSquintLeft": 0.3, "eyeSquintRight": 0.3,
-        "eyeBlinkLeft": 0.45, "eyeBlinkRight": 0.45, "browInnerUp": 0.35,
+        "eyeBlinkLeft": 0.15, "eyeBlinkRight": 0.15, "browInnerUp": 0.35,
     },
     # S13 "Follow for more": big open grin to camera (the hand does the thumbs-up).
     "thumbs_up": {
@@ -128,12 +128,12 @@ EXPRESSIONS = {
 # Head and neck rotation in degrees (x = nod down, y = tilt to his left, z = turn to his left).
 HEAD_POSE = {
     "neutral": (0, 0, 0),
-    "puzzled": (-3, 12, 8),
+    "puzzled": (-3, 8, 6),
     "wince": (6, -6, 0),
     "ear_pop": (5, -9, -4),
     "surprised": (-5, 0, 0),
     "amazed": (-7, 4, 0),
-    "curious": (-4, 13, 8),
+    "curious": (-4, 8, 6),
     "thinking": (-11, -9, -10),
     "scared": (5, 0, 0),
     "laughing": (-10, 4, 0),
