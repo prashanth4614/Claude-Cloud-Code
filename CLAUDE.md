@@ -40,9 +40,10 @@ YouTube Shorts production pipeline. **The agreed production pipeline is `PIPELIN
 - Cloud sessions get the ElevenLabs key as a network secret attached by the proxy, so
   `$ELEVENLABS_API_KEY` may be empty even though requests work. Never print, log or commit any key.
 
-## Helper sessions on the Mac (reuse these; don't create new ones)
+## Helper sessions (reuse these; don't create new ones)
 
-The owner's Mac has three standing helper sessions (Remote Control bridge). Send each task to the one
+The owner's Mac has three standing helper sessions (Remote Control bridge), and two cloud workers take
+long jobs off the coordinating session, so the owner can keep talking to it while they run. Send each task to the one
 that fits it with `send_message`, and create a new helper only for a genuinely new kind of task, with the
 owner's OK.
 
@@ -51,6 +52,8 @@ owner's OK.
 | Render worker | `session_01Bok4noiXNe3cEe1E2MxQpM` | Blender on the Mac: animatics, review renders, thumbnails, Mac-side previews |
 | Codex helper | `session_01Bok4nppX4eaPC9ozBb3Gms` | every `shorts/tools/ask_codex.sh <id>` run (code and creative review) |
 | Web / YouTube | `session_01Bok4noPAoM8Fa4xBMKHT9P` | Chrome on the Mac: YouTube references (`yt_reference.py`), web research, measurements of reference videos |
+| Cloud worker: voice & audio | `session_01Bok4nmfJr7VJ7ka18W8PBn` | long ElevenLabs jobs in the cloud: voice takes and auditions, `voice_check.py`, SFX and music generation, mix builds (`mix.py`, `telugu.py`) |
+| Cloud worker: RunPod renders | `session_01Bok4npHajGYFXx5epHgMSF` | RunPod GPU renders (`final_render.sh`: dry run, bench, full, assemble), watching the pods and deleting them |
 
 **Monitoring:**
 - Every time a helper gets a task, schedule a check-in (`send_later`, about 10-15 minutes, or matched
@@ -65,6 +68,12 @@ owner's OK.
 - Helpers can't always message back (a trusted-device limit), so read their transcript or the branch
   rather than waiting for a reply.
 - Cancel pending check-ins once the work is reported.
+- The cloud workers' earlier blockers (2026-10-29: an ElevenLabs 401, a missing TTS cache) are stale:
+  - the key now reaches ElevenLabs through the proxy;
+  - the pilot's takes are cached through `shorts/pilot_ear_pop/takes/`.
+
+  Brief each worker fully with every task (files, settings, spend limits). Credits are spent only after
+  the owner's OK, and RunPod jobs always run a `--dry-run` first.
 
 ## Making a new video
 
