@@ -4,7 +4,7 @@
   light stubble, big brown eyes, stylized-realistic).
 - `max_v4.blend` (current): the rigged 3D Max, everything packed, saved with Blender 5.2. Open it in Blender 5.2 or later; no add-ons needed.
   v4 = v3 + `shorts/blender/max_look.py`: pores, a varied-gloss skin and softer subsurface; wet eyes; finer, denser hair
-  with stray ends; 17 expressions. `max_v3.blend` stays for the published pilot.
+  (a neat side part since the owner's note: no spikes); 17 expressions. `max_v3.blend` stays for the published pilot.
 - `review/`: turnaround and expression sheets for each version (v1: first pass; v2: groomed hair, stubble).
 - `textures/max_outfit_diffuse.png`: the CC0 MakeHuman casual suit, recoloured by `shorts/blender/max_textures.py`.
 
@@ -14,9 +14,9 @@ body and phenotype, a stylized push (bigger eyes, defined jaw), skin, brown eyes
 the recoloured tee and jeans, white shoes05 sneakers, and the default
 skeleton (fingers, jaw, neck, eyes).
 
-Hair and stubble are particle grooms combed from code (`shorts/blender/max_hair.py`): ~2.6k guide
-strands with interpolated children for the messy dark-brown mop (top swept up and to his left, short
-sides), very short stubble on the jaw, chin and upper lip that moves with the face shapes, and a dark
+Hair and stubble are particle grooms combed from code (`shorts/blender/max_hair.py`): ~3k guide
+strands with interpolated children for a neat dark-brown side part (v4: the top combed back and over with a
+low quiff, short tidy sides and back, strands kept close to the skull, no spiky clumps), very short stubble on the jaw, chin and upper lip that moves with the face shapes, and a dark
 scalp cap underneath. Change the look with the constants at the top of that file.
 
 His face has the **52 ARKit face shapes** (faceunits01 pack) on the body (brows, lashes, teeth and tongue

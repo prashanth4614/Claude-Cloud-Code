@@ -1,8 +1,8 @@
 """Max's hair and stubble: particle grooms combed from code (free, renders in Cycles and EEVEE).
 
 groom(rig, body) adds to Max.body:
-  - "Max hair": ~2.5k combed guide strands + interpolated children. A thick, messy, dark-brown mop:
-    longer textured top swept forward over the forehead, short tapered sides and back.
+  - "Max hair": ~3k combed guide strands + interpolated children. v4: a neat, modern side part. The
+    longer top is combed back and over with a low quiff at the front; the sides and back are short and tidy.
   - "Max stubble": very short dark hairs on the jaw, chin, upper lip and cheeks. They ride on the
     face shapes, so the stubble moves with every expression.
   - "Max.scalp": a thin dark-brown cap under the hair, so no skin shows between strands.
@@ -19,11 +19,16 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
 SEED = 7
-GUIDES = 1800                 # fewer, chunkier locks (stylized, reads in wide shots)
-CHILDREN = 70                 # rendered children per guide
-TOP_LEN, SIDE_LEN, BACK_LEN = 0.064, 0.026, 0.022
+GUIDES = 3000                 # v4: more, finer guides for a smooth, groomed look (not chunky locks)
+CHILDREN = 60                 # rendered children per guide (max_look.py raises it for renders)
+TOP_LEN, SIDE_LEN, BACK_LEN = 0.072, 0.018, 0.02   # longer top, short tapered sides and back
 FRINGE_Z = 0.066              # front strands stay above this height over the eyes (no locks on the forehead)
-SWEEP = Vector((0.5, -0.2, 0.42))   # front/top flow: up off the forehead and over to his left (+X)
+# v4 style: a neat side part. The part sits on his right (-X); the top is combed back and over to his left
+# (+X) with a soft lift at the front (a low quiff), the short side below the part is combed down and back.
+PART_X = -0.035               # part line, relative to the head centre (his right is -X)
+SWEEP = Vector((0.55, 0.55, 0.12))   # top flow: back and over to his left, lying on the head
+FRONT_LIFT = 0.32             # lift at the front hairline only (the quiff), fading to flat by mid-head
+WAVE = 0.04                   # a whisper of wave (v3: 0.15-0.3 made spiky zigzags)
 HAIR_MELANIN, HAIR_REDNESS = 0.9, 0.12     # dark brown, highlights without orange tips
 STUBBLE_COUNT, STUBBLE_LEN = 14000, 0.0022
 
@@ -212,14 +217,14 @@ def groom(rig, body):
     s.child_type = "INTERPOLATED"
     s.child_percent, s.rendered_child_count = 8, CHILDREN
     s.virtual_parents = 0.0
-    s.clump_factor, s.clump_shape = 0.6, -0.1        # soft locks with rounded ends (not spikes)
-    s.roughness_1, s.roughness_1_size = 0.0012, 1.0
-    s.roughness_endpoint, s.roughness_end_shape = 0.003, 1.0
-    s.roughness_2, s.roughness_2_size, s.roughness_2_threshold = 0.0015, 1.0, 0.85   # few flyaways
+    s.clump_factor, s.clump_shape = 0.15, 0.0        # v4: barely clumped, so no pointed spikes
+    s.roughness_1, s.roughness_1_size = 0.0004, 1.0
+    s.roughness_endpoint, s.roughness_end_shape = 0.0005, 1.0
+    s.roughness_2, s.roughness_2_size, s.roughness_2_threshold = 0.0006, 1.0, 0.95   # rare flyaways
     s.child_length_threshold = 0.25
-    s.root_radius, s.tip_radius, s.radius_scale = 1.0, 0.45, 0.0005   # blunt lock ends: soft, not spiky
+    s.root_radius, s.tip_radius, s.radius_scale = 1.0, 0.6, 0.00034   # blunt ends: soft, not spiky
     s.use_close_tip = True
-    s.kink, s.kink_amplitude, s.kink_frequency, s.kink_shape = "WAVE", 0.0015, 0.8, 0.0   # children follow the guide's wave
+    s.kink = "NO"                                    # v4: smooth strands (no wave kink)
     _activate_edit(body)
     roots, oe, me, pe = _evaluated(body, "Max hair")
     sweep = SWEEP.normalized()
@@ -232,13 +237,19 @@ def groom(rig, body):
         phi = abs(math.degrees(math.atan2(rel.x, -rel.y)))
         top = _smooth(0.045, 0.085, h) * (1 - _smooth(120, 160, phi))
         back = _smooth(110, 160, phi) * (1 - top)
-        length = (SIDE_LEN * (1 - top - back) + TOP_LEN * top + BACK_LEN * back) * rnd.uniform(0.8, 1.2)
-        side_flow = Vector((0.0, 0.45, -1.0)).normalized()
-        flow = (sweep * top + side_flow * (1 - top)).normalized()
-        lift = 0.45 * top + 0.25 * (1 - top)
+        length = (SIDE_LEN * (1 - top - back) + TOP_LEN * top + BACK_LEN * back) * rnd.uniform(0.85, 1.15)
+        length *= 1 - 0.55 * _smooth(-0.01, 0.06, rel.y) * top     # v4: taper over the crown (no "shelf" at the back)
+        side_flow = Vector((0.0, 0.5, -1.0)).normalized()          # sides: combed down and back, flat
+        if top > 0.3 and rel.x < PART_X:                            # below the part: combed to his right, down
+            top_flow = Vector((-0.5, 0.45, -0.25)).normalized()
+        else:
+            top_flow = sweep
+        flow = (top_flow * top + side_flow * (1 - top)).normalized()
+        front = _smooth(-0.02, -0.09, rel.y) * top                 # near the front hairline (rel.y < 0 = front)
+        lift = FRONT_LIFT * front + 0.12 * top * (1 - front) + 0.05 * (1 - top)
         d = (n * lift + flow * (1 - lift)).normalized()
-        jitter = Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-0.5, 0.5))) * 0.2
-        phase, amp = rnd.uniform(0, 2 * math.pi), rnd.uniform(0.15, 0.3) * (0.4 + top)
+        jitter = Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-0.5, 0.5))) * 0.05
+        phase, amp = rnd.uniform(0, 2 * math.pi), WAVE * rnd.uniform(0.5, 1.0)
         d = (d + jitter).normalized()
         nk = len(part.hair_keys)
         seg = length / (nk - 1)
@@ -257,8 +268,15 @@ def groom(rig, body):
             near, nn, _, _ = bvh.find_nearest(p)
             if near is not None:
                 off = 0.0022 + 0.0012 * k * (0.5 + top)
-                if (p - near).dot(nn) < off:
+                # v4: also cap the distance, so combed strands follow the skull instead of flying off it;
+                # the front hairline gets extra room for the quiff
+                off_max = 0.0045 + 0.0022 * k * (0.3 + top) + 0.006 * front * k / (nk - 1)
+                dist = (p - near).dot(nn)
+                if dist < off:
                     p = near + nn * off
+                elif dist > off_max:
+                    p = near + nn * off_max
+                    d = (p - pts[-1]).normalized()      # carry on along the head, not outward
             pts.append(p.copy())
         for key, q in zip(part.hair_keys, pts):
             key.co_object_set(oe, me, pe.particles[idx], q)

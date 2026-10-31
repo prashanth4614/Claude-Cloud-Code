@@ -5,7 +5,7 @@
 
 Also runs on an existing file, without rebuilding:
 
-    blender -b assets/characters/max/max_v3.blend -P shorts/blender/max_look.py -- --out assets/characters/max/max_v4.blend [--sheet DIR]
+    blender -b assets/characters/max/max_v3.blend -P shorts/blender/max_look.py -- --out assets/characters/max/max_v4.blend [--regroom] [--sheet DIR]
 
 Realism comes from light and materials, not polygons (shorts-craft §11): pores and patchy gloss on the skin,
 a wet cornea coat on the eyes, fine clumped hair with stray tips, and a soft key with a cyan rim.
@@ -29,10 +29,10 @@ SKIN = {
 }
 SKIN_ROUGH = (0.36, 0.52)         # roughness varies across the face (oilier and drier patches)
 
-# hair groom (max_hair.py's particle systems): finer strands, more of them, natural stray ends
-HAIR = {"rendered_child_count": 220, "radius_scale": 0.00034, "tip_radius": 0.3, "clump_factor": 0.45,
-        "clump_shape": 0.25, "roughness_1": 0.0008, "roughness_endpoint": 0.0025, "roughness_2": 0.004,
-        "roughness_2_threshold": 0.75}
+# hair groom (max_hair.py's particle systems): fine, smooth, barely clumped strands
+HAIR = {"rendered_child_count": 150, "radius_scale": 0.00034, "tip_radius": 0.6, "clump_factor": 0.15,
+        "clump_shape": 0.0, "roughness_1": 0.0004, "roughness_endpoint": 0.0005, "roughness_2": 0.0006,
+        "roughness_2_threshold": 0.95}   # neat and groomed (the owner: "normal and stylish", no spikes)
 HAIR_SHADER = {"Roughness": 0.32, "Radial Roughness": 0.35, "Coat": 0.12, "Random Color": 0.12,
                "Random Roughness": 0.25}
 
@@ -151,6 +151,16 @@ if __name__ == "__main__":
     rig = bpy.data.objects.get("Max")
     if rig is None:
         raise SystemExit("open a Max .blend first")
+    if "--regroom" in argv:        # re-run max_hair.groom on this Max (replaces the old hair, stubble and scalp)
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import max_hair
+        body = next(o for o in rig.children_recursive if o.name.endswith(".body"))
+        for mod in [m for m in body.modifiers if m.type == "PARTICLE_SYSTEM"]:
+            body.modifiers.remove(mod)
+        for ob in [o for o in bpy.data.objects if o.name.startswith("Max.scalp")]:
+            bpy.data.objects.remove(ob, do_unlink=True)
+        bpy.context.view_layer.objects.active = body
+        max_hair.groom(rig, body)
     upgrade(rig)
     if "--sheet" in argv:          # turnaround + expression sheet in the house light rig
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
