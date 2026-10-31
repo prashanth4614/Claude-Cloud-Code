@@ -1,5 +1,13 @@
 # Meshy free-tier trial (2026-10-31): needs owner sign-in
 
+**Update (2026-10-31, 21:10–22:10 IST):**
+- The Meshy workspace was opened in the automation Chrome on the Mac and brought to the front for the
+  owner to sign in.
+- It was checked every minute for 60 minutes: **still not signed in**. The trial was not run, and
+  0 credits were spent.
+- The window is left open (Chrome with the profile `out/reference/profile`). Once the owner has signed
+  in there, re-send the task and the helper will run it.
+
 **Status: not run. Needs the owner to sign in.** Nothing was generated and no credits were spent. No
 account was created and no credentials were entered.
 
