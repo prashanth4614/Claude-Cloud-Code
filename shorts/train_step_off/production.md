@@ -6,7 +6,7 @@ owner approves (record the date). Changing a locked item reopens its gate.
 | Gate | Status | Approved (date) | Notes / links |
 |---|---|---|---|
 | G0 Idea and angle | ☑ | 2026-10-31 | see G0 below; web differentiation check pending |
-| G1 Story and facts (Codex) | ☐ | | `facts.md`, Codex request id |
+| G1 Story and facts (Codex) | ◐ | | beats approved by the owner 2026-10-31 ("proceed"); `story.md`, `facts.md`; Codex 017 |
 | G2 Script locked (Codex) | ☐ | | word count, timing at 170 wpm |
 | G3 Screenplay, shot list, transition chain, boards (Codex) | ☐ | | `shots.yaml`, boards sheet |
 | G4 Voice locked | ☐ | | take id, `voice_check.py` result |
@@ -35,6 +35,8 @@ owner approves (record the date). Changing a locked item reopens its gate.
 - **Telugu version:** not now.
 
 ## Decisions log
+
+- 2026-10-31 Meshy shelved; beat outline approved, go to the next step (owner)
 
 - 2026-10-31 Mumbai local; "why you fall" framing; hook 3; no Telugu version for now (owner)
 - 2026-10-31 Runtime up to ~50 s, as long as every shot is tight (owner): all three falls stay
