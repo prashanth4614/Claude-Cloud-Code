@@ -438,3 +438,11 @@ Render of `max_v6.blend` at 55f35cf (v6h): same Metal wrapper (Apple M4 GPU), 12
   motion amplitude is essentially the same as v6e. Maybe `chew_cycle` keys don't pick up the bigger
   chew shapes, or the change only affects the static `chew` tile.
 - **Lip gap:** none in any of the 14 frames.
+
+## v6i (chew amplitude; the Mac v6h review measured no visible change from v6e)
+
+- The keys were applied correctly; v6h's step (jawOpen 0.44 to 0.52) was just too small to see.
+- Now: jawOpen 0.68 with mouthClose 0.62 (lips still sealed), jawLeft/Right 0.75, and a 7° chin bob on
+  each chew (HEAD_POSE `chew` (7,-5,0)).
+- `max_v6i_chew_cpu.jpg` shows neutral | chew | chew_r: the chin clearly drops and swings, with no lip gap.
+- Shape keys only; `max_v6.blend` doesn't change (expressions are read from code).

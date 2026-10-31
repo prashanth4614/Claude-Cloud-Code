@@ -113,9 +113,9 @@ EXPRESSIONS = {
     # alternates chew / chew_b.
     # v6c (Codex 012): bigger, sealed jaw work; cheek fullness suggested on one side with the opposite
     # squint/press (the 52 units have no one-sided cheek puff). chew_r / chew_b_r mirror them (below).
-    "chew": {   # v6g (Codex 014): more jaw travel down and sideways, lips sealed (mouthClose follows jawOpen)
-        "jawOpen": 0.52, "mouthClose": 0.47,
-        "jawLeft": 0.6, "jawForward": 0.10,
+    "chew": {   # v6h (Mac: v6g's change was too small to see in motion): bigger jaw drop and shift, lips sealed
+        "jawOpen": 0.68, "mouthClose": 0.62,
+        "jawLeft": 0.75, "jawForward": 0.10,
         "mouthLeft": 0.22, "cheekPuff": 1.0,
         "cheekSquintRight": 0.65,
         "mouthPressRight": 0.4, "mouthPressLeft": 0.12,
@@ -158,7 +158,7 @@ HEAD_POSE = {
     "disgusted": (-5, -14, -8),
     "swallow": (10, 0, 0),       # v6b: a chin tuck, so a still reads as swallowing
     "yawn": (-14, 3, 0),
-    "chew": (4, -4, 0),
+    "chew": (7, -5, 0),
     "chew_b": (1, -2, 0),
     "relief_smile": (-12, -4, 3),
     "thumbs_up": (-1, 5, 0),
