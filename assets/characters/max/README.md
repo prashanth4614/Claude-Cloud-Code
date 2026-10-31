@@ -2,7 +2,9 @@
 
 - `max_reference.png`: the look we match (teal tee, dark jeans, white sneakers, messy dark-brown hair,
   light stubble, big brown eyes, stylized-realistic).
-- `max_v3.blend`: the rigged 3D Max, everything packed. Open it in Blender 4.5 or later; no add-ons needed.
+- `max_v4.blend` (current): the rigged 3D Max, everything packed, saved with Blender 5.2. Open it in Blender 5.2 or later; no add-ons needed.
+  v4 = v3 + `shorts/blender/max_look.py`: pores, a varied-gloss skin and softer subsurface; wet eyes; finer, denser hair
+  with stray ends; 17 expressions. `max_v3.blend` stays for the published pilot.
 - `review/`: turnaround and expression sheets for each version (v1: first pass; v2: groomed hair, stubble).
 - `textures/max_outfit_diffuse.png`: the CC0 MakeHuman casual suit, recoloured by `shorts/blender/max_textures.py`.
 
@@ -19,7 +21,8 @@ scalp cap underneath. Change the look with the constants at the top of that file
 
 His face has the **52 ARKit face shapes** (faceunits01 pack) on the body (brows, lashes, teeth and tongue
 follow it through drivers), so every expression is hand-keyed by name. The expressions live in `shorts/blender/max_expressions.py`
-(puzzled, wince, swallow, yawn, chew, relief smile, thumbs-up), each a set of face-shape weights plus a
+(neutral, puzzled, curious, thinking, surprised, amazed, scared, wince, ear_pop, disgusted, laughing,
+relief smile, swallow, yawn, chew, thumbs-up), asymmetric and at thumbnail strength since v4, each a set of face-shape weights plus a
 small head and neck tilt. Change a number there and rebuild, and every shot picks it up.
 
 To rebuild (only needed when changing him):
@@ -27,7 +30,9 @@ To rebuild (only needed when changing him):
 2. In MPFB's asset-pack panel, install the CC0 packs: makehuman_system_assets, skins01, hair01,
    eyebrows01, eyelashes01, faceunits01 (static.makehumancommunity.org/assets/assetpacks).
 3. `python3 shorts/blender/max_textures.py`
-4. `blender -b -P shorts/blender/build_max.py -- --out assets/characters/max/max_v3.blend --sheet out/characters/max/sheet`
+4. `blender -b -P shorts/blender/build_max.py -- --out assets/characters/max/max_v4.blend --sheet out/characters/max/sheet`
+   (build_max applies `max_look.upgrade()`; to upgrade an existing file instead:
+   `blender -b max_v3.blend -P shorts/blender/max_look.py -- --out max_v4.blend [--sheet DIR]`)
 
 ## Posing him by hand in Blender
 - Select **Max.body** ▸ Object Data properties ▸ **Shape Keys**: drag `jawOpen`, `eyeBlinkLeft`,

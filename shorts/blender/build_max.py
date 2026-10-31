@@ -103,6 +103,8 @@ def build():
     link_face_drivers(rig, body)
     import max_hair
     max_hair.groom(rig, body)
+    import max_look
+    max_look.upgrade(rig)          # v4: skin, eyes, teeth and hair polish
     return rig, body
 
 
@@ -319,23 +321,8 @@ def setup_render(res=(720, 720), samples=48):
     sc.render.film_transparent = False
     sc.view_settings.view_transform = "AgX"
     sc.view_settings.look = "AgX - Medium High Contrast"
-    world = bpy.data.worlds.new("Studio")
-    world.use_nodes = True
-    world.node_tree.nodes["Background"].inputs[0].default_value = (0.42, 0.45, 0.5, 1)
-    world.node_tree.nodes["Background"].inputs[1].default_value = 0.6
-    sc.world = world
-    # Three-point studio light, warm key / cool fill, like the cabin's window light.
-    for name, loc, energy, color, size in (
-        ("Key", (-1.6, -2.2, 2.4), 220, (1.0, 0.9, 0.8), 1.6),
-        ("Fill", (2.2, -1.6, 1.6), 70, (0.85, 0.9, 1.0), 2.5),
-        ("Rim", (0.6, 2.4, 2.4), 150, (1.0, 1.0, 1.0), 1.0),
-    ):
-        ld = bpy.data.lights.new(name, "AREA")
-        ld.energy, ld.color, ld.size = energy, color, size
-        lo = bpy.data.objects.new(name, ld)
-        sc.collection.objects.link(lo)
-        lo.location = loc
-        lo.rotation_euler = (Vector((0, 0, 1.2)) - Vector(loc)).to_track_quat("-Z", "Y").to_euler()
+    import max_look
+    max_look.studio(sc)            # the house character rig (ink & amber)
     cd = bpy.data.cameras.new("SheetCam")
     cam = bpy.data.objects.new("SheetCam", cd)
     sc.collection.objects.link(cam)
