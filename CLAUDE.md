@@ -40,6 +40,32 @@ YouTube Shorts production pipeline. **The agreed production pipeline is `PIPELIN
 - Cloud sessions get the ElevenLabs key as a network secret attached by the proxy, so
   `$ELEVENLABS_API_KEY` may be empty even though requests work. Never print, log or commit any key.
 
+## Helper sessions on the Mac (reuse these; don't create new ones)
+
+The owner's Mac has three standing helper sessions (Remote Control bridge). Send each task to the one
+that fits it with `send_message`, and create a new helper only for a genuinely new kind of task, with the
+owner's OK.
+
+| Helper | Session id | Use for |
+|---|---|---|
+| Render worker | `session_01Bok4noiXNe3cEe1E2MxQpM` | Blender on the Mac: animatics, review renders, thumbnails, Mac-side previews |
+| Codex helper | `session_01Bok4nppX4eaPC9ozBb3Gms` | every `shorts/tools/ask_codex.sh <id>` run (code and creative review) |
+| Web / YouTube | `session_01Bok4noPAoM8Fa4xBMKHT9P` | Chrome on the Mac: YouTube references (`yt_reference.py`), web research, measurements of reference videos |
+
+**Monitoring:**
+- Every time a helper gets a task, schedule a check-in (`send_later`, about 10-15 minutes, or matched
+  to the job's length).
+- On each check-in, read its state (`get_session`, `list_events` filtered to assistant/result, or its
+  pushes on the branch). Then:
+  - give the owner a one-line progress note;
+  - re-arm until the task is done;
+  - report the outcome.
+- A helper stuck or asking for something (a permission prompt, a missing tool) gets unblocked or
+  escalated to the owner at once.
+- Helpers can't always message back (a trusted-device limit), so read their transcript or the branch
+  rather than waiting for a reply.
+- Cancel pending check-ins once the work is reported.
+
 ## Making a new video
 
 - Use the `shorts-craft` skill (`.claude/skills/shorts-craft/`) for every new Short, on any topic:
