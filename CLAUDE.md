@@ -61,6 +61,11 @@ owner's OK.
   (ACCESS_DENIED, verified 2026-10-31). Don't schedule check-ins into it. Instead, **at the start of
   every reply**, check each helper that has an open task (`get_session`, the branch for its pushes)
   and report one line on each.
+- **Self-monitoring that does work:** while a helper is busy, run
+  `shorts/tools/watch_branch.sh '<path regex>' <minutes>` with the Bash tool's `run_in_background`. It
+  polls the branch every minute and exits when the helper's push lands, which re-invokes this session to
+  act on it (apply, review, send the next task) without the owner having to message. Re-arm it after
+  each event while work is open.
 - Helpers deliver by pushing to the branch, and by opening results in Preview on the Mac for the
   owner.
 - When checking, read its state (`get_session`, `list_events` filtered to assistant/result, or its
