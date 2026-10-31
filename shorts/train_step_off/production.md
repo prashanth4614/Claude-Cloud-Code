@@ -11,6 +11,7 @@ owner approves (record the date). Changing a locked item reopens its gate.
 | G3 Screenplay, shot list, transition chain, boards (Codex) | ◐ | | `shots.yaml` (11 shots), `boards/boards_g3_v2.jpg` (21 boards, Codex 019 fixes); procedural set `blender/build_set.py`; Codex 019, 020 |
 | G4 Voice locked | ☑ | 2026-10-31 | stability 0.5 full take (668 chars); pauses re-cut to ≤0.25 s (free); `voice/timings_locked.json`. Kept as is: flat-ish pitch (6 st) and "kilometres" possibly clipped (owner: keep for now) |
 | G5 Pre-frame QA (Codex) | ☐ | | QA report, waivers |
+| G5b Motion test (Codex) | ☐ | | mocap retarget + physics timing + facial acting, per action |
 | G6 Key-frame test (Claude + Codex) | ☐ | | sheets, must-fix list |
 | G7 Animatic + review .blend: picture lock | ☐ | | `out/train_step_off/train_step_off_review.blend` |
 | G8 Sound (Codex) | ☐ | | `audit_mix.py` result, licences |
@@ -35,6 +36,8 @@ owner approves (record the date). Changing a locked item reopens its gate.
 - **Telugu version:** not now.
 
 ## Decisions log
+
+- 2026-10-31 Owner priority: body physics, natural limb motion and facial acting per action must be spot on (Zack level). Added: motion test G5b; mocap (CMU, Mixamo) retargeted onto Max; physics-timed falls; reflex and face timing rules (shorts-craft §5b). Codex 020 board fixes folded into the motion test
 
 - 2026-10-31 Voice take kept as is. Order: frames and animatic first; audio and SFX after picture lock (owner)
 

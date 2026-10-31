@@ -133,6 +133,17 @@ Run on the built `.blend`, with no rendering:
 - **Pass:** no QA failures, or each one waived by the owner with a reason. (Extend `qa_scene.py` with
   the camera, transition and safe-zone checks as each new video needs them.)
 
+## G5b Motion test: body mechanics and acting (the owner's priority)
+
+- **What:** every action in the shot list (walk, step, stumble, fall, recover, grab), animated on Max
+  from retargeted motion capture plus physics-timed edits (shorts-craft §5b), with the facial acting.
+- **Render (render worker, Mac):** a short EEVEE or Workbench clip for each action, from two angles, at
+  real speed and in slow motion, plus contact sheets.
+- **Codex** reviews the frames: body mechanics, weight, contacts, reflexes, overlap, the face per
+  phase, and anything that looks robotic or floaty.
+- **Pass:** no robotic or floaty motion left, contacts clean, the face matches each phase.
+  **Owner approves.**
+
 ## G6 Frame test: key frames, reviewed by Claude and Codex
 
 - **Render (render worker, Mac):** for every shot its first, middle and last frame, plus both sides of

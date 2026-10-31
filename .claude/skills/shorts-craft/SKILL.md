@@ -163,6 +163,49 @@ Every transition must have a **reason the eye accepts**:
 - Frame what he's reacting to **with** his face (the hand on the ear, the phone in his hand). The
   pilot's tight crop hid it.
 
+## 5b. Body mechanics and acting (the owner's top priority, 2026-10-31)
+
+Zack's people move like real people. Ours must too: **no plank tilts, no posed-then-rotated bodies, no
+limbs aimed one at a time.** Every action (walk, step, slip, stumble, fall, reach, recover) follows these
+rules.
+
+- **Motion source: real human motion first.**
+  - Use motion capture (CMU BVH, free for any use; Mixamo with the owner's account) retargeted onto Max
+    (MPFB2 has `cmu_mb` and `mixamo` skeletons), then edited.
+  - Hand-keying only for small acting beats (a head turn, a hand on a pole).
+  - A pose that only "aims" bones is a board, never a frame.
+- **Physics drives the timing and direction:**
+  - The centre of mass keeps its velocity until a force changes it.
+  - Feet that touch the ground stop (friction), unless a surface is slippery.
+  - The body rotates about the planted foot like an inverted pendulum. At 10 km/h it reaches the ground
+    in roughly 0.5-0.8 s, so falls are fast: show them in slow motion, never by slowing the physics.
+  - Gravity is 9.81 m/s²; no floaty falls.
+- **Reflexes, in this order:**
+  1. The perturbation.
+  2. ~100-150 ms later, the arms fling out toward the fall direction (a protective reach) and the knees
+     unlock.
+  3. A compensatory step if a foot can get under the body (facing forward).
+  4. The spine and head counter-rotate (chin tucks in a backward fall; the head lifts in a forward one).
+  5. Hands reach for the ground or a grab-point before the body lands.
+- **Weight and contact:**
+  - Feet plant flat or roll heel-to-toe, never slide unless the story says slip.
+  - Knees and hips bend to absorb.
+  - Shoulders and arms counter-swing when walking.
+  - Contacts are checked in every frame (no floating or sinking feet).
+- **Overlap and follow-through:**
+  - The head lags the torso, the hands lag the forearms.
+  - Clothes and hair settle after the body stops (a cloth sim on the tee for close-ups).
+- **Face acts with the body, timed to it:**
+  - Surprise starts ~150 ms after the perturbation (brows up, eyes wide, mouth opens).
+  - It turns into fear or effort during the fall (brows pinched, teeth clenched).
+  - Eyes squeeze or blink just before impact.
+  - Relief or pain after, depending on the beat.
+  - Eyes look where the danger is (the gap, the ground), with saccades, not a fixed stare.
+  - Expressions blend over 3-6 frames, never pop.
+- **Motion test before key frames:** every new action gets a short clip from two angles, at real speed
+  and in slow motion, on the Mac. Codex reviews the frames (body mechanics, contacts, face); the owner
+  approves it before G6.
+
 ## 6. Voice (ElevenLabs v3, the owner's clone)
 
 - **Record the whole script as one take** after the script is locked; don't stitch repairs.
