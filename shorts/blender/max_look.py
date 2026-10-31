@@ -157,6 +157,32 @@ def upgrade_eyes(mat):
                  ("Subsurface Weight", 0.08), ("Specular IOR Level", 0.5)):
         if k in b.inputs:
             b.inputs[k].default_value = v
+    # v6b: the irises read orange-red; a deeper, cooler brown (white sclera is unaffected by saturation)
+    if b.inputs["Base Color"].is_linked and "max_look_iris" not in mat.node_tree.nodes:
+        link = b.inputs["Base Color"].links[0]
+        hsv = mat.node_tree.nodes.new("ShaderNodeHueSaturation")
+        hsv.name = "max_look_iris"
+        hsv.inputs["Hue"].default_value = 0.52     # a touch toward yellow: brown, not red
+        hsv.inputs["Saturation"].default_value = 0.88
+        hsv.inputs["Value"].default_value = 0.78    # deeper
+        mat.node_tree.links.new(link.from_socket, hsv.inputs["Color"])
+        mat.node_tree.links.new(hsv.outputs["Color"], b.inputs["Base Color"])
+
+
+def upgrade_lashes(mat):
+    """v6b: the MPFB lashes read long, thick and spiky (a mascara look): thin them by lowering their opacity."""
+    b = next((n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
+    if not b or "max_look_lash" in mat.node_tree.nodes:
+        return
+    alpha = b.inputs["Alpha"]
+    m = mat.node_tree.nodes.new("ShaderNodeMath")
+    m.name, m.operation = "max_look_lash", "MULTIPLY"
+    m.inputs[1].default_value = LASH_OPACITY
+    if alpha.is_linked:
+        mat.node_tree.links.new(alpha.links[0].from_socket, m.inputs[0])
+    else:
+        m.inputs[0].default_value = alpha.default_value
+    mat.node_tree.links.new(m.outputs[0], alpha)
 
 
 def upgrade_teeth(mat):
@@ -178,7 +204,8 @@ def upgrade_teeth(mat):
 
 
 UPPER_TEETH_SHIFT = (0.0, -0.0006, -0.0024)   # m: down 2.4 mm, forward 0.6 mm (front is -y)
-ENAMEL = (0.93, 0.88, 0.80, 1.0)               # warm off-white, not paper white
+ENAMEL = (1.15, 1.08, 0.95, 1.0)               # warm and brighter (v6b: the teeth read grey-blue in shadow)
+LASH_OPACITY = 0.75                            # 0.5 made the eyes lose definition
 
 
 def upgrade_teeth_geometry(teeth):
@@ -483,12 +510,12 @@ def add_eye_wetness(rig, body):
                        - co[path[max(j - 1, 0)]]).normalized()
             across = tangent.cross(normal).normalized()
             taper = 0.1 + 0.9 * math.sin(math.pi * j / (count - 1))
-            centre = hit + normal * (0.09 * mm)
+            centre = hit + normal * (0.12 * mm)
             for k in range(ring):
                 angle = 2 * math.pi * k / ring
                 positions.append(centre
-                                 + across * (0.10 * mm * taper * math.cos(angle))
-                                 + normal * (0.035 * mm * taper * math.sin(angle)))
+                                 + across * (0.20 * mm * taper * math.cos(angle))
+                                 + normal * (0.06 * mm * taper * math.sin(angle)))   # v6b: 2x (0.2 mm didn't show)
                 used.append(source)
         for j in range(count - 1):
             for k in range(ring):
@@ -617,9 +644,9 @@ def upgrade_shirt(rig):
             math.tau * (db.z / 0.13 + 0.22 * (db.x / 0.18) ** 2),
         ))
         amplitudes.extend((
-            0.00055 * envelope(d, (0.085, 0.16, 0.055)),
-            0.00085 * envelope(dp, (0.075, 0.16, 0.065)),
-            0.00120 * envelope(db, (0.19, 0.20, 0.115)),
+            0.0010 * envelope(d, (0.085, 0.16, 0.055)),     # v6b: ~1.8x (folds read "smooth CG")
+            0.0016 * envelope(dp, (0.075, 0.16, 0.065)),
+            0.0021 * envelope(db, (0.19, 0.20, 0.115)),
         ) if i in shirt else (0, 0, 0))
 
     for name, values in (
@@ -671,7 +698,7 @@ def upgrade_shirt(rig):
                 socket.default_value = value
 
         for name, value in (
-            ("Roughness", 0.65), ("Sheen Weight", 0.15),
+            ("Roughness", 0.65), ("Sheen Weight", 0.08),   # v6b: less sheen keeps the teal rich
             ("Sheen Roughness", 0.70), ("Coat Weight", 0.0),
             ("Metallic", 0.0),
         ):
@@ -742,6 +769,8 @@ def upgrade(rig):
                 upgrade_eyes(mat)
             elif "teeth" in ob.name:
                 upgrade_teeth(mat)
+            elif "eyelash" in ob.name:
+                upgrade_lashes(mat)
     teeth = next((o for o in rig.children_recursive if "teeth" in o.name and o.type == "MESH"), None)
     if teeth:
         print("[max_look] upper teeth moved:", upgrade_teeth_geometry(teeth))
@@ -772,7 +801,7 @@ def studio(scene):
     for name, loc, energy, color, size in (
         ("Key", (-0.86, -1.23, 2.28), 100, (1.0, 0.86, 0.72), 1.0),  # Codex 010: 1 m wide, 1.5 m away, 35° side, 25° up
         ("Fill", (2.0, -1.8, 1.5), 35, (0.70, 0.82, 1.0), 3.0),     # low cool fill
-        ("Rim", (0.9, 2.6, 2.9), 50, (0.37, 0.83, 0.90), 0.8),     # cyan rim (#5FD3E6)
+        ("Rim", (0.9, 2.6, 2.9), 35, (0.37, 0.83, 0.90), 0.8),     # cyan rim (#5FD3E6)
         ("Kicker", (-1.4, 1.8, 1.7), 25, (0.37, 0.83, 0.90), 0.6),
         ("EyeLight", (0.25, -2.4, 1.68), 18, (1.0, 0.95, 0.9), 0.35),  # small, near the lens: a clear catchlight
     ):

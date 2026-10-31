@@ -106,8 +106,8 @@ EXPRESSIONS = {
     # ~0.7, so the jaw moves under closed lips; the cheeks fill as the bolus moves. build_max.chew_cycle()
     # alternates chew / chew_b.
     "chew": {
-        "jawOpen": 0.2, "mouthClose": 0.14, "jawLeft": 0.12, "mouthLeft": 0.2, "mouthPucker": 0.1,
-        "cheekPuff": 0.3, "mouthRollLower": 0.1,
+        "jawOpen": 0.2, "mouthClose": 0.14, "jawLeft": 0.2, "mouthLeft": 0.3, "mouthPucker": 0.1,
+        "cheekPuff": 0.45, "mouthRollLower": 0.1,
     },
     "chew_b": {
         "jawOpen": 0.04, "mouthClose": 0.03, "jawRight": 0.08, "mouthRight": 0.1, "mouthPressLeft": 0.3,
@@ -142,9 +142,9 @@ HEAD_POSE = {
     "scared": (5, 0, 0),
     "laughing": (-10, 4, 0),
     "disgusted": (6, -10, -8),
-    "swallow": (4, 0, 0),
+    "swallow": (10, 0, 0),       # v6b: a chin tuck, so a still reads as swallowing
     "yawn": (-14, 3, 0),
-    "chew": (0, 0, 0),
+    "chew": (2, -4, 0),
     "chew_b": (0, 0, 0),
     "relief_smile": (-6, -5, 0),
     "thumbs_up": (-1, 5, 0),

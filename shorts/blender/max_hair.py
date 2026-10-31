@@ -96,7 +96,7 @@ def scalp_weight(p, eye, head, fade=False):
         return 0.0
     phi = abs(math.degrees(math.atan2(rel.x, -rel.y)))   # 0 = front, 90 = side, 180 = back
     # v5b: lower and fuller (the v5 review: the hairline read as receding, an "M" with bare temples)
-    hairline = _ramp(phi, [(0, 0.057), (30, 0.051), (55, 0.036), (80, 0.022), (100, 0.012), (120, -0.02), (150, -0.06), (180, -0.08)])
+    hairline = _ramp(phi, [(0, 0.057), (30, 0.049), (55, 0.032), (80, 0.022), (100, 0.012), (120, -0.02), (150, -0.06), (180, -0.08)])
     if fade:
         side = _smooth(50, 80, phi)                 # sides and back only: never darken the forehead
         w = _smooth(-0.022 * side, 0.012 + 0.02 * side, (p.z - eye.z) - hairline)
