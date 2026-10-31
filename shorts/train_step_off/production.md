@@ -8,7 +8,7 @@ owner approves (record the date). Changing a locked item reopens its gate.
 | G0 Idea and angle | ☑ | 2026-10-31 | see G0 below; web differentiation check pending |
 | G1 Story and facts (Codex) | ☑ | 2026-10-31 | `story.md` rev 2, `facts.md`; Codex 017 objections all applied |
 | G2 Script locked (Codex) | ☑ | 2026-10-31 | `script.md` draft 2: 112 words, ≈42 s; Codex 018 applied |
-| G3 Screenplay, shot list, transition chain, boards (Codex) | ◐ | | `shots.yaml` (11 shots), `boards/boards_g3_v1.jpg`; procedural set `blender/build_set.py`; Codex 019 |
+| G3 Screenplay, shot list, transition chain, boards (Codex) | ◐ | | `shots.yaml` (11 shots), `boards/boards_g3_v2.jpg` (21 boards, Codex 019 fixes); procedural set `blender/build_set.py`; Codex 019, 020 |
 | G4 Voice locked | ☑ | 2026-10-31 | stability 0.5 full take (668 chars); pauses re-cut to ≤0.25 s (free); `voice/timings_locked.json`. Kept as is: flat-ish pitch (6 st) and "kilometres" possibly clipped (owner: keep for now) |
 | G5 Pre-frame QA (Codex) | ☐ | | QA report, waivers |
 | G6 Key-frame test (Claude + Codex) | ☐ | | sheets, must-fix list |

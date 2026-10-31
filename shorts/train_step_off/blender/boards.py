@@ -169,7 +169,7 @@ def needle(kmh):
 
 def dial_cam():
     """Hub, 0, 10, 20, 30 and km/h in frame, with a little console; identical for shots 3 and 10."""
-    look((399.965, -0.50, 1.19), (399.965, -0.27, 1.19), 70)
+    look((399.975, -0.56, 1.185), (399.975, -0.27, 1.185), 50)   # hub, 0-40 and km/h, a little console
 
 
 B = []
@@ -312,7 +312,7 @@ def b9b():
 def b9c():
     x = 5.0
     place(x, -2.7, PLAT_Z, "fwd", lean=12, legs="stride", expr="scared")
-    person(x + 0.5, -2.36, PLAT_Z)            # beside him on the far side: never between camera and Max
+    person(x + 0.78, -2.36, PLAT_Z)           # just ahead of him on the far side: never covering Max
     frame_max(x + 0.2, -2.8, side=-1, lens=35, offset_x=0.2)
 
 
@@ -320,7 +320,7 @@ def b9c():
 def b9d():
     x = 5.0
     place(x, -2.30, PLAT_Z, "fwd", lean=10, legs="stride", expr="scared")
-    look((x + 1.25, -2.62, PLAT_Z + 0.42), (x + 0.05, -2.05, PLAT_Z - 0.02), 28)   # the heel, the lip, the dark gap, the coach sill
+    look((x + 0.55, -2.95, PLAT_Z + 1.05), (x + 0.05, -2.02, PLAT_Z - 0.05), 30)   # looking down past him: the heel, the lip, the dark gap, the coach sill
 
 
 @board("10", "So wait until the train has completely STOPPED… (the same dial framing: the needle at 0)")
