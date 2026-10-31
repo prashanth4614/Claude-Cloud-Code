@@ -152,3 +152,23 @@ Render of `max_v6.blend` at 1d8af4d+ (pulled c945323): same Metal wrapper, Apple
 ### Anything new
 - Nothing broken. The expression sheet matches v6b otherwise (teeth, irises, chew shift all as before).
 - Still minor: a tiny bright edge on the top of the ear in the turn tiles (rim light), as noted in v6b.
+
+## v6d (Codex 012, applied and checked by Claude in the cloud)
+
+- **Armpit correctives** (`max_look.add_shirt_correctives`): two shape keys on the tee,
+  `max_pit_L` and `max_pit_R`. They are sampled from the real skinning at a 70° arm lift, inverted, and
+  then add 3 diagonal folds and remove part of the upward drag (up to 6.7 mm, about 290 vertices).
+  - Driven by the upper arm's world angle. Claude moved the onset from 15° to 40° (`PIT_ONSET`), full at
+    85° (`PIT_FULL`). With Codex's 15° the key sat at 0.33 in the rest A-pose.
+  - Measured: 0 at rest and with the arm down, 0.47 at 60°, 1.0 at 90° and above, unaffected by a 60°
+    twist; thumbs-up raised is 0.92.
+  - Fixed a Codex bug: mathutils `Matrix / float` isn't supported.
+  - Result (`max_v6d_armpit_cpu.jpg`, before | after): a modest gain, a few more folds gather under the
+    raised arm and the stretch softens. The tee's base mesh is coarse, so it won't get much crisper
+    without new geometry.
+- **Chew** (`max_expressions` chew/chew_b, plus mirrored chew_r/chew_b_r; `build_max.chew_keys`,
+  `ease_chew`, `chew_cycle`): 3 chews at 24 fps, 12 frames each, alternating sides, eased.
+  - jawOpen peaks at 0.34 under sealed lips (mouthClose 0.30), with jawLeft ±0.42.
+  - Still (`max_v6d_chew_cpu.jpg`, neutral | chew | chew_r): the jaw drops and shifts, the lips stay
+    closed and the cheek fills.
+  - The published pilot (`real_max.py`) is unchanged.

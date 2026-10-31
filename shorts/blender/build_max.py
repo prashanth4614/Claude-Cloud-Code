@@ -218,11 +218,46 @@ def set_expression(rig, name, frame=None, weight=1.0):
     pose_head(rig, HEAD_POSE.get(name, (0, 0, 0)), frame, weight)
 
 
-def chew_cycle(rig, start, chews=3, period=8):
-    """Key a chewing cycle: the jaw works under sealed lips (chew -> chew_b), `chews` times, every `period` frames."""
+def chew_keys(start, chews=3, period=12):
+    """24 fps: three chews over 36 frames; opening peaks +3,+15,+27."""
+    if chews < 1 or period < 8:
+        raise ValueError("Chewing needs >=1 chew and >=8 frames/chew")
+    yield start - 3, "neutral"
     for i in range(chews):
-        set_expression(rig, "chew", start + i * period)
-        set_expression(rig, "chew_b", start + i * period + period // 2)
+        t = start + i * period
+        suffix = "_r" if i % 2 else ""
+        yield t, "chew_b" + suffix
+        yield t + round(period * 0.25), "chew" + suffix
+        yield t + round(period * 0.58), "chew_b" + suffix
+    yield start + chews * period, "neutral"
+
+
+def ease_chew(rig, first, last):
+    from rigs import fcurves
+    body = next(o for o in rig.children if o.name.endswith(".body"))
+    face_paths = {k.path_from_id("value")
+                  for k in body.data.shape_keys.key_blocks if _unit(k.name)}
+    head_paths = {
+        rig.pose.bones[n].path_from_id("rotation_euler")
+        for n in ("neck01", "neck02", "head") if n in rig.pose.bones
+    }
+    for owner, paths in ((body.data.shape_keys, face_paths),
+                         (rig, head_paths)):
+        for curve in fcurves(owner):
+            if curve.data_path not in paths:
+                continue
+            for point in curve.keyframe_points:
+                if first <= point.co.x <= last:
+                    point.interpolation = "BEZIER"
+                    point.handle_left_type = "AUTO_CLAMPED"
+                    point.handle_right_type = "AUTO_CLAMPED"
+
+
+def chew_cycle(rig, start, chews=3, period=12):
+    """v6c (Codex 012): key `chews` chews (alternating sides) with eased curves."""
+    for frame, name in chew_keys(start, chews, period):
+        set_expression(rig, name, frame=frame)
+    ease_chew(rig, start - 3, start + chews * period)
 
 
 def swallow_motion(rig, start):

@@ -546,6 +546,184 @@ def add_eye_wetness(rig, body):
     return result
 
 
+# Armpit correctives: Codex 012 patch (applied and verified by Claude). Shape keys sampled from the
+# real skinning, driven by the upper-arm angle: crisp folds and less upward drag when an arm lifts.
+PIT_ONSET, PIT_FULL = 40, 85   # upper-arm angle from straight down (deg): corrective starts / is full
+
+
+def add_shirt_correctives(rig, ob, shirt, positions,
+                         shoulders, metres, transform):
+    import math
+    from mathutils import Matrix, Vector
+    from build_max import aim_bone
+
+    if ob.get("max_shirt_correctives") == 1:
+        return
+    if not any(m.type == "ARMATURE" and m.object == rig
+               and m.show_viewport for m in ob.modifiers):
+        raise ValueError("Expected active Max armature modifier")
+
+    if not ob.data.shape_keys:
+        ob.shape_key_add(name="Basis", from_mix=False)
+    keys = ob.data.shape_keys
+    if not keys.use_relative:
+        raise ValueError("Expected relative shirt shape keys")
+
+    names = ["max_pit_L", "max_pit_R"]
+    # Safe retry after an interrupted build.
+    for name in names + ["__pit_probe"]:
+        old = keys.key_blocks.get(name)
+        if old:
+            ob.shape_key_remove(old)
+
+    basis = keys.reference_key
+    probe = ob.shape_key_add(name="__pit_probe", from_mix=False)
+    saved_pose = [(p, p.matrix_basis.copy()) for p in rig.pose.bones]
+    saved_mods = [(m, m.show_viewport) for m in ob.modifiers]
+    saved_position = rig.data.pose_position
+    to_local = transform.to_3x3().inverted() * (1.0 / metres)   # mathutils Matrix has no "/"
+    centre_x = sum(p.x for p in shoulders.values()) / 2
+    made = []
+    eps = 0.001                       # one millimetre in rig/metre coordinates
+
+    def evaluated_positions():
+        bpy.context.view_layer.update()
+        ev = ob.evaluated_get(bpy.context.evaluated_depsgraph_get())
+        mesh = ev.to_mesh()
+        try:
+            if len(mesh.vertices) != len(positions):
+                raise ValueError("Probe requires unchanged vertex indices")
+            return [transform @ v.co * metres for v in mesh.vertices]
+        finally:
+            ev.to_mesh_clear()
+
+    try:
+        rig.data.pose_position = "POSE"
+        # Probe only skinning; subdivision must not mix neighbouring vertices.
+        for m, _ in saved_mods:
+            if m.type != "ARMATURE":
+                m.show_viewport = False
+
+        for side, name in zip(("L", "R"), names):
+            for p, _ in saved_pose:
+                p.matrix_basis.identity()
+            bpy.context.view_layer.update()
+
+            shoulder = shoulders[side]
+            sign = 1 if shoulder.x > centre_x else -1
+            a = math.radians(70)
+            direction = rig.matrix_world.to_3x3() @ Vector(
+                (sign * math.sin(a), -0.25, -math.cos(a)))
+            for bone in ("upperarm01", "upperarm02"):
+                aim_bone(rig, f"{bone}.{side}", direction)
+
+            probe.value = 0
+            base = evaluated_positions()
+            columns = []
+            for axis in range(3):
+                step = Vector((0, 0, 0))
+                step[axis] = eps
+                local_step = to_local @ step
+                for i in shirt:
+                    probe.data[i].co = basis.data[i].co + local_step
+                probe.value = 1
+                moved = evaluated_positions()
+                columns.append([(q - p) / eps
+                                for p, q in zip(base, moved)])
+            probe.value = 0
+
+            pit = shoulder + Vector((-sign * 0.03, 0, -0.12))
+            weights = {}
+            for i in shirt:
+                p = positions[i]
+                if sign * (p.x - centre_x) <= 0:
+                    continue
+                d = p - pit
+                w = 1.0
+                for component, width in zip(d, (0.10, 0.18, 0.13)):
+                    w *= max(0.0, 1.0 - (component / width) ** 2) ** 2
+                # Protect shoulder cap and sleeve.
+                w *= min(1.0, max(0.0,
+                    (shoulder.z - 0.045 - p.z) / 0.04))
+                if w > 1e-4:
+                    weights[i] = w
+            if not weights:
+                raise ValueError(f"No armpit vertices: {side}")
+
+            centre = sum((base[i] * w for i, w in weights.items()),
+                         Vector()) / sum(weights.values())
+            key = ob.shape_key_add(name=name, from_mix=False)
+            key.relative_key = basis
+            key.value = 0
+            made.append((side, key))
+
+            for i, w in weights.items():
+                q = base[i]
+                # Remove part of the skin-driven lift; cap at 22 mm.
+                drop = max(-0.022, min(0.008,
+                    -0.35 * (q.z - positions[i].z)))
+                u = q.z + drop - centre.z - (
+                    0.55 * sign * (q.x - centre.x))
+                relief = 0.006 * sum(
+                    math.exp(-((u - offset) / 0.012) ** 2)
+                    for offset in (-0.04, 0.0, 0.04))
+                outward = Vector((q.x - centre_x,
+                                   q.y - shoulder.y, 0)).normalized()
+                desired = w * (outward * relief + Vector((0, 0, drop)))
+                jacobian = Matrix(
+                    [column[i] for column in columns]).transposed()
+                if abs(jacobian.determinant()) < 1e-8:
+                    raise ValueError(f"Singular skinning at vertex {i}")
+                key.data[i].co = basis.data[i].co + (
+                    to_local @ (jacobian.inverted() @ desired))
+    finally:
+        probe.value = 0
+        ob.shape_key_remove(probe)
+        for p, matrix in saved_pose:
+            p.matrix_basis = matrix
+        for m, enabled in saved_mods:
+            m.show_viewport = enabled
+        rig.data.pose_position = saved_position
+        bpy.context.view_layer.update()
+
+    torso = max(
+        (b for b in rig.data.bones if b.name.startswith("spine")),
+        key=lambda b: (b.head_local.z + b.tail_local.z) / 2)
+    up_sign = 1 if torso.tail_local.z > torso.head_local.z else -1
+
+    for side, key in made:
+        driver = key.driver_add("value").driver
+        driver.type = "SCRIPTED"
+        # Evaluated world quaternions: independent of pose rotation mode,
+        # armature heading, and upper-arm axial twist.
+        for prefix, bone in (("a", f"upperarm01.{side}"),
+                             ("t", torso.name)):
+            for component in "wxyz":
+                v = driver.variables.new()
+                v.name = prefix + component
+                v.type = "TRANSFORMS"
+                target = v.targets[0]
+                target.id = rig
+                target.bone_target = bone
+                target.transform_space = "WORLD_SPACE"
+                target.rotation_mode = "QUATERNION"
+                target.transform_type = "ROT_" + component.upper()
+        # Dot product of each bone's world +Y axis.
+        dot = (
+            "4*(ax*ay-aw*az)*(tx*ty-tw*tz)"
+            "+(1-2*(ax*ax+az*az))*(1-2*(tx*tx+tz*tz))"
+            "+4*(ay*az+aw*ax)*(ty*tz+tw*tx)"
+        )
+        onset = math.cos(math.radians(PIT_ONSET))   # 0 in the rest A-pose (about 35 deg)
+        span = onset - math.cos(math.radians(PIT_FULL))
+        driver.expression = (
+            f"min(1,max(0,({up_sign}*({dot})+{onset:.6f})/"
+            f"{span:.6f}))")
+
+    ob.data.update()
+    ob["max_shirt_correctives"] = 1
+
+
 # Shirt fabric and folds: Codex 011b patch (applied and verified by Claude).
 def upgrade_shirt(rig):
     """Shirt-only shading; rest-space folds follow skinning, without simulation."""
@@ -554,8 +732,7 @@ def upgrade_shirt(rig):
 
     ob = next(o for o in rig.children_recursive
               if o.type == "MESH" and "male_casualsuit06" in o.name)
-    if ob.get("max_shirt_upgrade") == 1:
-        return
+    shaded = ob.get("max_shirt_upgrade") == 1
 
     unit = bpy.context.scene.unit_settings.scale_length
     scales = [v.length for v in rig.matrix_world.to_3x3().col]
@@ -618,6 +795,10 @@ def upgrade_shirt(rig):
     if ob.data.users > 1:
         ob.data = ob.data.copy()
     mesh = ob.data
+    add_shirt_correctives(
+        rig, ob, shirt, positions, shoulders, metres, transform)
+    if shaded:
+        return
 
     belly_z = max(low + 0.09, min(p.z for p in spine) + 0.08)
     belly_y = sum(p.y for p in spine) / len(spine)

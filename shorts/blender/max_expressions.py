@@ -105,13 +105,21 @@ EXPRESSIONS = {
     # Chewing (v5, Codex 011 finding): the jaw opens but the lips stay sealed: mouthClose follows jawOpen at
     # ~0.7, so the jaw moves under closed lips; the cheeks fill as the bolus moves. build_max.chew_cycle()
     # alternates chew / chew_b.
+    # v6c (Codex 012): bigger, sealed jaw work; cheek fullness suggested on one side with the opposite
+    # squint/press (the 52 units have no one-sided cheek puff). chew_r / chew_b_r mirror them (below).
     "chew": {
-        "jawOpen": 0.2, "mouthClose": 0.14, "jawLeft": 0.2, "mouthLeft": 0.3, "mouthPucker": 0.1,
-        "cheekPuff": 0.45, "mouthRollLower": 0.1,
+        "jawOpen": 0.34, "mouthClose": 0.30,
+        "jawLeft": 0.42, "jawForward": 0.10,
+        "mouthLeft": 0.16, "cheekPuff": 0.82,
+        "cheekSquintRight": 0.55,
+        "mouthPressRight": 0.38, "mouthPressLeft": 0.12,
+        "mouthShrugLower": 0.16,
     },
     "chew_b": {
-        "jawOpen": 0.04, "mouthClose": 0.03, "jawRight": 0.08, "mouthRight": 0.1, "mouthPressLeft": 0.3,
-        "mouthPressRight": 0.3, "cheekPuff": 0.15,
+        "jawOpen": 0.06, "mouthClose": 0.08,
+        "jawLeft": 0.10, "mouthLeft": 0.05,
+        "cheekPuff": 0.38, "cheekSquintRight": 0.30,
+        "mouthPressLeft": 0.30, "mouthPressRight": 0.38,
     },
     # S12b "pull the tube open": relief, a soft closed-mouth smile and relaxed eyes.
     "relief_smile": {  # v4: a fuller smile, eyes softly closing, brows lifted
@@ -144,11 +152,27 @@ HEAD_POSE = {
     "disgusted": (6, -10, -8),
     "swallow": (10, 0, 0),       # v6b: a chin tuck, so a still reads as swallowing
     "yawn": (-14, 3, 0),
-    "chew": (2, -4, 0),
-    "chew_b": (0, 0, 0),
+    "chew": (3, -3, 0),
+    "chew_b": (1, -2, 0),
     "relief_smile": (-6, -5, 0),
     "thumbs_up": (-1, 5, 0),
 }
+
+def _mirror_chew(units):
+    def opposite(name):
+        if name.endswith("Left"):
+            return name[:-4] + "Right"
+        if name.endswith("Right"):
+            return name[:-5] + "Left"
+        return name
+    return {opposite(k): v for k, v in units.items()}
+
+
+for _name in ("chew", "chew_b"):     # the bolus moves side to side: alternate chews mirror
+    EXPRESSIONS[_name + "_r"] = _mirror_chew(EXPRESSIONS[_name])
+    _x, _y, _z = HEAD_POSE[_name]
+    HEAD_POSE[_name + "_r"] = (_x, -_y, -_z)
+    assert set(EXPRESSIONS[_name]) <= FACE_UNITS
 
 SHEET_ORDER = ["neutral", "puzzled", "curious", "thinking", "surprised", "amazed", "scared", "wince", "ear_pop",
                "disgusted", "laughing", "relief_smile", "swallow", "yawn", "chew", "thumbs_up"]
