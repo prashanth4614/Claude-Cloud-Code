@@ -123,3 +123,32 @@ Root cause: two faults in `max_hair_curves.hair_surface()`. The second is the on
 
 Cloud CPU check (24 spp): `max_v6c_hairfix_cpu.jpg`, showing neutral, swallow and a 28° tilt. No bald
 band. A full-quality Mac sheet should confirm.
+
+## v6c Mac review
+
+Render of `max_v6.blend` at 1d8af4d+ (pulled c945323): same Metal wrapper, Apple M4 GPU (10 cores),
+128 spp.
+- `max_v6c_expressions.jpg`: the full expression sheet.
+- `max_v6c_hair_poses.jpg`: 4 tiles, 600x600, 3/4 front at 35°, 85 mm, 0.7 m, aimed 5 cm above the
+  head point (forehead/hairline). The framing crops the lower face on purpose.
+- Times: expression tiles 8.5-12.9 s, hair-pose tiles 15.5-19.0 s, total 404 s. That includes an
+  accidental second sheet pass from my wrapper (harmless: identical output, light rig idempotent).
+  The Mac was also under background load again. Peak footprint 6.8 GB, max RSS 2.8 GB.
+
+### Hair attachment per pose
+| pose | pale band brows-hairline | fringe attached | strands through skin | result |
+|---|---|---|---|---|
+| swallow (`set_expression("swallow")`, chin tuck) | none | yes | none | **PASS** |
+| look up (`pose_head(-12,0,0)`) | none | yes | none | **PASS** |
+| turn (`pose_head(0,0,28)`) | none | yes | none | **PASS** |
+| down 8 + turn 20 (`pose_head(8,0,20)`) | none | yes | none | **PASS** |
+
+- The v6b bug is fixed: in swallow the hair now sits on the scalp, the hairline stays in place with
+  its soft, fuzzy edge, and there's no bald band. The `expr_swallow` tile in the expression sheet
+  also looks right now.
+- Side fade and temples follow the head in all turns; the fade stays clean with no lifting at the
+  sides.
+
+### Anything new
+- Nothing broken. The expression sheet matches v6b otherwise (teeth, irises, chew shift all as before).
+- Still minor: a tiny bright edge on the top of the ear in the turn tiles (rim light), as noted in v6b.
