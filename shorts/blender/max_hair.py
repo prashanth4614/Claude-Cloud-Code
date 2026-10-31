@@ -88,15 +88,20 @@ def _smooth(e0, e1, x):
     return t * t * (3 - 2 * t)
 
 
-def scalp_weight(p, eye, head):
-    """1 inside the hairline, fading to 0 over ~1 cm. Hairline height above the eyes by angle round the head."""
+def scalp_weight(p, eye, head, fade=False):
+    """1 inside the hairline, fading to 0 over ~1 cm. Hairline height above the eyes by angle round the head.
+    fade=True: a wider, lower gradient on the sides and back (the skin tint of a fade haircut)."""
     rel = p - head
     if rel.length > 0.17 or p.z < eye.z - 0.11:
         return 0.0
     phi = abs(math.degrees(math.atan2(rel.x, -rel.y)))   # 0 = front, 90 = side, 180 = back
     # v5b: lower and fuller (the v5 review: the hairline read as receding, an "M" with bare temples)
-    hairline = _ramp(phi, [(0, 0.057), (30, 0.053), (55, 0.04), (80, 0.024), (100, 0.012), (120, -0.02), (150, -0.06), (180, -0.08)])
-    w = _smooth(0.0, 0.012, (p.z - eye.z) - hairline)
+    hairline = _ramp(phi, [(0, 0.057), (30, 0.051), (55, 0.036), (80, 0.022), (100, 0.012), (120, -0.02), (150, -0.06), (180, -0.08)])
+    if fade:
+        side = _smooth(50, 80, phi)                 # sides and back only: never darken the forehead
+        w = _smooth(-0.022 * side, 0.012 + 0.02 * side, (p.z - eye.z) - hairline)
+    else:
+        w = _smooth(0.0, 0.012, (p.z - eye.z) - hairline)
     # keep the ears and the skin right behind them clear
     if 75 < phi < 125 and abs(rel.x) > 0.072 and p.z - eye.z < 0.035:
         w = 0.0
@@ -241,7 +246,10 @@ def groom(rig, body):
         length = (SIDE_LEN * (1 - top - back) + TOP_LEN * top + BACK_LEN * back) * rnd.uniform(0.85, 1.15)
         # v5 (Codex 010): a feathered hairline. Strands near the edge of the hair region are shorter, so the
         # hairline fades into the skin instead of ending in a hard "helmet" line
-        length *= 0.6 + 0.4 * _smooth(0.1, 0.5, scalp_weight(root, eye, head))   # v5b: a gentler feather
+        edge = scalp_weight(root, eye, head)
+        length *= 0.6 + 0.4 * _smooth(0.1, 0.5, edge)                          # v5b: a gentler feather
+        if edge < 0.45:                            # v5c: break up the hairline (no ruled edge): uneven lengths
+            length *= rnd.uniform(0.45, 1.0)
         layer = rnd.random()                       # 0 = lies on the scalp, 1 = outer layer (depth, not a shell)
         length *= 1 - 0.55 * _smooth(-0.01, 0.06, rel.y) * top     # v4: taper over the crown (no "shelf" at the back)
         side_flow = Vector((0.0, 0.5, -1.0)).normalized()          # sides: combed down and back, flat
@@ -253,7 +261,7 @@ def groom(rig, body):
         front = _smooth(-0.02, -0.09, rel.y) * top                 # near the front hairline (rel.y < 0 = front)
         lift = FRONT_LIFT * front + 0.12 * top * (1 - front) + 0.05 * (1 - top)
         d = (n * lift + flow * (1 - lift)).normalized()
-        jitter = Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-0.5, 0.5))) * 0.05
+        jitter = Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-0.5, 0.5))) * (0.05 if edge >= 0.45 else 0.22)
         phase, amp = rnd.uniform(0, 2 * math.pi), WAVE * rnd.uniform(0.5, 1.0)
         d = (d + jitter).normalized()
         nk = len(part.hair_keys)

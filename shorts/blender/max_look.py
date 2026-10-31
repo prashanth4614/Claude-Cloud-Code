@@ -76,7 +76,7 @@ def paint_zones(rig, body):
     ears = fall(np.abs(co[:, 2] - (ez - 0.005)), 0.02, 0.035) * (dx > 0.066) * (co[:, 1] > ey + 0.02)
     red = np.clip(np.maximum.reduce([cheeks * 0.8, ears, fall(nose_d, 0.006, 0.016) * front]), 0, 1)
     from mathutils import Vector
-    scalp = np.array([max_hair.scalp_weight(Vector(c), eye, head) for c in co])   # where the hair grows
+    scalp = np.array([max_hair.scalp_weight(Vector(c), eye, head, fade=True) for c in co])   # hair + side fade
     me = body.data
     for name, vals in (("zone_oil", oil), ("zone_lip", lip), ("zone_red", red), ("zone_scalp", scalp)):
         at = me.attributes.get(name) or me.attributes.new(name, "FLOAT", "POINT")
@@ -161,10 +161,45 @@ def upgrade_eyes(mat):
 
 def upgrade_teeth(mat):
     b = next((n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
+    if b and "max_look_enamel" not in mat.node_tree.nodes:      # tint the texture to a warm enamel
+        link = b.inputs["Base Color"].links[0] if b.inputs["Base Color"].is_linked else None
+        if link:
+            mix = mat.node_tree.nodes.new("ShaderNodeMix")
+            mix.name = "max_look_enamel"
+            mix.data_type, mix.blend_type = "RGBA", "MULTIPLY"
+            mix.inputs["Factor"].default_value = 1.0
+            mix.inputs["B"].default_value = ENAMEL
+            mat.node_tree.links.new(link.from_socket, mix.inputs["A"])
+            mat.node_tree.links.new(mix.outputs["Result"], b.inputs["Base Color"])
     if b:
         for k, v in (("Roughness", 0.25), ("Subsurface Weight", 0.15), ("Coat Weight", 0.15), ("Coat Roughness", 0.1)):
             if k in b.inputs:
                 b.inputs[k].default_value = v
+
+
+UPPER_TEETH_SHIFT = (0.0, -0.0006, -0.0024)   # m: down 2.4 mm, forward 0.6 mm (front is -y)
+ENAMEL = (0.93, 0.88, 0.80, 1.0)               # warm off-white, not paper white
+
+
+def upgrade_teeth_geometry(teeth):
+    """The upper row sat so high that an open mouth showed only the lower teeth (it read as "gappy").
+    Move the upper row (the vertices that don't move with jawOpen) down and slightly forward, in the
+    basis and in every shape key."""
+    if teeth.get("max_look_teeth"):
+        return 0
+    keys = teeth.data.shape_keys.key_blocks if teeth.data.shape_keys else None
+    if not keys or "jawOpen" not in keys:
+        return 0
+    basis, jaw = keys[0], keys["jawOpen"]
+    upper = [i for i in range(len(basis.data)) if (Vector(jaw.data[i].co) - Vector(basis.data[i].co)).length < 1e-5]
+    off = Vector(UPPER_TEETH_SHIFT)
+    for kb in keys:
+        for i in upper:
+            kb.data[i].co = Vector(kb.data[i].co) + off
+    for i in upper:
+        teeth.data.vertices[i].co = Vector(teeth.data.vertices[i].co) + off
+    teeth["max_look_teeth"] = True
+    return len(upper)
 
 
 def upgrade_hair(body):
@@ -201,6 +236,9 @@ def upgrade(rig):
                 upgrade_eyes(mat)
             elif "teeth" in ob.name:
                 upgrade_teeth(mat)
+    teeth = next((o for o in rig.children_recursive if "teeth" in o.name and o.type == "MESH"), None)
+    if teeth:
+        print("[max_look] upper teeth moved:", upgrade_teeth_geometry(teeth))
     upgrade_hair(body)
     rig["max_look"] = "v5"
 
@@ -218,7 +256,7 @@ def studio(scene):
     for name, loc, energy, color, size in (
         ("Key", (-0.86, -1.23, 2.28), 100, (1.0, 0.86, 0.72), 1.0),  # Codex 010: 1 m wide, 1.5 m away, 35° side, 25° up
         ("Fill", (2.0, -1.8, 1.5), 35, (0.70, 0.82, 1.0), 3.0),     # low cool fill
-        ("Rim", (0.9, 2.6, 2.9), 70, (0.37, 0.83, 0.90), 0.8),     # cyan rim (#5FD3E6)
+        ("Rim", (0.9, 2.6, 2.2), 60, (0.37, 0.83, 0.90), 0.8),     # cyan rim (#5FD3E6)
         ("Kicker", (-1.4, 1.8, 1.7), 25, (0.37, 0.83, 0.90), 0.6),
         ("EyeLight", (0.25, -2.4, 1.68), 18, (1.0, 0.95, 0.9), 0.35),  # small, near the lens: a clear catchlight
     ):

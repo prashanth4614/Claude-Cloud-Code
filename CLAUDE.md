@@ -56,18 +56,26 @@ owner's OK.
 | Cloud worker: RunPod renders | `session_01Bok4npHajGYFXx5epHgMSF` | RunPod GPU renders (`final_render.sh`: dry run, bench, full, assemble), watching the pods and deleting them |
 
 **Monitoring:**
-- Every time a helper gets a task, schedule a check-in (`send_later`, about 10-15 minutes, or matched
-  to the job's length).
-- On each check-in, read its state (`get_session`, `list_events` filtered to assistant/result, or its
+- **The coordinating session can't be woken automatically.** It is bound to the owner's trusted
+  device, so scheduled check-ins (`send_later`) and messages from helpers into it are refused
+  (ACCESS_DENIED, verified 2026-10-31). Don't schedule check-ins into it. Instead, **at the start of
+  every reply**, check each helper that has an open task (`get_session`, the branch for its pushes)
+  and report one line on each.
+- **Self-monitoring that does work:** while a helper is busy, run
+  `shorts/tools/watch_branch.sh '<path regex>' <minutes>` with the Bash tool's `run_in_background`. It
+  polls the branch every minute and exits when the helper's push lands, which re-invokes this session to
+  act on it (apply, review, send the next task) without the owner having to message. Re-arm it after
+  each event while work is open.
+- Helpers deliver by pushing to the branch, and by opening results in Preview on the Mac for the
+  owner.
+- When checking, read its state (`get_session`, `list_events` filtered to assistant/result, or its
   pushes on the branch). Then:
   - give the owner a one-line progress note;
-  - re-arm until the task is done;
   - report the outcome.
 - A helper stuck or asking for something (a permission prompt, a missing tool) gets unblocked or
   escalated to the owner at once.
 - Helpers can't always message back (a trusted-device limit), so read their transcript or the branch
   rather than waiting for a reply.
-- Cancel pending check-ins once the work is reported.
 - The cloud workers' earlier blockers (2026-10-29: an ElevenLabs 401, a missing TTS cache) are stale:
   - the key now reaches ElevenLabs through the proxy;
   - the pilot's takes are cached through `shorts/pilot_ear_pop/takes/`.
