@@ -21,7 +21,10 @@ EXTRA_UNITS = {"throatRise"}   # our own shape keys on Max.body, built by max_lo
 
 # Face units not listed are 0. Keep weights below ~0.9 so the mesh never tears or looks rubbery.
 EXPRESSIONS = {
-    "neutral": {},
+    "neutral": {   # v6j (Codex 015: the bare mesh reads slightly worried): a calm, relaxed baseline
+        "mouthSmileLeft": 0.1, "mouthSmileRight": 0.1, "browDownLeft": 0.06, "browDownRight": 0.06,
+        "cheekSquintLeft": 0.05, "cheekSquintRight": 0.05,
+    },
     # S01-S02 hook: one brow up, the other down, mouth pulled to one side, eyes slightly narrowed.
     "puzzled": {   # v6g (Codex 014): stronger brow asymmetry (one down hard, one up), narrowed, concentrating eyes
         "browDownLeft": 0.2, "browDownRight": 0.9, "browOuterUpLeft": 0.95, "browInnerUp": 0.15,
@@ -48,17 +51,18 @@ EXPRESSIONS = {
         "mouthLowerDownRight": 0.3, "mouthFrownLeft": 0.4, "mouthFrownRight": 0.15,
     },
     # General reactions for any topic (v4).
-    "surprised": {   # v6e: arched brows, jaw dropped open (a round mouth, not a tooth strip), eyes wide but not staring
-        "browInnerUp": 0.95, "browOuterUpLeft": 0.95, "browOuterUpRight": 0.9,
-        "eyeWideLeft": 0.6, "eyeWideRight": 0.55, "jawOpen": 0.7,
-        "mouthLowerDownLeft": 0.35, "mouthLowerDownRight": 0.35, "mouthUpperUpLeft": 0.2, "mouthUpperUpRight": 0.2,
-        "mouthStretchLeft": 0.15, "mouthStretchRight": 0.15,
+    "surprised": {   # v6j: startled: brows maxed, eyes wide, jaw dropped, no smile at all, head pulled back
+        "browInnerUp": 1.0, "browOuterUpLeft": 1.0, "browOuterUpRight": 0.95,
+        "eyeWideLeft": 0.75, "eyeWideRight": 0.7, "jawOpen": 0.72,
+        "mouthLowerDownLeft": 0.35, "mouthLowerDownRight": 0.35, "mouthUpperUpLeft": 0.15, "mouthUpperUpRight": 0.15,
+        "mouthStretchLeft": 0.25, "mouthStretchRight": 0.25, "mouthFrownLeft": 0.1, "mouthFrownRight": 0.1,
     },
-    "amazed": {   # v6g (Codex 014: read mid-sentence): a dropped-jaw 'wow' with high brows and wide eyes, smiling cheeks
-        "browInnerUp": 0.8, "browOuterUpLeft": 0.85, "browOuterUpRight": 0.75,
-        "eyeWideLeft": 0.55, "eyeWideRight": 0.5, "cheekSquintLeft": 0.35, "cheekSquintRight": 0.3,
-        "jawOpen": 0.6, "mouthFunnel": 0.35, "mouthLowerDownLeft": 0.3, "mouthLowerDownRight": 0.3,
-        "mouthUpperUpLeft": 0.15, "mouthUpperUpRight": 0.15, "mouthSmileLeft": 0.4, "mouthSmileRight": 0.35,
+    "amazed": {   # v6j (Codex 015: same as surprised): delighted wonder: a big open smile, cheeks lifting the lower lids, soft brows
+        "browInnerUp": 0.6, "browOuterUpLeft": 0.55, "browOuterUpRight": 0.5,
+        "eyeWideLeft": 0.15, "eyeWideRight": 0.12, "cheekSquintLeft": 0.6, "cheekSquintRight": 0.55,
+        "eyeSquintLeft": 0.3, "eyeSquintRight": 0.28,
+        "jawOpen": 0.3, "mouthFunnel": 0.2, "mouthSmileLeft": 0.7, "mouthSmileRight": 0.65,
+        "mouthUpperUpLeft": 0.2, "mouthUpperUpRight": 0.2, "mouthDimpleLeft": 0.2, "mouthDimpleRight": 0.2,
     },
     "curious": {   # v6g (Codex 014: read amused): a directed gaze at something, one brow high, lips parted, leaning in
         "browInnerUp": 0.6, "browOuterUpLeft": 0.95, "browOuterUpRight": 0.4,
@@ -81,11 +85,12 @@ EXPRESSIONS = {
         "mouthLowerDownRight": 0.45, "mouthFrownLeft": 0.35, "mouthFrownRight": 0.35, "mouthUpperUpLeft": 0.15,
         "mouthUpperUpRight": 0.15,
     },
-    "laughing": {
-        "mouthSmileLeft": 0.95, "mouthSmileRight": 0.9, "jawOpen": 0.4, "mouthUpperUpLeft": 0.3,
-        "mouthUpperUpRight": 0.3, "cheekSquintLeft": 0.85, "cheekSquintRight": 0.8,
-        "eyeSquintLeft": 0.6, "eyeSquintRight": 0.55, "eyeBlinkLeft": 0.35, "eyeBlinkRight": 0.3,
-        "browInnerUp": 0.2,
+    "laughing": {   # v6j (Codex 015: 'sleepy eyes'): cheeks push up into the lower lids (squint, not blink), nose crinkles
+        "mouthSmileLeft": 0.95, "mouthSmileRight": 0.9, "jawOpen": 0.4, "mouthUpperUpLeft": 0.35,
+        "mouthUpperUpRight": 0.35, "cheekSquintLeft": 1.0, "cheekSquintRight": 0.95,
+        "eyeSquintLeft": 0.8, "eyeSquintRight": 0.75, "eyeBlinkLeft": 0.12, "eyeBlinkRight": 0.1,
+        "mouthDimpleLeft": 0.3, "mouthDimpleRight": 0.3, "noseSneerLeft": 0.2, "noseSneerRight": 0.2,
+        "browInnerUp": 0.15, "browDownLeft": 0.1, "browDownRight": 0.1,
     },
     "disgusted": {   # v6e: an 'ew': nose wrinkled hard, upper lip lifted, chin pushed up, head drawn back and away
         "noseSneerLeft": 1.0, "noseSneerRight": 0.85, "mouthUpperUpLeft": 1.0, "mouthUpperUpRight": 0.7,
@@ -113,19 +118,15 @@ EXPRESSIONS = {
     # alternates chew / chew_b.
     # v6c (Codex 012): bigger, sealed jaw work; cheek fullness suggested on one side with the opposite
     # squint/press (the 52 units have no one-sided cheek puff). chew_r / chew_b_r mirror them (below).
-    "chew": {   # v6h (Mac: v6g's change was too small to see in motion): bigger jaw drop and shift, lips sealed
-        "jawOpen": 0.68, "mouthClose": 0.62,
-        "jawLeft": 0.75, "jawForward": 0.10,
-        "mouthLeft": 0.22, "cheekPuff": 1.0,
-        "cheekSquintRight": 0.65,
-        "mouthPressRight": 0.4, "mouthPressLeft": 0.12,
-        "mouthShrugLower": 0.25,
+    "chew": {   # v6j (Codex 015: read as lip-pursing): jaw-led, relaxed lips (no press/shrug bunching), cheek compression
+        "jawOpen": 0.62, "mouthClose": 0.58,
+        "jawLeft": 0.75, "jawForward": 0.06,
+        "mouthLeft": 0.15, "cheekPuff": 0.75, "cheekSquintRight": 0.5, "cheekSquintLeft": 0.15,
     },
-    "chew_b": {
-        "jawOpen": 0.06, "mouthClose": 0.08,
-        "jawLeft": 0.10, "mouthLeft": 0.05,
-        "cheekPuff": 0.38, "cheekSquintRight": 0.30,
-        "mouthPressLeft": 0.30, "mouthPressRight": 0.38,
+    "chew_b": {   # v6j: a real in-between (jaw half up, still moving), so the cycle reads continuous, not peak-flat-peak
+        "jawOpen": 0.28, "mouthClose": 0.26,
+        "jawLeft": 0.3, "mouthLeft": 0.06,
+        "cheekPuff": 0.45, "cheekSquintRight": 0.25,
     },
     # S12b "pull the tube open": relief, a soft closed-mouth smile and relaxed eyes.
     "relief_smile": {   # v6e: an exhale of relief: eyes closing, inner brows soft up, gentle closed smile, head tipped back
@@ -149,8 +150,8 @@ HEAD_POSE = {
     "puzzled": (-2, 9, 9),
     "wince": (8, -3, 0),
     "ear_pop": (5, -9, -12),
-    "surprised": (-8, 0, 0),
-    "amazed": (-6, 4, 0),
+    "surprised": (-9, 0, 0),
+    "amazed": (-5, 5, 3),
     "curious": (7, 8, 8),
     "thinking": (-12, -10, -8),
     "scared": (10, -8, 0),

@@ -462,3 +462,14 @@ Chew only, at b9bbe04: `chew_cycle(rig, 10)`, frames 7-46, 640x640, 32 spp, Meta
   motion eases rather than snapping between keys.
 - **Chin bob:** looks natural. The head dips slightly on each chew peak (more top of head visible
   at 25 and 37) and returns between chews; small enough not to look like nodding.
+
+## v6j (Codex 015: "good enough to start the pilot"; facial performance pass)
+
+- **neutral:** a calm baseline (a hint of smile, settled brows); the bare mesh read slightly worried.
+- **laughing:** the cheeks push up into the lower lids (squint 0.8, not blink), with dimples and a nose
+  crinkle. Before, it read as "sleepy eyes".
+- **amazed / surprised separated:** amazed is delighted wonder (a big open smile, lifted cheeks, soft
+  brows); surprised is startled (maxed brows, wide eyes, dropped jaw, no smile, head back).
+- **chew:** jaw-led with relaxed lips (no press or shrug bunching, so no "lip-pursing"), and a real
+  in-between `chew_b` (jaw half up), so the cycle moves continuously.
+- `max_v6j_expressions_cpu.jpg` shows neutral, laughing, amazed, surprised, chew and chew_b.
