@@ -385,3 +385,19 @@ Render of `max_v6.blend` at dbfeaf4 (v6g): the same 5-tile shoulder sheet as v6f
   armhole seam is unchanged. Close-up only.
 - Sleeve hem inner ring: unchanged from v6f (dark-brown shadowed underside in the side view, no
   black ring).
+
+## v6h (Codex 014 fixes; cloud CPU checks)
+
+- **Pale parting / "thinning":** a test with the scalp under the hair darkened to black proved the
+  patch was skin showing between the strands. The scalp tint is now full strength in a deep root brown
+  (`SCALP_TINT` 1.0, `SCALP_COLOR`; it was 0.85 toward a light brown). Near the part, strands also
+  lean up to 45% across it (`PART_SOFT`/`PART_BLEND`), so it closes to a line.
+  `max_v6h_hair_cpu.jpg` shows the temple, the front and a tilt.
+- **Expressions:**
+  - scared: wide eyes, lips apart, corners pulled sideways and down, recoil;
+  - amazed: a dropped-jaw "wow" with high brows and smiling cheeks;
+  - curious: a directed gaze, one brow high, leaning in;
+  - puzzled: one brow hard down and one up, narrowed eyes;
+  - chew: more jaw travel (jawOpen 0.52 with mouthClose 0.47, jawLeft 0.6).
+
+  `max_v6h_expressions_cpu.jpg` also has the temple before and after the part blend only.

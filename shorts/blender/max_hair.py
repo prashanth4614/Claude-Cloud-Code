@@ -28,6 +28,7 @@ FRINGE_Z = 0.054              # front strands stay above this height over the ey
 # v4 style: a neat side part. The part sits on his right (-X); the top is combed back and over to his left
 # (+X) with a soft lift at the front (a low quiff), the short side below the part is combed down and back.
 PART_X = -0.035               # part line, relative to the head centre (his right is -X)
+PART_SOFT, PART_BLEND = 0.008, 0.45   # v6e: within 8 mm of the part, up to 45% of the other side's flow (no pale gap)
 SWEEP = Vector((0.55, 0.55, 0.12))   # top flow: back and over to his left, lying on the head
 FRONT_LIFT = 0.4              # lift at the front hairline only (the quiff), fading to flat by mid-head
 WAVE = 0.04                   # a whisper of wave (v3: 0.15-0.3 made spiky zigzags)
@@ -258,10 +259,14 @@ def groom(rig, body):
         layer = rnd.random()                       # 0 = lies on the scalp, 1 = outer layer (depth, not a shell)
         length *= 1 - 0.55 * _smooth(-0.01, 0.06, rel.y) * top     # v4: taper over the crown (no "shelf" at the back)
         side_flow = Vector((0.0, 0.5, -1.0)).normalized()          # sides: combed down and back, flat
-        if top > 0.3 and rel.x < PART_X:                            # below the part: combed to his right, down
-            top_flow = Vector((-0.5, 0.45, -0.25)).normalized()
+        below_flow = Vector((-0.5, 0.45, -0.25)).normalized()      # below the part: combed to his right, down
+        if top > 0.3 and rel.x < PART_X:
+            top_flow, other = below_flow, sweep
         else:
-            top_flow = sweep
+            top_flow, other = sweep, below_flow
+        if top > 0.3:   # v6e: near the part, strands lean partly across it, so it closes to a thin line
+            cross = PART_BLEND * (1 - _smooth(0.0, PART_SOFT, abs(rel.x - PART_X)))
+            top_flow = (top_flow * (1 - cross) + other * cross).normalized()
         flow = (top_flow * top + side_flow * (1 - top)).normalized()
         front = _smooth(-0.02, -0.09, rel.y) * top                 # near the front hairline (rel.y < 0 = front)
         lift = FRONT_LIFT * front + 0.12 * top * (1 - front) + 0.05 * (1 - top)

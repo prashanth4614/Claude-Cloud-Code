@@ -29,7 +29,9 @@ SKIN = {
 }
 SKIN_ROUGH = (0.38, 0.52)         # T-zone (oily) / elsewhere: by anatomy, from paint_zones() (Codex 010)
 SKIN_LIP_ROUGH = 0.32
-SCALP_TINT = 0.85                 # how far the skin under the hair is darkened toward a shadowed scalp
+SCALP_TINT = 1.0                  # how far the skin under the hair is darkened toward a shadowed scalp
+SCALP_COLOR = (0.032, 0.022, 0.017, 1.0)   # v6h: deep root brown (was 0.85 toward (0.09,0.062,0.05): the
+                                           # skin showed through as a pale patch at the part, "thinning")
 SKIN_FLUSH = 0.6                  # multiply strength toward a warm red on ears, nose tip and cheeks
 SUBDIV_RENDER = 2                 # the face's render subdivision (silhouette, fine expression creases)
 
@@ -144,7 +146,7 @@ def upgrade_skin(mat):
     nt.links.new(sc.outputs["Fac"], famt.inputs[0])
     nt.links.new(famt.outputs[0], tint.inputs["Factor"])
     nt.links.new(flush.outputs["Result"], tint.inputs["A"])
-    tint.inputs["B"].default_value = (0.09, 0.062, 0.05, 1.0)
+    tint.inputs["B"].default_value = SCALP_COLOR
     nt.links.new(tint.outputs["Result"], bsdf.inputs["Base Color"])
 
 
