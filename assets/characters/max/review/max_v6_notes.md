@@ -401,3 +401,40 @@ Render of `max_v6.blend` at dbfeaf4 (v6g): the same 5-tile shoulder sheet as v6f
   - chew: more jaw travel (jawOpen 0.52 with mouthClose 0.47, jawLeft 0.6).
 
   `max_v6h_expressions_cpu.jpg` also has the temple before and after the part blend only.
+
+## v6h Mac review
+
+Render of `max_v6.blend` at 55f35cf (v6h): same Metal wrapper (Apple M4 GPU), 128 spp (chew 32 spp).
+- `max_v6h_expressions.jpg` (16).
+- `max_v6h_hair_poses.jpg`: 4 head poses + temple view, as v6e.
+- `max_v6h_chew.mp4`: 40 frames, 24 fps, 640x640, 130 KB.
+- `max_v6h_chew_frames.jpg`: every 3rd frame, 7-46.
+- Times: expression tiles 3.0-4.5 s; hair poses 7.2-8.7 s, temple 12.7 s; chew 5.0 s/frame. Total 353 s.
+  Peak footprint 6.9 GB, max RSS 2.9 GB.
+
+### Parting and hairline
+- **Parting: fixed.** No pale scalp patch in the temple view any more. The part reads as a soft
+  darker parting line with hair density either side; in the front tiles the light streak on his
+  right side is gone.
+- **Hairline: fine, not harsh.** The front edge keeps its soft, fuzzy break-up. The darker scalp
+  shows as a slight shadow right at the roots, which reads as natural density, not a painted dark
+  line.
+- All 4 head poses still pass (no band, fringe attached, no strands through skin).
+
+### Expressions at thumbnail size
+- **amazed:** clearer (brows up, eyes wide, open mouth with teeth). Reads as amazed, not just talking.
+- **curious:** clearer. A slight head dip with eyes up and a small half-smile; distinct from neutral.
+- **puzzled:** clear (asymmetric brow, mouth twisted to one side).
+- **scared:** better than v6e. Eyes wider, mouth pulled back showing teeth. Reads as
+  scared/anxious now, though still a little "worried"; more brow-raise in the middle would push it.
+- Unchanged and fine: surprised, disgusted, ear pop, laughing, wince, relief smile, yawn, thinking,
+  thumbs up. swallow is still subtle.
+- **chew tile:** cheek bulge and jaw shift visible; reads as chewing.
+
+### Chew in motion and lip gap
+- Reads as chewing: peaks at ~13, 25 and 37, alternating sides, sealed lips.
+- **"Bigger chew": I can't see a difference from v6e in the clip.** Measured rest-vs-peak (f7 vs
+  f13) SSIM is 0.847 for v6h and 0.843 for v6e, and v6e vs v6h at the same peak frame is 0.976. The
+  motion amplitude is essentially the same as v6e. Maybe `chew_cycle` keys don't pick up the bigger
+  chew shapes, or the change only affects the static `chew` tile.
+- **Lip gap:** none in any of the 14 frames.
