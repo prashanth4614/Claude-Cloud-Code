@@ -36,6 +36,8 @@ owner approves (record the date). Changing a locked item reopens its gate.
 
 ## Decisions log
 
+- 2026-10-31 Voice audition: stability 0.5 chosen (owner); full take next
+
 - 2026-10-31 Script locked (draft 2). Option A: narration stays tight, and the per-scenario physics is shown with the shared kit (centre-of-mass dot + arrow, grip arrow at the shoe, curved tipping arrow, inertia ghost, freeze + orbit); ≤3 labels in 3D. OK to spend ElevenLabs credits on the audition + full take (owner)
 
 - 2026-10-31 Meshy shelved; beat outline approved, go to the next step (owner)
