@@ -92,6 +92,9 @@ Decide in words before paying in pixels.
   in-world metaphor object, the meter or label plan (2-3 labels at most), and the "hear it" moment.
 - **Rough boards:** one Workbench still per shot from blockout geometry, as a contact sheet. These are
   minutes of work, not renders.
+- **Asset list:** every character, prop and set the shots need, each with its source (shorts-craft §11),
+  licence, cost and restyle notes. The web helper finds and verifies them. Anything paid, CC-BY-SA or
+  AI-generated needs the owner's yes here.
 - **Codex** reviews the shot list, transition chain and boards (with images).
 - **Pass:**
   - every line has a picture that explains it;

@@ -212,6 +212,51 @@ Every transition must have a **reason the eye accepts**:
   shadow, kept inside 90% of the width and within the top 25%.
 - Render it locally on the Mac (Metal, 2160×3840), and output a 1080×1920 JPG for upload.
 
+## 11. Assets at Zack's level without building them
+
+Zack's polish comes mostly from **good base assets, strong materials and lighting, and one art
+direction**, not from modelling everything. We source, then **restyle into our house look** so
+everything matches (§2).
+
+**Where to get them** (always check the licence at download and record it in `assets/LICENSES.md`;
+the web helper researches and verifies):
+
+| Need | Sources | Notes |
+|---|---|---|
+| Props, sets, vehicles, furniture | Poly Haven, ambientCG (CC0); BlenderKit (a Blender add-on, free plus paid); Sketchfab (filter for CC0 or CC-BY, plus the store); CGTrader / TurboSquid (paid) | CC-BY needs a credit line in the description |
+| Space, planets, spacecraft | NASA 3D Resources (generally public domain) | |
+| Animals, specimens, artefacts | Smithsonian 3D (many CC0); Sketchfab | |
+| Anatomy | Z-Anatomy, BodyParts3D | **CC-BY-SA**: ask the owner before using it in a published video (share-alike) |
+| Skies, lighting | Poly Haven HDRIs | |
+| Body motion | Mixamo (free rigs and animations, retargeted onto Max); phone-video motion capture (Rokoko Video or similar) | the owner can act the motion |
+| Max's face | **an iPhone face-capture app recording ARKit's 52 blendshapes** (Live Link Face, Face Cap or similar) | Max already uses those same 52 face units, so the owner can *perform* the expressions and we import them |
+| One-off props nobody sells | image-to-3D generators (open source: Hunyuan3D, TRELLIS; services: Meshy, Tripo) | **needs the owner's OK first** (CLAUDE.md pauses image and video generation); for background props only, then cleaned up and restyled |
+
+**Upgrading Max** (the owner decides; it's a one-time investment):
+- **Free path (default):** keep the MPFB/MakeHuman Max and upgrade his look:
+  - a skin shader with subsurface scattering plus a skin texture set;
+  - modern hair curves instead of cards;
+  - better eye shaders;
+  - a soft key light plus a cyan rim.
+- **Paid path:** Reallusion Character Creator 4 or Human Generator (a Blender add-on). Higher-quality
+  skin, hair and clothes, and ARKit-compatible faces. Check the current price and licence first.
+
+**Restyle every asset in, before it appears in a shot:**
+- swap its materials to the house set (the colour code, ink & amber palette, our roughness and
+  subsurface values);
+- remove baked lighting;
+- rescale to real-world size;
+- run it through G5 QA.
+
+An asset that can't be made to match is not used. A mismatched style breaks the one-3D-world rule.
+
+**Where the realism comes from** (in priority order):
+1. lighting (a soft large key, rim, bounce);
+2. materials (subsurface on organics, clear-coat only where real, micro-roughness);
+3. depth of field and motion blur;
+4. animation timing;
+5. polygon detail last.
+
 ## 10. Pre-render checklist (before spending RunPod credits)
 
 1. The script is locked and fact-checked, about 30-35 s, with one presentation device chosen (§1).
