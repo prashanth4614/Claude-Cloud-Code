@@ -40,6 +40,13 @@ YouTube Shorts production pipeline. **The agreed production pipeline is `PIPELIN
 - Cloud sessions get the ElevenLabs key as a network secret attached by the proxy, so
   `$ELEVENLABS_API_KEY` may be empty even though requests work. Never print, log or commit any key.
 
+## Making a new video
+
+- Use the `shorts-craft` skill (`.claude/skills/shorts-craft/`) for every new Short: story formula,
+  opening, transitions, camera, Max's acting, voice gates (`scripts/voice_check.py`), captions, our house
+  look (`shorts/look/house_grade.py`, "ink & amber") and signatures, ending, thumbnail, pre-render
+  checklist. Don't re-edit published videos to apply it.
+
 ## Sound
 
 - For any sound-mix work (SFX, transitions, music, room tone, voice clean-up, loudness), use the
