@@ -364,3 +364,24 @@ Times: 7.2-12.4 s per tile, 55 s total. Peak footprint 7.6 GB, max RSS 3.5 GB.
   at 175°. Hair roots are unchanged.
 - **Image:** `max_v6g_overhead_shoulder_cpu.jpg` shows arms overhead, the raised shoulder from the
   front, and from the side.
+
+## v6g Mac review
+
+Render of `max_v6.blend` at dbfeaf4 (v6g): the same 5-tile shoulder sheet as v6f
+(`max_v6g_shoulder.jpg`), Metal on the Apple M4 GPU, 128 spp, 900x1000 tiles. Times 6.7-10.3 s per tile,
+51 s total. Peak footprint 7.5 GB, max RSS 3.7 GB.
+
+- **Overhead balloon: gone (d).** With both arms up the tee now follows the torso: sleeves
+  stand up with the arms, and the sides taper down to the waist. A slight natural fullness remains
+  where the sleeve meets the side, but nothing sticks out past the body. A tiny dark notch at the
+  outer edge of his right sleeve is only visible at full size.
+- **Raised shoulder (a, b, c): still natural.** Rounded top with the collarbone lift, a smooth
+  slope from neck to arm, not trimmed and not padded. Practically the same as v6f, minus the extra
+  fullness. No candy-wrapper twist.
+- **Armpit blocky patch (e): fainter, not gone.** The rectangular lighter block in the armpit hollow
+  is softer-edged and lower in contrast than v6e/v6f. You still see its straight edges at full size;
+  invisible at phone size.
+- **Chest crease line (b, e): still there.** The thin stepped/jagged line from the collar toward the
+  armhole seam is unchanged. Close-up only.
+- Sleeve hem inner ring: unchanged from v6f (dark-brown shadowed underside in the side view, no
+  black ring).
