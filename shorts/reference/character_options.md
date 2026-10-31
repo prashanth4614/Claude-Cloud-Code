@@ -1,7 +1,6 @@
 # Free host-character options for Blender (Cycles) Shorts — licence check (2026-10-31)
 
-This is web research only: no installs, downloads or spending. I read the official pages where they
-could be reached; where I only had forum or press sources, the table says so.
+Web research only. Official pages where reachable; forum or press sources are marked.
 
 | Option | Licence for monetised renders | Mac (Apple silicon) | Path into Blender and face rig | Verdict |
 |---|---|---|---|---|
