@@ -308,3 +308,42 @@ Render of `max_v6.blend` at f50a157: same Metal wrapper (Apple M4 GPU, 10 cores)
 - **Images:**
   - `max_v6f_shoulder_before_after_cpu.jpg`: front before | after, side before | after (the first fix only);
   - `max_v6f_shoulder_poses_cpu.jpg`: with both fixes, raised front, raised side, rest, thumbs-up.
+
+## v6f Mac review
+
+Render of `max_v6.blend` at 6de1eb8 (contains aa49aff v6f): same Metal wrapper (Apple M4 GPU), 128 spp,
+900x1000 tiles. `max_v6f_shoulder.jpg` has 5 tiles:
+- a: the v6d/v6e shirt pose, chest camera;
+- b: front close-up on the raised left shoulder (sh+(0.15,-0.9,0.05) -> sh+(-0.05,0,-0.03), 50 mm);
+- c: side view (sh+(0.85,-0.45,0.15) -> sh, 50 mm);
+- d: both arms straight overhead, chest camera;
+- e: the v6e armpit close-up, re-rendered.
+
+Times: 7.2-12.4 s per tile, 55 s total. Peak footprint 7.6 GB, max RSS 3.5 GB.
+
+### Raised shoulder (a, b, c): fixed
+- The shoulder top is **rounded and natural now**: the collarbone and deltoid rise with the arm and
+  the line from neck to arm is a smooth slope, with no flat "trimmed" top. In the side view (c) the
+  deltoid bulge under the sleeve looks anatomical.
+- No candy-wrapper twisting on the upper arm or at the elbow in any tile.
+
+### Arms overhead (d): NEW PROBLEM, the tee balloons
+- With both arms straight up, the **shirt balloons out hugely at both shoulders/armpits**: two big
+  inflated lobes stick out sideways past the body, wider than the head-to-shoulder width, with the
+  seam arcing across them. It reads as a puffed-up costume, not cloth.
+- The body/arms underneath look OK. It's the shirt deform: likely the pit correctives
+  (max_pit_L/R) at full value stacking with the volume-preserving skinning, or the sleeve/side
+  vertices following the arm too far. Needs clamping, or a separate overhead corrective, before any
+  arms-up shot.
+
+### Sleeve hem inner ring
+- **Mostly fixed:** no pure black ring. In (c) the underside of the raised sleeve's hem still shows
+  a dark brown band (the sleeve interior in shadow), noticeable but believable as a shadowed inside.
+  In (a/b) it's no longer visible.
+
+### Blocky patch (e) and a new chest line
+- **Blocky square patch: still there.** In the armpit hollow below the seam there's a lighter
+  rectangular block with straight edges. Same as v6e.
+- **New, small:** a thin jagged/stepped crease line runs across the upper chest from the collar
+  toward the seam (visible in b and e). It looks like a shape-key or fold-map boundary, not a real
+  fabric fold. Close-up only.
