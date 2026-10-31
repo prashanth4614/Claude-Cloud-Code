@@ -446,3 +446,19 @@ Render of `max_v6.blend` at 55f35cf (v6h): same Metal wrapper (Apple M4 GPU), 12
   each chew (HEAD_POSE `chew` (7,-5,0)).
 - `max_v6i_chew_cpu.jpg` shows neutral | chew | chew_r: the chin clearly drops and swings, with no lip gap.
 - Shape keys only; `max_v6.blend` doesn't change (expressions are read from code).
+
+## v6i Mac review
+
+Chew only, at b9bbe04: `chew_cycle(rig, 10)`, frames 7-46, 640x640, 32 spp, Metal on the Apple M4
+(4.8 s/frame, 216 s total).
+`max_v6i_chew.mp4` (40 frames, 24 fps, 140 KB) and `max_v6i_chew_frames.jpg` (every 3rd frame).
+
+- **Reads as chewing at phone size: yes.** The peaks (~13, 25, 37) show a clearly longer lower face,
+  jaw dropped and swung to alternating sides, with a cheek bulge. Visibly bigger than v6e/v6h:
+  rest-vs-peak SSIM f7/f13 is 0.824 (v6h 0.847, v6e 0.843).
+- **Lip gap:** none; the lips stay sealed through every frame on the sheet, including the deepest peaks.
+- **Jaw popping:** none found. The biggest frame-to-frame changes (SSIM 0.87-0.89 at 35-36, 11-12,
+  23-24, 15-16) cluster evenly on the way into and out of each peak, with no single outlier jump. The
+  motion eases rather than snapping between keys.
+- **Chin bob:** looks natural. The head dips slightly on each chew peak (more top of head visible
+  at 25 and 37) and returns between chews; small enough not to look like nodding.
