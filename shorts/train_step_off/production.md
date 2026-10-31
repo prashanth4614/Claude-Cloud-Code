@@ -6,8 +6,8 @@ owner approves (record the date). Changing a locked item reopens its gate.
 | Gate | Status | Approved (date) | Notes / links |
 |---|---|---|---|
 | G0 Idea and angle | ☑ | 2026-10-31 | see G0 below; web differentiation check pending |
-| G1 Story and facts (Codex) | ◐ | | beats approved by the owner 2026-10-31 ("proceed"); `story.md`, `facts.md`; Codex 017 |
-| G2 Script locked (Codex) | ☐ | | word count, timing at 170 wpm |
+| G1 Story and facts (Codex) | ☑ | 2026-10-31 | `story.md` rev 2, `facts.md`; Codex 017 objections all applied |
+| G2 Script locked (Codex) | ◐ | | `script.md` draft 1: 122 words, ≈45 s; Codex 018 |
 | G3 Screenplay, shot list, transition chain, boards (Codex) | ☐ | | `shots.yaml`, boards sheet |
 | G4 Voice locked | ☐ | | take id, `voice_check.py` result |
 | G5 Pre-frame QA (Codex) | ☐ | | QA report, waivers |
