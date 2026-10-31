@@ -741,6 +741,7 @@ SEAM_OFFSET = 0.012     # armhole seam: this far out along the arm from the shou
 SEAM_WIDTH = 0.0012     # seam line half-width (m)
 SEAM_DEPTH = 0.0004     # groove depth (m)
 SEAM_SHADE = 0.72       # base colour multiplier on the seam line
+INSIDE_GLOW = 0.35      # emission on the tee's back faces (the inside of the sleeves)
 
 
 # Shirt fabric and folds: Codex 011b patch (applied and verified by Claude).
@@ -984,6 +985,12 @@ def upgrade_shirt(rig):
             darken.inputs[6].default_value = base_in.default_value
         links.new(seam_band.outputs["Result"], darken.inputs["Factor"])
         links.new(darken.outputs[2], base_in)
+        # The inside of the sleeves (back faces) read as a black ring at the hem: real cotton lets some
+        # light through, so back faces get a faint glow of their own colour.
+        geo = nodes.new("ShaderNodeNewGeometry")
+        glow = math_node("MULTIPLY", geo.outputs["Backfacing"], INSIDE_GLOW)
+        links.new(darken.outputs[2], bsdf.inputs["Emission Color"])
+        links.new(glow, bsdf.inputs["Emission Strength"])
 
         # Base Color, UVs, images and the original normal-map chain stay intact.
         replacements[index] = len(mesh.materials)
@@ -996,8 +1003,22 @@ def upgrade_shirt(rig):
     ob["max_shirt_upgrade"] = 1
 
 
+def preserve_volume(rig):
+    """v6e: volume-preserving (dual quaternion) skinning on everything skinned to Max, so a raised arm
+    keeps a round shoulder instead of collapsing it. All of them must match the body (the hair surface
+    copies the body's weights), so this runs again after the hair curves are built."""
+    n = 0
+    for ob in bpy.data.objects:
+        for m in getattr(ob, "modifiers", []):
+            if m.type == "ARMATURE" and m.object == rig and not m.use_deform_preserve_volume:
+                m.use_deform_preserve_volume = True
+                n += 1
+    return n
+
+
 def upgrade(rig):
     body = next(o for o in rig.children_recursive if o.name.endswith(".body"))
+    print("[max_look] preserve-volume skinning on", preserve_volume(rig), "objects")
     print("[max_look] skin zones", paint_zones(rig, body))
     print("[max_look] throat-rise vertices:", add_throat_rise(rig, body))
     for m in body.modifiers:
@@ -1081,6 +1102,7 @@ if __name__ == "__main__":
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         import max_hair_curves
         max_hair_curves.to_curves(rig, next(o for o in rig.children_recursive if o.name.endswith(".body")))
+        print("[max_look] preserve-volume skinning on", preserve_volume(rig), "more objects")
     if "--sheet" in argv:          # turnaround + expression sheet in the house light rig
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         import build_max

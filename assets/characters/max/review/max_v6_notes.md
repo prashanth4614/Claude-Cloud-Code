@@ -238,3 +238,23 @@ Codex 013 top 3: hair attachment at the temples, armpit folds, expression separa
   - chew has a bigger jaw drop and shift.
 
   `max_v6e_expressions_cpu.jpg` is from before the last curious, surprised and amazed tweak.
+
+## v6f (owner: "the raised left arm's shoulder looks trimmed, not natural")
+
+- **Cause:** only the upper-arm bone rotated, so when the arm went up, the top of the shoulder collapsed into a
+  straight, flat line from the neck to the arm.
+- **Fixes:**
+  - **Shoulder rise** (`build_max.lift_shoulder`, called automatically by `aim_bone` for any
+    `upperarm01.*`): the collarbone lifts with the arm, at 0.33° per degree of arm elevation above 35°,
+    capped at 32°. This is the shoulder's natural rhythm.
+  - **Volume-preserving skinning** (`max_look.preserve_volume`): dual quaternion skinning on all 10 objects
+    skinned to Max, including the hair surface, so they still deform alike. The raised shoulder stays round.
+  - **Sleeve insides:** the back faces of the tee get a faint glow of their own colour
+    (`INSIDE_GLOW` 0.35), so the hem no longer shows a pitch-black ring.
+- **Checks:**
+  - hair roots unchanged in all head poses (p95 0.38 mm);
+  - shirt correctives still 0 at rest and 1.0 at a 90° lift;
+  - rest and thumbs-up poses look normal.
+- **Images:**
+  - `max_v6f_shoulder_before_after_cpu.jpg`: front before | after, side before | after (the first fix only);
+  - `max_v6f_shoulder_poses_cpu.jpg`: with both fixes, raised front, raised side, rest, thumbs-up.

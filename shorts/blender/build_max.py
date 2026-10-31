@@ -16,7 +16,7 @@ import os
 import sys
 
 import bpy
-from mathutils import Euler, Vector
+from mathutils import Euler, Matrix, Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -107,6 +107,7 @@ def build():
     max_look.upgrade(rig)          # v4/v5: skin zones, eyes, teeth, render subdivision
     import max_hair_curves
     max_hair_curves.to_curves(rig, body)   # v5: real hair curves (~150k strands) from the combed guides
+    max_look.preserve_volume(rig)  # v6e: the hair surface must skin like the body
     return rig, body
 
 
@@ -281,12 +282,41 @@ def pose_head(rig, deg, frame=None, weight=1.0):
             pb.keyframe_insert("rotation_euler", frame=frame)
 
 
+SHOULDER_RISE = 0.33       # collarbone lift per degree of arm elevation past SHOULDER_RISE_FROM (the ~1:2
+SHOULDER_RISE_FROM = 35    # scapulohumeral rhythm), capped at SHOULDER_RISE_MAX degrees
+SHOULDER_RISE_MAX = 32
+
+
+def lift_shoulder(rig, side, direction):
+    """v6e: raise the collarbone with the arm, as a real shoulder does. Rotating only the upper arm
+    collapsed the top of the shoulder into a flat, "trimmed" line when the arm went up."""
+    clav = rig.pose.bones.get(f"clavicle.{side}")
+    if not clav:
+        return
+    clav.matrix_basis = Matrix.Identity(4)
+    bpy.context.view_layer.update()
+    d = (rig.matrix_world.to_3x3().inverted() @ Vector(direction)).normalized()
+    elevation = math.degrees(d.angle(Vector((0, 0, -1))))
+    rise = min(SHOULDER_RISE_MAX, SHOULDER_RISE * max(0.0, elevation - SHOULDER_RISE_FROM))
+    if rise <= 0:
+        return
+    rest = clav.matrix.to_3x3().col[1].normalized()
+    axis = rest.cross(Vector((0, 0, 1)))
+    if axis.length < 1e-6:
+        return
+    lifted = Matrix.Rotation(math.radians(rise), 3, axis.normalized()) @ rest
+    aim_bone(rig, clav.name, rig.matrix_world.to_3x3() @ lifted)
+
+
 def aim_bone(rig, name, direction, up=None, up_child=None):
     """Point a pose bone along a world direction (rig-axis independent). Optionally roll it so the
-    vector from its head to bone `up_child`'s head points as close to `up` as possible."""
+    vector from its head to bone `up_child`'s head points as close to `up` as possible.
+    Aiming an upper arm also lifts its collarbone (lift_shoulder)."""
     pb = rig.pose.bones.get(name)
     if not pb:
         return
+    if name.startswith("upperarm01."):
+        lift_shoulder(rig, name.split(".")[-1], direction)
     bpy.context.view_layer.update()
     inv = rig.matrix_world.to_3x3().inverted()
     d = (inv @ Vector(direction)).normalized()
