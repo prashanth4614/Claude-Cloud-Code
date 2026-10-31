@@ -22,12 +22,12 @@ SEED = 7
 GUIDES = 3000                 # v4: more, finer guides for a smooth, groomed look (not chunky locks)
 CHILDREN = 60                 # rendered children per guide (max_look.py raises it for renders)
 TOP_LEN, SIDE_LEN, BACK_LEN = 0.072, 0.018, 0.02   # longer top, short tapered sides and back
-FRINGE_Z = 0.066              # front strands stay above this height over the eyes (no locks on the forehead)
+FRINGE_Z = 0.054              # front strands stay above this height over the eyes (no locks on the forehead)
 # v4 style: a neat side part. The part sits on his right (-X); the top is combed back and over to his left
 # (+X) with a soft lift at the front (a low quiff), the short side below the part is combed down and back.
 PART_X = -0.035               # part line, relative to the head centre (his right is -X)
 SWEEP = Vector((0.55, 0.55, 0.12))   # top flow: back and over to his left, lying on the head
-FRONT_LIFT = 0.32             # lift at the front hairline only (the quiff), fading to flat by mid-head
+FRONT_LIFT = 0.4              # lift at the front hairline only (the quiff), fading to flat by mid-head
 WAVE = 0.04                   # a whisper of wave (v3: 0.15-0.3 made spiky zigzags)
 HAIR_MELANIN, HAIR_REDNESS = 0.9, 0.12     # dark brown, highlights without orange tips
 STUBBLE_COUNT, STUBBLE_LEN = 14000, 0.0022
@@ -94,7 +94,8 @@ def scalp_weight(p, eye, head):
     if rel.length > 0.17 or p.z < eye.z - 0.11:
         return 0.0
     phi = abs(math.degrees(math.atan2(rel.x, -rel.y)))   # 0 = front, 90 = side, 180 = back
-    hairline = _ramp(phi, [(0, 0.064), (30, 0.06), (55, 0.046), (80, 0.03), (100, 0.022), (120, -0.01), (150, -0.06), (180, -0.08)])
+    # v5b: lower and fuller (the v5 review: the hairline read as receding, an "M" with bare temples)
+    hairline = _ramp(phi, [(0, 0.057), (30, 0.053), (55, 0.04), (80, 0.024), (100, 0.012), (120, -0.02), (150, -0.06), (180, -0.08)])
     w = _smooth(0.0, 0.012, (p.z - eye.z) - hairline)
     # keep the ears and the skin right behind them clear
     if 75 < phi < 125 and abs(rel.x) > 0.072 and p.z - eye.z < 0.035:
@@ -240,7 +241,7 @@ def groom(rig, body):
         length = (SIDE_LEN * (1 - top - back) + TOP_LEN * top + BACK_LEN * back) * rnd.uniform(0.85, 1.15)
         # v5 (Codex 010): a feathered hairline. Strands near the edge of the hair region are shorter, so the
         # hairline fades into the skin instead of ending in a hard "helmet" line
-        length *= 0.3 + 0.7 * _smooth(0.12, 0.65, scalp_weight(root, eye, head))
+        length *= 0.6 + 0.4 * _smooth(0.1, 0.5, scalp_weight(root, eye, head))   # v5b: a gentler feather
         layer = rnd.random()                       # 0 = lies on the scalp, 1 = outer layer (depth, not a shell)
         length *= 1 - 0.55 * _smooth(-0.01, 0.06, rel.y) * top     # v4: taper over the crown (no "shelf" at the back)
         side_flow = Vector((0.0, 0.5, -1.0)).normalized()          # sides: combed down and back, flat
@@ -277,7 +278,7 @@ def groom(rig, body):
                 t = k / (nk - 1)
                 bulge = 0.35 + 0.65 * math.sin(math.pi * min(1.0, t * 1.2))   # some lift kept to the tip
                 # a real side-part cut sits ~1-2 cm thick on top: outer layers up to ~15 mm, inner ones low
-                off = 0.0004 + (0.003 + 0.012 * layer) * bulge * (0.2 + 0.8 * top)
+                off = 0.0004 + (0.003 + 0.016 * layer) * bulge * (0.2 + 0.8 * top)   # v5b: a bit more lift
                 off_max = off + 0.004 + 0.01 * front * t                                  # quiff room
                 dist = (p - near).dot(nn)
                 if dist < off:

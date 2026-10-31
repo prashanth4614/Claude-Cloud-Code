@@ -29,6 +29,7 @@ SKIN = {
 }
 SKIN_ROUGH = (0.38, 0.52)         # T-zone (oily) / elsewhere: by anatomy, from paint_zones() (Codex 010)
 SKIN_LIP_ROUGH = 0.32
+SCALP_TINT = 0.85                 # how far the skin under the hair is darkened toward a shadowed scalp
 SKIN_FLUSH = 0.6                  # multiply strength toward a warm red on ears, nose tip and cheeks
 SUBDIV_RENDER = 2                 # the face's render subdivision (silhouette, fine expression creases)
 
@@ -74,8 +75,10 @@ def paint_zones(rig, body):
                  for sx in (-1, 1))
     ears = fall(np.abs(co[:, 2] - (ez - 0.005)), 0.02, 0.035) * (dx > 0.066) * (co[:, 1] > ey + 0.02)
     red = np.clip(np.maximum.reduce([cheeks * 0.8, ears, fall(nose_d, 0.006, 0.016) * front]), 0, 1)
+    from mathutils import Vector
+    scalp = np.array([max_hair.scalp_weight(Vector(c), eye, head) for c in co])   # where the hair grows
     me = body.data
-    for name, vals in (("zone_oil", oil), ("zone_lip", lip), ("zone_red", red)):
+    for name, vals in (("zone_oil", oil), ("zone_lip", lip), ("zone_red", red), ("zone_scalp", scalp)):
         at = me.attributes.get(name) or me.attributes.new(name, "FLOAT", "POINT")
         at.data.foreach_set("value", vals.astype(np.float32))
     return {"oil": int((oil > 0.5).sum()), "lip": int((lip > 0.5).sum()), "red": int((red > 0.5).sum())}
@@ -129,7 +132,20 @@ def upgrade_skin(mat):
     nt.links.new(amt.outputs[0], flush.inputs["Factor"])
     nt.links.new(link.from_socket, flush.inputs["A"])
     flush.inputs["B"].default_value = (1.0, 0.62, 0.55, 1.0)
-    nt.links.new(flush.outputs["Result"], bsdf.inputs["Base Color"])
+    # the scalp under the hair is darker (roots, hair shadow): no warm skin band at the hairline, and the
+    # short sides read as a soft fade instead of a shaved line
+    sc = nt.nodes.new("ShaderNodeAttribute")
+    sc.attribute_name, sc.attribute_type = "zone_scalp", "GEOMETRY"
+    tint = nt.nodes.new("ShaderNodeMix")
+    tint.data_type = "RGBA"
+    famt = nt.nodes.new("ShaderNodeMath")
+    famt.operation = "MULTIPLY"
+    famt.inputs[1].default_value = SCALP_TINT
+    nt.links.new(sc.outputs["Fac"], famt.inputs[0])
+    nt.links.new(famt.outputs[0], tint.inputs["Factor"])
+    nt.links.new(flush.outputs["Result"], tint.inputs["A"])
+    tint.inputs["B"].default_value = (0.09, 0.062, 0.05, 1.0)
+    nt.links.new(tint.outputs["Result"], bsdf.inputs["Base Color"])
 
 
 def upgrade_eyes(mat):
