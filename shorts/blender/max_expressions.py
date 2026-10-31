@@ -22,7 +22,7 @@ EXTRA_UNITS = {"throatRise"}   # our own shape keys on Max.body, built by max_lo
 # Face units not listed are 0. Keep weights below ~0.9 so the mesh never tears or looks rubbery.
 EXPRESSIONS = {
     "neutral": {   # v6j (Codex 015: the bare mesh reads slightly worried): a calm, relaxed baseline
-        "mouthSmileLeft": 0.1, "mouthSmileRight": 0.1, "browDownLeft": 0.06, "browDownRight": 0.06,
+        "mouthSmileLeft": 0.1, "mouthSmileRight": 0.1, "browDownLeft": 0.12, "browDownRight": 0.12,
         "cheekSquintLeft": 0.05, "cheekSquintRight": 0.05,
     },
     # S01-S02 hook: one brow up, the other down, mouth pulled to one side, eyes slightly narrowed.
@@ -119,9 +119,10 @@ EXPRESSIONS = {
     # v6c (Codex 012): bigger, sealed jaw work; cheek fullness suggested on one side with the opposite
     # squint/press (the 52 units have no one-sided cheek puff). chew_r / chew_b_r mirror them (below).
     "chew": {   # v6j (Codex 015: read as lip-pursing): jaw-led, relaxed lips (no press/shrug bunching), cheek compression
-        "jawOpen": 0.62, "mouthClose": 0.58,
+        "jawOpen": 0.62, "mouthClose": 0.6,
         "jawLeft": 0.75, "jawForward": 0.06,
         "mouthLeft": 0.15, "cheekPuff": 0.75, "cheekSquintRight": 0.5, "cheekSquintLeft": 0.15,
+        "mouthPressLeft": 0.2, "mouthPressRight": 0.2,   # v6k: a light press seals the peak (the Mac saw a gap)
     },
     "chew_b": {   # v6j: a real in-between (jaw half up, still moving), so the cycle reads continuous, not peak-flat-peak
         "jawOpen": 0.28, "mouthClose": 0.26,

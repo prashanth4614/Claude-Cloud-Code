@@ -494,3 +494,14 @@ Metal on the Apple M4, 320 s total.
   (also visible at 37 and faintly at 25 on the sheet). Between peaks the lips are sealed. The
   bigger jaw drop seems to outrun the lip-seal shape. It needs a stronger seal (or a lip press
   corrective driven by jaw open) at the peak values.
+
+## v6k (the v6j Mac review: lips part at the chew peaks)
+
+- chew: mouthClose 0.60 plus a light mouthPress 0.2 on both sides. The lips are sealed at the peak, both
+  sides (`max_v6k_chew_peak_cpu.jpg`, close-up at 32 spp).
+- neutral: browDown 0.12 (was 0.06) settles the faint inner-brow lift ("slightly tired").
+- **Status:** Max passes for production (Codex 015 "good enough to start"; the Mac v6j expressions pass).
+  Open polish for later, not blocking:
+  - underarm and sleeve folds;
+  - hair clump and silhouette variation;
+  - the faint armpit patch and chest crease line (close-ups only).
